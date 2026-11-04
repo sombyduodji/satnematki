@@ -7,6 +7,9 @@ const STORE_APART = 7; // and on the store's shelves, around the store
 const PLACING_TRIES = 20;
 const BEST_TIMES = 10;
 
+// Foods bought as a mass stay singular in a shopping list's object form (mielkki, vuoja); the rest are plural (moniid, tomáhtaid).
+// Must match UNCOUNTED_FOODS in tools/fetch_voices.py.
+const UNCOUNTED_FOODS = new Set(["bread", "milk", "cheese", "butter", "guolli", "icecream", "coffee", "juice", "chocolate", "cake", "soda", "jam"]);
 const TEXT = {
   find: "Etsi:",
   found: "Löysit sen!",
@@ -91,7 +94,7 @@ const TEXT = {
   helpOff: "Ohjekuplat: pois",
   placeStars: (count) => `Valmiusaste: ${count} / 5 tähteä`,
   needBasket: "Ota ensin kori oven vierestä.",
-  enough: "Dat lea doarvái",
+  enough: (word) => `Doarvái ${word.forms[UNCOUNTED_FOODS.has(word.sprite) ? "Sg+Acc" : "Pl+Acc"][0]}`,
   notOnList: "Tämä ei ole ostoslistallani.",
   notOnListFi: (fi) => `Ei, tämä on ${fi}, eikä se ole ostoslistallani.`,
   shoppingList: "Ostoslista",
@@ -243,7 +246,7 @@ const THEMES = [
   { id: "library-mixed", title: "Kirjasto", level: "keskitaso", example: "peanna: čáhppat", place: "library", sprite: "pen", colour: "red", words: () => colouredWords("item", 6, 5, easyPhrase) },
   { id: "library", title: "Kirjasto", level: "vaikeampi", example: "vilges girji", place: "library", sprite: "notebook", colour: "green", words: () => colouredWords("item", 6, 5, attributivePhrase) },
   { id: "store", title: "Kauppa", level: "helppo", example: "mielki", place: "store", sprite: "apple", ordered: true, words: () => storeWords(5 + Math.floor(Math.random() * 2), 6) },
-  { id: "store-count", title: "Kauppa", level: "vaikeampi", example: "3 × mielki", place: "store", sprite: "milk", ordered: true, counts: true, words: () => storeWords(5 + Math.floor(Math.random() * 2), 6) },
+  { id: "store-count", title: "Kauppa", level: "vaikeampi", example: "3 × mielkki", place: "store", sprite: "milk", ordered: true, counts: true, words: () => storeWords(5 + Math.floor(Math.random() * 2), 6) },
   { id: "numbers-10", title: "Luokka", level: "0–10", place: "classroom", number: 7, desks: true, words: () => numberWords(10, 7, 4) },
   { id: "numbers-20", title: "Luokka", level: "0–20", place: "classroom", number: 15, desks: true, words: () => numberWords(20, 10, 8) },
   { id: "numbers-100", title: "Luokka", level: "0–100", place: "classroom", number: 64, desks: true, words: () => numberWords(100, 10, 8) },
@@ -367,6 +370,14 @@ function numberCard(number) {
       if (bit === "1") g.fillRect(3 + i * 8 + (k % 3) * scale, 5 + Math.floor(k / 3) * scale, scale, scale);
     });
   });
+  // At double detail it's plainly twice the size, as Scale2x would round a 7 into something like a question mark.
+  c.fine = document.createElement("canvas");
+  c.fine.width = c.width * 2;
+  c.fine.height = c.height * 2;
+  const fine = c.fine.getContext("2d");
+  fine.imageSmoothingEnabled = false;
+  fine.drawImage(c, 0, 0, c.fine.width, c.fine.height);
+  c.fine.detail = 2;
   return c;
 }
 
@@ -655,7 +666,13 @@ function newRound() {
   targets = shuffled(find);
   heardWords = [];
   cart = newCart();
-  if (theme.counts) targets = wantedCounts(targets);
+  if (theme.counts) {
+    targets = wantedCounts(targets);
+    const id = VOICES[look.gender];
+    prepareLines([1, 2, 3, 4].map((count) => `audio/count-${count}-${id}.wav`));
+    prepareLines([2, 3, 4, 5].map((count) => `audio/count-and-${count}-${id}.wav`));
+    prepareLines([...cart.want].filter(([, wanted]) => wanted > 1).map(([word]) => `audio/enough-${word.sprite}-${id}.wav`));
+  }
   if (helpRound && theme.place === "store") prepareLines(Object.values(STORE_HINTS).map((hint) => `audio/${hint.line}-${VOICES[look.gender]}.wav`));
   prepareLines(targets.map((word) => askLine(word)));
   shoppingList = theme.ordered ? [...new Set(targets)] : [];
@@ -672,6 +689,9 @@ function newRound() {
 }
 
 // The shopping list on a piece of paper, in handwriting. What's been found is crossed off, and things can be got in any order.
+// On the harder level's list things are in their object form after the number, as in a real shopping list: "5 × mielkki".
+const listWord = (word) => (!theme?.counts ? word.lemma : word.forms[word.sprite === "egg" ? "Pl+Acc" : "Sg+Acc"][0]);
+
 function paperList() {
   const paper = document.createElement("ul");
   paper.className = "paper-list";
@@ -681,7 +701,7 @@ function paperList() {
     const wanted = theme.counts ? cart.want.get(word) : 1;
     const left = targets.filter((other) => other === word).length;
     const row = document.createElement("li");
-    row.textContent = `${wanted > 1 ? `${wanted} ` : ""}${word.lemma}`;
+    row.textContent = `${wanted > 1 ? `${wanted} × ` : ""}${listWord(word)}`;
     const price = document.createElement("small");
     price.textContent = `${FOOD_PRICES[word.sprite]} ${TEXT.euro}`;
     row.append(price);
@@ -713,7 +733,7 @@ function showPrompt() {
     promptEl.querySelector("#hear-again").addEventListener("click", hearAgain);
   } else if (targets.length) {
     const left = theme.counts ? targets.filter((word) => word === targets[0]).length : 1;
-    const aim = `${left > 1 ? `${left} × ` : ""}${targets[0].aim || targets[0].lemma}`;
+    const aim = `${left > 1 ? `${left} × ` : ""}${targets[0].aim || listWord(targets[0])}`;
     if (theme.ordered) {
       promptEl.replaceChildren(paperList());
       return;
@@ -728,7 +748,7 @@ function showPrompt() {
       list.lang = "se";
       shoppingList.forEach((word) => {
         const row = document.createElement("li");
-        row.textContent = `${theme.counts ? `${cart.want.get(word)} × ` : ""}${word.lemma} ${FOOD_PRICES[word.sprite]} ${TEXT.euro}`;
+        row.textContent = `${theme.counts ? `${cart.want.get(word)} × ` : ""}${listWord(word)} ${FOOD_PRICES[word.sprite]} ${TEXT.euro}`;
         if (!targets.includes(word)) row.className = "bought";
         else if (word === targets[0]) row.className = "now";
         list.append(row);
@@ -1063,9 +1083,30 @@ function showPlaces() {
 // Pictures carry it for a child who doesn't read yet.
 // Stars out of five in the menu for how far along a place is; the rest have half a star.
 const PLACE_STARS = { store: 2, forest: 1 };
-// The start page's picture of each place, showing faintly behind its button in the menu.
+// The start page's picture of each place, showing faintly behind its button in the menu. With the mouse over the button, its clip
+// plays instead; it loads only then, and phones and anyone who has asked for less motion keep the picture.
+const CLIPS_ON_HOVER = matchMedia("(hover: hover) and (prefers-reduced-motion: no-preference)").matches;
 const PLACE_MAPS = { home: "koti", forest: "elaimet", city: "parkkipaikka", library: "kirjasto", store: "kauppa", classroom: "luokka" };
 const HALF_STAR = 0.5;
+
+// A finer picture for the menu than the one on a word's card: built again at double detail where it's made of round shapes, and
+// otherwise doubled.
+const MENU_DETAIL = 2;
+const menuPictures = new Map();
+function menuPicture(word) {
+  const key = `${word.sprite}/${word.colour || ""}/${word.number ?? ""}`;
+  if (!menuPictures.has(key)) {
+    const round = word.number === undefined && !VEHICLES[word.sprite] && MODELS[word.sprite]?.(0, word.colour)[0].kind;
+    if (round) menuPictures.set(key, croppedImage(makeModelImage(word.sprite, 0, word.sprite === "beaiveloddi" ? 1 : 0, 0, word.colour, MENU_DETAIL)));
+    else {
+      const detail = viewDetail;
+      viewDetail = 1;
+      menuPictures.set(key, doubledImage(pictureOf(word)));
+      viewDetail = detail;
+    }
+  }
+  return menuPictures.get(key);
+}
 
 function menuButton({ look: picture, title, small, example, onClick, className, starCount, map }) {
   const button = document.createElement("button");
@@ -1073,13 +1114,29 @@ function menuButton({ look: picture, title, small, example, onClick, className, 
   if (map) {
     const mapEl = document.createElement("img");
     mapEl.className = "place-map";
-    mapEl.src = `art/site/${map}.png`;
+    const still = `art/site/${map}.png`, clip = `art/site/clips/${map}.webp`;
+    mapEl.src = still;
     mapEl.alt = "";
     button.classList.add("has-map");
     button.append(mapEl);
+    if (CLIPS_ON_HOVER) {
+      let over = false;
+      button.addEventListener("mouseenter", () => {
+        over = true;
+        const loading = new Image();
+        loading.onload = () => {
+          if (over) mapEl.src = clip;
+        };
+        loading.src = clip;
+      });
+      button.addEventListener("mouseleave", () => {
+        over = false;
+        mapEl.src = still;
+      });
+    }
   }
   if (picture) {
-    const image = pictureOf(picture);
+    const image = menuPicture(picture);
     const canvasEl = document.createElement("canvas");
     canvasEl.width = image.width;
     canvasEl.height = image.height;
@@ -1226,6 +1283,7 @@ function menuLevels(title, levels) {
       title: `${TEXT.level} ${index + 1}: ${option.level}`,
       example: option.example,
       small: bestText(option),
+      map: PLACE_MAPS[option.place],
       onClick: () => enterTheme(option),
     }));
   });
@@ -1373,7 +1431,8 @@ function showStartCard() {
 let rightSpeech = null;
 let heardWords = [];
 
-function showCard(word, right) {
+
+function showCard(word, right, count = 1) {
   preview = null;
   cardEl.className = right ? "right" : "";
   const plural = word.forms?.["Pl+Nom"]?.[0];
@@ -1381,9 +1440,9 @@ function showCard(word, right) {
     cardEl.innerHTML = `<div class="note">${right ? TEXT.found : TEXT.notYet}</div>`;
   } else cardEl.innerHTML = `<div>
       <div class="note">${right ? TEXT.found : FAMILY.has(word.sprite) ? TEXT.thisIsPerson : TEXT.thisIs}</div>
-      <div><span class="word" lang="se">${escapeText(word.lemma)}</span>
-        <span class="translation">= ${escapeText(translation(word))}</span></div>
-      ${plural ? `<div class="note">${TEXT.plural} <span lang="se">${escapeText(plural)}</span></div>` : ""}
+      <div><span class="word" lang="se">${escapeText(count > 1 ? TEXT.enough(word) : word.lemma)}</span>
+        <span class="translation">= ${count > 1 ? `${count} × ` : ""}${escapeText(translation(word))}</span></div>
+      ${plural && count === 1 ? `<div class="note">${TEXT.plural} <span lang="se">${escapeText(plural)}</span></div>` : ""}
     </div>`;
   const picture = document.createElement("canvas");
   const image = pictureOf(word);
@@ -1398,11 +1457,11 @@ function showCard(word, right) {
   const line = pickLine(right ? TEXT.right : TEXT.wrong);
   const [say, sayFi] = (right ? TEXT.right : TEXT.wrong)[line];
   const person = FAMILY.has(word.sprite);
-  bubble.querySelector(".say").textContent = `${say} ${word.thisWord || (person ? TEXT.thisPerson : TEXT.thisWord)(word.lemma)}`;
-  bubble.querySelector(".note").textContent = `${sayFi} ${word.thisWordFi || (person ? TEXT.thisPersonFi : TEXT.thisWordFi)(translation(word))}`;
+  bubble.querySelector(".say").textContent = count > 1 ? `Ja ${window.MAHTTE_NUMBERS[count]}. ${TEXT.enough(word)}.` : `${say} ${word.thisWord || (person ? TEXT.thisPerson : TEXT.thisWord)(word.lemma)}`;
+  bubble.querySelector(".note").textContent = count > 1 ? `${count} × ${translation(word)}.` : `${sayFi} ${word.thisWordFi || (person ? TEXT.thisPersonFi : TEXT.thisWordFi)(translation(word))}`;
   if (!audioOnly) cardEl.append(bubble);
   const id = VOICES[look.gender];
-  const lines = [`audio/${right ? "praise" : "wrong"}-${line}-${id}.wav`, wordLine(word, id)];
+  const lines = count > 1 ? [`audio/count-and-${count}-${id}.wav`, `audio/enough-${word.sprite}-${id}.wav`] : [`audio/${right ? "praise" : "wrong"}-${line}-${id}.wav`, wordLine(word, id)];
   if (!right && targets.length) lines.push(askLine(targets[0], id)); // and again what is being looked for
   // A find is always said in full: what is bumped into meanwhile stays quiet, and another find waits its turn.
   if (right) {
@@ -1446,7 +1505,8 @@ function touch(object, now) {
     holdForWrongPick(now);
     return;
   }
-  // One at a time when several are wanted: only the last of them is said, and then it goes.
+  // One at a time when several are wanted: the character counts each one out loud, and the next waits until it has been said.
+  // The last of them ends the counting with "enough of it", and then it goes.
   if (right && theme.counts && targets.filter((word) => word === object.word).length > 1) {
     pickOne(object.word);
     startAction("pick", now);
@@ -1455,12 +1515,19 @@ function touch(object, now) {
     sparkles.push({ x: object.x, y: object.y, born: now });
     playImpact("brush");
     const wanted = cart.want.get(object.word);
+    const count = wanted - targets.filter((word) => word === object.word).length;
     cardEl.className = "";
-    cardEl.innerHTML = `<div class="note">${escapeText(object.word.lemma)}: ${wanted - targets.filter((word) => word === object.word).length} / ${wanted}</div>`;
+    cardEl.innerHTML = audioOnly ? `<div class="note">${count} / ${wanted}</div>`
+      : `<div><div><span class="word" lang="se">${escapeText(window.MAHTTE_NUMBERS[count])}</span>
+        <span class="translation">${count} / ${wanted}</span></div>
+        <div class="note"><span lang="se">${escapeText(object.word.lemma)}</span> = ${escapeText(translation(object.word))}</div></div>`;
+    rightSpeech = (rightSpeech ?? Promise.resolve()).then(() => playVoice(`audio/count-${count}-${VOICES[look.gender]}.wav`)).then(() => {
+      rightSpeech = null;
+    });
     showPrompt();
     return;
   }
-  const speech = showCard(object.word, right);
+  const speech = showCard(object.word, right, theme?.counts && right ? cart.want.get(object.word) ?? 1 : 1);
   if (!right) {
     holdForWrongPick(now);
     return;
@@ -1481,10 +1548,7 @@ function touch(object, now) {
     if (!me.sittingOn) startAction("cheer", now);
   }
   // The last of several: that's enough of those.
-  if (theme.counts && cart.want.get(object.word) > 1) {
-    voiceQueue.push(`audio/store-enough-${VOICES[look.gender]}.wav`);
-    saying = { say: TEXT.enough, until: now + ENOUGH_SHOWN_MS };
-  }
+  if (theme.counts && cart.want.get(object.word) > 1) saying = { say: TEXT.enough(object.word), until: now + ENOUGH_SHOWN_MS };
   showPrompt();
   if (targets.length) announceAfter(speech);
   else if (placeName === "store") {
@@ -1814,7 +1878,7 @@ function touchThings(now) {
   const goal = me.goal;
   if (!goal || goal.done || goal.word.place === "desk") return;
   if (awayFrom(goal, me.x, me.y) >= thingReach(goal)) return;
-  if (rightSpeech && targets[0] !== goal.word) return;
+  if (rightSpeech && (theme?.counts || targets[0] !== goal.word)) return;
   me.goal = null;
   touch(goal, now);
   me.route = [];
@@ -1830,7 +1894,7 @@ function activate(now) {
   }
   const thing = thingInReach();
   if (!thing) return false;
-  if (rightSpeech && targets[0] !== thing.word) return true;
+  if (rightSpeech && (theme?.counts || targets[0] !== thing.word)) return true;
   touch(thing, now);
   return true;
 }
@@ -2882,8 +2946,8 @@ function pickOne(word) {
 // How many of each, from one to five, without the whole list costing more than can be said.
 function wantedCounts(words) {
   const cost = () => words.reduce((sum, word) => sum + cart.want.get(word) * FOOD_PRICES[word.sprite], 0);
-  // Only one plate of meat, so nobody waits at the counter for more to be cut.
-  for (const word of words) cart.want.set(word, word.place === "meat" ? 1 : 1 + Math.floor(Math.random() * MOST_OF_ONE));
+  // Only one plate of meat, so nobody waits at the counter for more to be cut, and one carton of eggs, as "moniid" says.
+  for (const word of words) cart.want.set(word, word.place === "meat" || word.sprite === "egg" ? 1 : 1 + Math.floor(Math.random() * MOST_OF_ONE));
   while (cost() > MAX_TOTAL) {
     const dearest = words.filter((word) => cart.want.get(word) > 1).sort((p, q) => FOOD_PRICES[q.sprite] - FOOD_PRICES[p.sprite])[0];
     cart.want.set(dearest, cart.want.get(dearest) - 1);

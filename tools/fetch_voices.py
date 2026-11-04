@@ -32,7 +32,6 @@ LINES = {
     "store-no": "Ii.",
     "store-notonlist": "Dat ii leat mu listtus.",
     "store-full": "Vuordde.",
-    "store-enough": "Dat lea doarvái.",
 }
 # What the cashier says at the till: whole euros, up to MAX_TOTAL in src/game.js.
 PRICES = range(3, 100)
@@ -71,6 +70,11 @@ def load_words():
     return json.loads(text[text.index("["):text.rindex("]") + 1])
 
 
+# Foods bought as a mass stay singular in a shopping list's object form (mielkki, vuoja); the rest are plural (moniid, tomáhtaid).
+# Must match UNCOUNTED_FOODS in src/game.js.
+UNCOUNTED_FOODS = {"bread", "milk", "cheese", "butter", "guolli", "icecream", "coffee", "juice", "chocolate", "cake", "soda", "jam"}
+
+
 def accusative(word):
     forms = word["forms"].get("Sg+Acc")
     return forms[0] if forms else word["lemma"]
@@ -104,7 +108,10 @@ def wanted_lines():
     lines += [(f"number-{n}", THIS_IS.format(word=word)) for n, word in enumerate(numbers)]
     lines += [(f"ask-number-{n}", ASK.format(what=NUMBER_OBJECT.get(word, word))) for n, word in enumerate(numbers)]
     lines += [(f"store-price-{n}", PRICE.format(number=numbers[n])) for n in PRICES]
-    lines += [(f"count-{n}", f"{numbers[n].capitalize()}.") for n in range(2, 6)]
+    lines += [(f"count-{n}", f"{numbers[n].capitalize()}.") for n in range(1, 6)]
+    # Picking several of a food is counted out, which needs no number with the noun: "Okta. Guokte. Ja golbma. Doarvái mielkki."
+    lines += [(f"count-and-{n}", f"Ja {numbers[n]}.") for n in range(2, 6)]
+    lines += [(f"enough-{word['sprite']}", f"Doarvái {accusative(word) if word['sprite'] in UNCOUNTED_FOODS else word['forms']['Pl+Acc'][0]}.") for word in words if word["theme"] == "food" and word["place"] != "meat" and word["sprite"] != "egg"]
     return list(dict(lines).items())
 
 

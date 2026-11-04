@@ -949,7 +949,7 @@ function drawModel(g, sprite, facing, frame, headFacing, colour, detail = 1) {
 
 const modelImages = new Map();
 // These places are drawn at double detail, so that things are easier to recognize.
-const DETAIL_PLACES = { store: 2, forest: 2 };
+const DETAIL_PLACES = { home: 2, forest: 2, city: 2, library: 2, store: 2, classroom: 2 };
 let viewDetail = 1;
 
 function setViewDetail(place) {
@@ -1028,7 +1028,8 @@ function modelImage(sprite, facing, frame, headFacing = facing, colour) {
   if (viewDetail === 1) return plainModelImage(sprite, facing, frame, headFacing, colour);
   const key = `${sprite}/${facing}/${frame}/${headFacing}/${colour}/${viewDetail}`;
   if (!modelImages.has(key)) {
-    if (sprite.startsWith("person_") || ANIMALS.has(sprite)) {
+    // Home is full of round furniture, too much to make in one go as the place opens.
+    if (sprite.startsWith("person_") || ANIMALS.has(sprite) || placeName === "home") {
       queueFinePicture(key, sprite, facing, frame, headFacing, colour);
       return modelImages.get(key) ?? plainModelImage(sprite, facing, frame, headFacing, colour);
     }

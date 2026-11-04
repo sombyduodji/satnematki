@@ -23,7 +23,7 @@ MIN_FREQ = 100
 MAX_TRANSLATIONS = 3
 
 FORMS = {
-    "N": ["Sg+Nom", "Sg+Acc", "Sg+Gen", "Sg+Ill", "Sg+Loc", "Sg+Com", "Pl+Nom", "Ess"],
+    "N": ["Sg+Nom", "Sg+Acc", "Sg+Gen", "Sg+Ill", "Sg+Loc", "Sg+Com", "Pl+Nom", "Pl+Acc", "Ess"],
     "V": ["Inf", "Ind+Prs+Sg1", "Ind+Prs+Sg3", "Ind+Prt+Sg3", "Ind+Prs+ConNeg"],
     "A": ["Attr", "Sg+Nom", "Pl+Nom", "Sg+Gen", "Comp+Sg+Nom"],
 }
