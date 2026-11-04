@@ -446,18 +446,16 @@ function saveName(name) {
 // Playing by ear is a different game, so it has best times of its own, as different levels do.
 const timesKey = (themeId) => `mahtte.times.${themeId}${audioOnly ? ".audio" : ""}`;
 
-// The forest's animals changed, so times from before that no longer compare and are forgotten.
+// All best times are forgotten once when this changes, as rounds played before no longer compare. Name and character stay.
+const TIMES_FROM = "0.1.7";
 try {
-  localStorage.removeItem("mahtte.times.animals");
-  localStorage.removeItem("mahtte.times.animals.audio");
-  // A round in the store now also goes through the till, so its old times are forgotten once.
-  if (!localStorage.getItem("mahtte.storeTillTimes")) {
-    localStorage.removeItem("mahtte.times.store");
-    localStorage.removeItem("mahtte.times.store.audio");
-    localStorage.setItem("mahtte.storeTillTimes", "1");
+  if (localStorage.getItem("mahtte.timesFrom") !== TIMES_FROM) {
+    Object.keys(localStorage).filter((key) => key.startsWith("mahtte.times.")).forEach((key) => localStorage.removeItem(key));
+    localStorage.removeItem("mahtte.storeTillTimes");
+    localStorage.setItem("mahtte.timesFrom", TIMES_FROM);
   }
 } catch {
-  // Private windows may refuse; those old times are no longer read anyway.
+  // Private windows may refuse, and keep nothing for long anyway.
 }
 
 function loadTimes(themeId) {
