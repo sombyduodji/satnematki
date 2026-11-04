@@ -618,11 +618,26 @@ def sprite_brushing_arm(p, side, stroke, shoulder_y, belt_y):
     p.r(hand_x - 1, hand_y + 2, hand_x + 2, hand_y + 2, SKIN[1])
 
 
+def sprite_reaching_arm(p, from_x, from_y, hand_x, hand_y):
+    """An arm held out to pat something: the sleeve from the shoulder to the hand, with its red cuff."""
+    rows = max(abs(hand_x - from_x), abs(hand_y - from_y), 1)
+    for i in range(rows):
+        x = from_x + round((hand_x - from_x) * i / rows)
+        y = from_y + round((hand_y - from_y) * i / rows)
+        p.r(x, y, x + 1, y + 1, BLUE[2])
+        p.r(x, y + 2, x + 1, y + 2, BLUE[0])
+    p.r(hand_x, hand_y, hand_x + 1, hand_y + 1, RED[2])
+    side = 1 if hand_x >= from_x else -1
+    p.r(hand_x + side, hand_y - 1, hand_x + side + 2, hand_y + 1, SKIN[2])
+    p.r(hand_x + side, hand_y + 2, hand_x + side + 2, hand_y + 2, SKIN[1])
+
+
 def frame(facing, *, up=0, left=(0, 0), right=(0, 0), swing=0, blink=False, look_x=0, hop=0, sway=0,
-          arms_up=False, flare=0, lift=0, squat=0, sitting=False, pat=0, bend=0):
+          arms_up=False, flare=0, lift=0, squat=0, sitting=False, pat=0, bend=0, reach=0):
     """left and right are (lift, shift) for the feet. up raises the upper body, squat lowers it.
     pat: a hand brushing the gákti, negative on the left, positive on the right, 2 being further
-    along its stroke. bend: the head dips forward over the chest, looking down."""
+    along its stroke. bend: the head dips forward over the chest, looking down. reach: an arm held out to
+    pat an animal to the right, how low the hand has come in its stroke, negative being above the shoulder."""
     p = Px()
     g = GROUND - hop
     body = GROUND - 9 - up - hop + squat  # belt row
@@ -638,7 +653,10 @@ def frame(facing, *, up=0, left=(0, 0), right=(0, 0), swing=0, blink=False, look
         sprite_long_hair(p, CX, head, facing, sway, lift)
         sprite_head(p, CX, head, facing, blink)
         sprite_short_hair_flick(p, CX, head, facing, sway)
-        sprite_arm(p, CX - 2, collar_y + 2, swing, light=True, up=arms_up, edge=not arms_up)
+        if reach:
+            sprite_reaching_arm(p, CX - 1, collar_y + 2, CX + 6, collar_y + 2 + reach)
+        else:
+            sprite_arm(p, CX - 2, collar_y + 2, swing, light=True, up=arms_up, edge=not arms_up)
     else:
         if not sitting:
             sprite_leg(p, CX - 5, g, left[0], left[1], toe=-1 if facing == "down" else 0)
@@ -932,9 +950,40 @@ def wipe():
             frame("down", sway=2, flare=1), frame("down", sway=-2, flare=1)]
 
 
+def doubled(sheet):
+    """Twice the size with Scale2x, which rounds off stair-steps and keeps the drawing and its colours exactly."""
+    w, h = sheet.size
+    src = sheet.load()
+    out = Image.new("RGBA", (w * 2, h * 2), (0, 0, 0, 0))
+    dst = out.load()
+    for y in range(h):
+        for x in range(w):
+            e = src[x, y]
+            b = src[x, y - 1] if y else e
+            d = src[x - 1, y] if x else e
+            f = src[x + 1, y] if x + 1 < w else e
+            h_ = src[x, y + 1] if y + 1 < h else e
+            if b != h_ and d != f:
+                dst[x * 2, y * 2] = d if d == b else e
+                dst[x * 2 + 1, y * 2] = f if b == f else e
+                dst[x * 2, y * 2 + 1] = d if d == h_ else e
+                dst[x * 2 + 1, y * 2 + 1] = f if h_ == f else e
+            else:
+                dst[x * 2, y * 2] = dst[x * 2 + 1, y * 2] = dst[x * 2, y * 2 + 1] = dst[x * 2 + 1, y * 2 + 1] = e
+    return out
+
+
+def pat_rows():
+    """Patting an animal to the right: the hand strokes down and lifts again, low for a small animal and
+    high for the back of a tall one."""
+    return [[frame("right", reach=stroke) for stroke in strokes]
+            for strokes in ((1, 2, 3, 2, 1, 2), (-6, -5, -4, -5, -6, -5))]
+
+
 def main():
     (OUT / "base").mkdir(parents=True, exist_ok=True)
     (OUT / "sprites").mkdir(parents=True, exist_ok=True)
+    (OUT / "sprites-2x").mkdir(parents=True, exist_ok=True)
 
     # Base models: one per gákti and girl/boy, in the default hair.
     for name, gender in product(OUTFITS, GENDERS):
@@ -950,7 +999,7 @@ def main():
     # or away from the viewer stops, then the diagonal views. The game picks among them;
     # see cloth in src/game.js.
     fronts = []
-    for old in (OUT / "sprites").glob("*.png"):
+    for old in [*(OUT / "sprites").glob("*.png"), *(OUT / "sprites-2x").glob("*.png")]:
         old.unlink()  # all generated here; a style that was dropped must not linger
     combinations = ((n, g, c, length) for n, g, c in product(OUTFITS, GENDERS, HAIRS) for length in HAIR_STYLES[g])
     for name, gender, hair_name, length in combinations:
@@ -963,11 +1012,13 @@ def main():
         rows += jump_rows() + [wipe()]
         rows += run_rows() + [[slide_frame(stage) for stage in range(6)]]
         rows += [[frame("right", squat=3, flare=1)] + [sit_frame(swing) for swing in (0, 1, 2, 1, 0, -1)]]
+        rows += pat_rows()
         sheet = Image.new("RGBA", (FW * 8, FH * len(rows)), (0, 0, 0, 0))
         for y, row in enumerate(rows):
             for x, fr in enumerate(row):
                 sheet.alpha_composite(fr, (x * FW, y * FH))
         sheet.save(OUT / f"sprites/{name}-{gender}-{hair_name}-{length}.png", optimize=True)
+        doubled(sheet).save(OUT / f"sprites-2x/{name}-{gender}-{hair_name}-{length}.png", optimize=True)
         if name == "ohcejohka":
             fronts.append(draw_front())
         if name == "ohcejohka" and hair_name == "brown" and length == ("long" if gender == "girl" else "short"):

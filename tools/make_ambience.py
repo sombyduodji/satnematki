@@ -12,8 +12,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "audio/ambience"
 # Place: where to start and how long, in seconds. Mostly the steadiest stretch of a recording, with quiet ends for
-# the loop's join.
-TRACKS = {"forest": (71.5, 30.2), "city": (20, 30.2), "home": (279, 30.2), "library": (241, 30.2), "classroom": (13, 30.2), "store": (9.5, 30.2)}
+# the loop's join. The store's loop is a minute long, as sounds almost like speech stand out when they come round too soon.
+TRACKS = {"forest": (71.5, 30.2), "city": (20, 30.2), "home": (279, 30.2), "library": (241, 30.2), "classroom": (13, 30.2), "store": (9.5, 65.2)}
 BITRATES = [0, 32, 40, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320]
 RATES = [44100, 48000, 32000]
 

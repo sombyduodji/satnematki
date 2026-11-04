@@ -2,9 +2,9 @@
 # chosen translation is no longer in satni.db, or if the word is filtered out.
 # Being listed here overrides only the frequency limit, not the filters.
 # theme: river, animal, later (kept for a place to come), item, vehicle, lot (only in the car park's first level), home, food, or colour (sprite is then the colour's id).
-# place: land or water; food goes on a shelf, in a fridge, in a freezer or in a produce crate;
+# place: land or water; food goes on a shelf, in a fridge, in a freezer, in a produce crate or on the meat counter;
 # library things go on a bookshelf or a table; vehicles park in a bay; things at home have a place of their own.
-# Norwegian may be empty for a home word the dictionary gives no Norwegian for.
+# Norwegian may be empty for a home or food word the dictionary gives no Norwegian for.
 # lemma	pos	fi	nb	sprite	place	theme
 viessu	N	talo	hus	viessu	land	river
 goahti	N	kota	gamme	goahti	land	river
@@ -54,8 +54,32 @@ muorji	N	marja	bær	berries	produce	food
 lákcajiekŋa	N	jäätelö	iskrem	icecream	freezer	food
 guolli	N	kala	fisk	guolli	freezer	food
 gáffe	N	kahvi	kaffe	coffee	shelf	food
-sohkar	N	sokeri	sukker	sugar	shelf	food
-sálti	N	suola	salt	salt	shelf	food
+tomáhtta	N	tomaatti	tomat	tomato	produce	food
+gurká	N	kurkku	agurk	cucumber	produce	food
+lávki	N	ruokasipuli	løk	onion	produce	food
+kálla	N	kaali	kål	cabbage	produce	food
+appelsiidna	N	appelsiini	appelsin	orange	produce	food
+beron	N	päärynä		pear	produce	food
+sitrovdna	N	sitruuna	sitron	lemon	produce	food
+eanamuorji	N	mansikka	jordbær	strawberry	produce	food
+viidnemuorji	N	viinirypäle	drue	grapes	produce	food
+sákta	N	mehu	saft	juice	fridge	food
+bohccobiergu	N	poronliha	reinkjøtt	reindeermeat	meat	food
+biffa	N	pihvi	biff	steak	meat	food
+biergodáigi	N	jauheliha	kjøttdeig	mince	meat	food
+spiinnebiergu	N	sianliha	svinekjøtt	pork	meat	food
+šuhkoláda	N	suklaa	sjokolade	chocolate	shelf	food
+njálggus	N	karkki	slikkeri	candy	shelf	food
+keaksa	N	keksi	kjeks	cookie	shelf	food
+gáhkku	N	kakku	kake	cake	fridge	food
+bruvsa	N	limsa	brus	soda	shelf	food
+pizza	N	pizza	pizza	pizza	freezer	food
+guoppar	N	sieni	sopp	mushroom	produce	food
+jokŋa	N	puolukka	tyttebær	lingonberry	freezer	food
+luomi	N	lakka	molte	cloudberry	freezer	food
+muorjemeastu	N	hillo	syltetøy	jam	shelf	food
+bullá	N	pulla		bun	shelf	food
+bánnogáhkku	N	pannukakku	pannekake	pancake	fridge	food
 ruoksat	A	punainen	rød	red	land	colour
 alit	A	sininen	blå	blue	land	colour
 fiskat	A	keltainen	gul	yellow	land	colour

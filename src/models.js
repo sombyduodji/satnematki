@@ -348,7 +348,159 @@ Object.assign(MODELS, {
       holes: [[-2, 3.4, 4, 1.7], [1.5, 1.6, 2.5, 1.2], [-3.5, 3.8, 6.6, 1], [-4.5, 0, 8, 1.6], [0.5, 0.5, 8, 1.1]],
     },
   ],
-  egg: () => [tube([0, 0, 4.6], [0, 0, 9.4], 4.6, 2.5, "#f6eedd")],
+  // A full glass with a straw.
+  juice: () => [
+    { ...rounded(-3.8, 3.8, -3.8, 3.8, 0, 12, 1.4, "#f2a23a"), paint: ([, , z]) => (z > 10 ? "#dfeef2" : "#f2a23a") },
+    tube([1.4, 0, 9], [3.4, 0.4, 16.5], 0.45, 0.45, "#d13a30"),
+    ball(-3.4, 2.6, 10.6, 2.2, 0.5, 2.2, "#ee8a2e"),
+  ],
+  yoghurt: () => [
+    { ...rounded(-3.8, 3.8, -3.8, 3.8, 0, 8, 1.4, "#f4f1e8"), paint: ([, , z]) => (z > 2.5 && z < 6 ? "#d8588a" : "#f4f1e8") },
+    rounded(-4.4, 4.4, -4.4, 4.4, 8, 8.6, 0.2, "#c9ccd2"),
+  ],
+  flour: () => [
+    { ...rounded(-5, 5, -3.5, 3.5, 0, 14, 0.8, "#f0e8d6"), paint: ([, y, z]) => (y > 2 && z > 4 && z < 10 ? "#c9a24e" : "#f0e8d6") },
+    rounded(-5, 5, -1.2, 1.2, 14, 15.5, 0.4, "#e6dcc4"),
+  ],
+  rice: () => [
+    { ...rounded(-4.5, 4.5, -3, 3, 0, 13, 0.8, "#f4f1e8"), paint: ([, y, z]) => (y > 2 && z > 7 ? "#3e8a7a" : "#f4f1e8") },
+    ...[[-2, 3.1, 3.5], [0, 3.1, 2.2], [2, 3.1, 3.8], [-0.8, 3.1, 4.8], [1.2, 3.1, 5.4]].map(([x, y, z]) => ball(x, y, z, 0.8, 0.2, 0.4, "#c9c2b0")),
+  ],
+  // Only 50 grams, as reindeer meat is dear: a small plate of slices.
+  reindeermeat: () => onPlate([[-2.8, -1.8], [0.4, -2.2], [3, -1.2], [-2.2, 1.8], [1, 1.8], [3.4, 1.8]].map(([x, y], i) => ball(x, y, 1.7, 2, 1.5, 0.9, i % 2 ? "#6e2e28" : "#8f3c32"))),
+  steak: () => onPlate([
+    { ...ball(0, 0, 2.2, 6.2, 5.2, 1.6, "#a02e26"), paint: ([x, y]) => (Math.hypot(x / 6.2, y / 5.2) > 0.72 ? "#f6e8c8" : Math.abs(x) < 0.7 ? "#f4f1e8" : "#a02e26") },
+  ]),
+  mince: () => onPlate([
+    { ...ball(0, 0, 3, 5.2, 4.8, 2.8, "#b5544a"), paint: ([x, y, z]) => ((Math.round(x * 1.6) + Math.round(y * 1.6) + Math.round(z * 1.6)) % 3 === 0 ? "#d07a6e" : "#b5544a") },
+  ], 6.4),
+  pork: () => onPlate([
+    { ...ball(-1, 0, 2, 5, 4, 1.3, "#e27f7a"), paint: ([x, y]) => (Math.hypot((x + 1) / 5, y / 4) > 0.8 ? "#f6eedd" : "#e27f7a") },
+    tube([3.4, -0.4, 2.2], [6.6, -0.8, 2.2], 0.9, 0.8, "#f4f1e8"),
+    ball(6.8, -0.8, 2.2, 1.2, 1.2, 1, "#f4f1e8"),
+  ]),
+  tea: () => [
+    { ...rounded(-5, 5, -3, 3, 0, 10, 0.4, "#3e8a5e"), paint: ([, y, z]) => (y > 2.6 && z > 3 && z < 7.5 ? "#f2c14e" : "#3e8a5e") },
+    tube([5.2, 3, 8], [6.5, 3, 3.5], 0.15, 0.15, "#f4f1e8"),
+    rounded(5.6, 7.4, 2.9, 3.1, 1.5, 3.5, 0.05, "#d13a30"),
+  ],
+  chocolate: () => [
+    { ...rounded(-7, 7, -4, 4, 0, 2, 0.3, "#5a3a22"), paint: ([x, y]) => (x < 0 ? "#2f5fa8" : (Math.abs(((x + 14) % 3.5) - 1.75) < 0.25 || Math.abs(((y + 8) % 4)) < 0.4 ? "#3e2614" : "#5a3a22")) },
+  ],
+  // Wrapped sweets with twisted ends.
+  candy: () => [[-3.2, 2, 2.2, "#d8588a"], [3.4, 1.4, 2.2, "#f2c14e"], [0, -3, 2.2, "#3e8a4e"], [0.2, 0.8, 6, "#d13a30"]].flatMap(([x, y, z, c]) => [
+    ball(x, y, z, 2.6, 2.2, 2.2, c),
+    ...sides((s) => ball(x + s * 3.2, y, z, 1.1, 1.2, 1.4, "#f4f1e8")),
+  ]),
+  cookie: () => [
+    ...[0, 1, 2].map((i) => {
+      const y = -3 + i * 3;
+      return { ...tube([0, y, 2.4], [0, y + 0.5, 3], 5, 5, "#c98d4a"), paint: ([px, py]) => ((Math.round(px * 1.2) + Math.round(py * 1.6)) % 4 === 0 ? "#5a3a22" : "#c98d4a") };
+    }),
+  ],
+  // A small one, for one or two.
+  cake: () => [
+    rounded(-6.5, 6.5, -6.5, 6.5, 0, 0.6, 0.2, "#e6dfc8"),
+    { ...rounded(-5, 5, -5, 5, 0.6, 7, 2, "#f6eedd"), paint: ([, , z]) => (z > 3.2 && z < 4.2 ? "#d8588a" : "#f6eedd") },
+    ...[[-2.4, -2.4], [2.4, -2.4], [-2.4, 2.4], [2.4, 2.4]].map(([x, y]) => ball(x, y, 7.6, 1.2, 1.2, 1.1, "#d9283a")),
+  ],
+  // A shop's cola bottle: dark, with a red label and cap, and no real brand on it.
+  soda: () => [
+    ...fizzyBottle("#3e2214", "#d13a30", "#d13a30"),
+    ball(0, 3.8, 8.8, 2.2, 0.25, 0.5, "#f4f1e8"),
+  ],
+  pizza: () => [
+    ball(0, 0, 1.3, 9, 9, 1.3, "#d9a862"),
+    ball(0, 0, 2.1, 7.6, 7.6, 0.9, "#d9472e"),
+    ...[[-3, -2], [3, -3], [0, 3], [4, 2.5], [-4.5, 2]].map(([x, y]) => ball(x, y, 2.9, 1.5, 1.5, 0.4, "#8e1f1a")),
+    ...[[0, -4.5], [-1.8, 0.2], [2, 0.5], [-1, 5.2], [5, -0.5]].map(([x, y]) => ball(x, y, 2.9, 1.2, 0.9, 0.3, "#f2d27a")),
+  ],
+  mushroom: () => [
+    tube([0, 0, 0.5], [0, 0, 6], 2.2, 2.6, "#efe6d4"),
+    { ...ball(0, 0, 7, 6.5, 6.5, 4, "#e6dcc4"), paint: ([x, y, z]) => (z < 6.2 ? "#b39a78" : "#e6dcc4") },
+  ],
+  lingonberry: () => [
+    ...[[-3, 2, 2.4], [3, 2, 2.4], [0, -2.6, 2.4], [-3, -2.4, 2.4], [3, -2.2, 2.4], [0, 2.6, 2.4], [-1.4, 0, 5.8], [1.8, 0.5, 5.8], [0, 0, 9]].map(([x, y, z], i) => ball(x, y, z, 2.1, 2.1, 2.1, i % 2 ? "#c9202f" : "#a81828")),
+    ball(1.5, -1.5, 11, 2.8, 1.2, 0.5, "#2f6f32"),
+    ball(-2, 1.5, 10.4, 2.4, 1, 0.5, "#3e8e41"),
+  ],
+  cloudberry: () => [
+    ...[0, 1, 2, 3, 4].map((i) => { const a = (i / 5) * Math.PI * 2; return tube([0, 0, 0.8], [Math.cos(a) * 7.5, Math.sin(a) * 7.5, 0.5], 1.1, 0.5, "#6b7a3a"); }),
+    ...[[0, 0, 4.6, 3.6], [-3.4, 1.4, 5.4, 2.5], [3.4, 1.4, 5.4, 2.5], [-2, -3, 5.4, 2.5], [2.2, -3, 5.4, 2.5], [0, 3.4, 5.8, 2.5], [-1.8, 0.8, 8.4, 2.3], [1.8, 0.6, 8.6, 2.3], [0, -1.2, 10.2, 2.1]].map(([x, y, z, r], i) => ball(x, y, z, r, r, r, i % 2 ? "#f2a23a" : "#e88a22")),
+  ],
+  jam: () => [
+    { ...rounded(-4.2, 4.2, -4.2, 4.2, 0, 10, 1.6, "#b0263a"), paint: ([, , z]) => (z > 3 && z < 7 ? "#f4f1e8" : "#b0263a") },
+    rounded(-3.8, 3.8, -3.8, 3.8, 10, 12, 0.4, "#f2c14e"),
+  ],
+  gum: () => [
+    { ...rounded(-5, 5, -2, 2, 0, 3, 0.4, "#5ab0d9"), paint: ([x]) => (Math.abs(x) < 1.8 ? "#f4f1e8" : "#5ab0d9") },
+  ],
+  // A cinnamon roll, with its swirl on top.
+  bun: () => [
+    { ...ball(0, 0, 3.8, 7.4, 7.4, 3.8, "#d9a862"), paint: ([x, y, z]) => (z > 4.4 && (Math.atan2(y, x) + Math.hypot(x, y) * 1.5 + 12.56) % 3.14 < 0.9 ? "#7a4a22" : "#d9a862") },
+  ],
+  pancake: () => [
+    ball(0, 0, 0.9, 8, 8, 0.9, "#e8c47a"),
+    ball(0.4, -0.3, 2.3, 7.4, 7.4, 0.9, "#ddb368"),
+    ball(-0.3, 0.3, 3.7, 7, 7, 0.9, "#e8c47a"),
+    ball(0, 0, 4.9, 2.6, 2.6, 0.7, "#d9283a"),
+  ],
+  // An open carton of six.
+  egg: () => [
+    { ...rounded(-11, 11, -7, 7, 0, 4, 0.8, "#a8957a"), paint: ([x, , z]) => (z < 3.2 && Math.abs(((x + 33) % 7.33) - 3.67) < 0.5 ? "#8f7d64" : "#a8957a") },
+    rounded(-11.5, 11.5, -8.5, -7, 3, 11, 0.6, "#b9a88a"),
+    rounded(-7, 7, -8.8, -8.4, 5, 9, 0.2, "#3e74c9"),
+    ...[-7.3, 0, 7.3].flatMap((x) => [-3.2, 3.2].map((y) => ball(x, y, 5.6, 2.9, 2.9, 3.2, "#f6eedd"))),
+  ],
+  tomato: () => [
+    ball(0, 0, 5.4, 6.5, 6.5, 5.4, "#d6382e"),
+    ...[0, 1, 2, 3, 4].map((i) => { const a = (i / 5) * Math.PI * 2; return tube([0, 0, 10.6], [Math.cos(a) * 3, Math.sin(a) * 3, 10.4], 0.6, 0.3, "#3e8e41"); }),
+    tube([0, 0, 10.6], [0.5, 0, 12.4], 0.5, 0.4, "#3e8e41"),
+  ],
+  cucumber: () => [
+    { ...tube([-10, 0, 3], [10, 0, 3], 2.8, 2.6, "#3e8a3e"), paint: ([x]) => ((x + 40) % 4 < 1 ? "#5aa652" : "#3e8a3e") },
+    ball(-10.4, 0, 3, 1.4, 1.6, 1.6, "#2f6f32"),
+  ],
+  onion: () => [
+    { ...ball(0, 0, 5.2, 6, 6, 5.2, "#c98d3a"), paint: ([x]) => ((x + 40) % 3 < 0.7 ? "#a8702a" : "#c98d3a") },
+    tube([0, 0, 9.5], [0.3, 0, 13.5], 1.3, 0.3, "#d9b06a"),
+    ball(0, 0, 0.8, 1.6, 1.6, 0.7, "#8a6a48"),
+  ],
+  cabbage: () => [
+    { ...ball(0, 0, 6.6, 7.4, 7.4, 6.6, "#8fc26a"), paint: ([x, y]) => (Math.abs(x * 0.6 + y * 0.3) < 0.5 || Math.abs(y * 0.7 - x * 0.3 - 2) < 0.4 ? "#c9e0a8" : "#8fc26a") },
+    ...[[-5, 3, 4], [5, -3, 5], [3, 5, 8]].map(([x, y, z]) => ball(x, y, z, 3.6, 3.6, 2.6, "#6fa84f")),
+  ],
+  lettuce: () => [
+    ...[[0, 0, 4, 7], [-4, 2, 4, 4.4], [4, 2, 4.4, 4.6], [-3, -3, 5, 4.2], [3, -3, 4.6, 4.4], [0, 4, 5.4, 4.2]].map(([x, y, z, r], i) => ball(x, y, z, r, r, r * 0.8, i % 2 ? "#7fbe55" : "#5e9e42")),
+    rounded(-5, 5, -5, 5, 0, 2.4, 1, "#6b4a32"),
+  ],
+  orange: () => [
+    { ...ball(0, 0, 6, 6.2, 6.2, 6, "#ee8a2e"), paint: ([x, y, z]) => ((Math.round(x * 2) + Math.round(y * 2) + Math.round(z * 2)) % 7 === 0 ? "#d9761f" : "#ee8a2e") },
+    ball(0, 0, 11.8, 1, 1, 0.4, "#3e6a2e"),
+  ],
+  pear: () => [
+    ball(0, 0, 4.8, 5.4, 5.4, 4.8, "#c2c94e"),
+    tube([0, 0, 7], [0, 0, 12], 4, 2.2, "#c2c94e"),
+    tube([0, 0, 13.2], [0.8, -0.3, 15.6], 0.5, 0.4, "#5c3a1e"),
+    ball(0.8, 2.8, 5.6, 1.6, 0.8, 2, "#d9a24e"),
+  ],
+  lemon: () => [
+    ball(0, 0, 4.6, 7, 4.6, 4.4, "#f2d23a"),
+    ...[-1, 1].map((s) => ball(s * 7.4, 0, 4.6, 1.3, 1.4, 1.3, "#e6c12e")),
+  ],
+  // A little punnet of them.
+  strawberry: () => [
+    ...[[-3.6, -2.4], [0, -2.8], [3.6, -2.4], [-3.4, 2.4], [0.2, 2.6], [3.6, 2.4], [-1.6, 0], [1.8, 0]].flatMap(([x, y], i) => [
+      { ...ball(x, y, 6 + (i > 5 ? 1.2 : 0), 2.2, 2.2, 2.3, "#d9283a"), paint: ([px, py, pz]) => ((Math.round(px * 1.6) + Math.round(py * 1.6) + Math.round(pz * 1.6)) % 4 === 0 ? "#f2d278" : "#d9283a") },
+      ball(x, y, 8.2 + (i > 5 ? 1.2 : 0), 1.3, 1.3, 0.5, "#3e8e41"),
+    ]),
+    { ...rounded(-6.4, 6.4, -5, 5, 0, 6, 0.5, "#3e74c9"), paint: ([x, , z]) => (z > 4.8 ? "#f4f1e8" : Math.abs(((x + 26) % 2.6) - 1.3) < 0.3 ? "#2f5fa8" : "#3e74c9") },
+  ],
+  grapes: () => [
+    ...[[0, 0, 3], [-2.3, 0.5, 5.4], [2.3, -0.5, 5.4], [0, 2.3, 5.6], [0, -2.3, 5.4], [-4, 1, 8], [4, -1, 8], [-1.5, 2.8, 8.2], [1.5, -2.8, 8.2], [-2, -1.5, 8.6], [2, 1.5, 8.8], [-4, -2, 10.4], [4, 2, 10.4], [0, 0, 11], [-1.8, 3, 10.8], [1.8, -3, 10.8]].map(([x, y, z], i) => ball(x, y, z, 2.3, 2.3, 2.3, i % 3 ? "#6a3a8e" : "#7f4aa8")),
+    tube([0, 0, 12.6], [0.6, -0.4, 15], 0.5, 0.4, "#5c3a1e"),
+    ball(3, -1, 14, 3, 1.4, 0.7, "#3e8e41"),
+  ],
   potato: () => [
     ball(0, 0, 3.8, 7, 5, 3.8, "#b08b55"),
     ball(-2.5, 1, 4.4, 4, 3.5, 3.2, "#b9965c"),
@@ -401,12 +553,14 @@ Object.assign(MODELS, {
     ball(5, 2, 5, 0.9, 0.7, 0.9, "#ffffff"),
     ball(5.3, 2.5, 5, 0.5, 0.4, 0.5, "#22222c"),
   ],
+  // A cup of it, as a pack of coffee can't be told from any other pack.
   coffee: () => [
-    across(3.25, -2.25, 2.25, 0, 10.5, "#3a2a22"),
-    across(3.25, -1.25, 1.25, 10.5, 12, "#2c1f18"),
-    across(2.5, 2.25, 2.45, 3, 8.5, "#d13a30"),
-    animalBox(-1.25, 1.25, 2.25, 2.6, 4.5, 7, "#f2c14e"),
-    animalBox(3.25, 3.4, -1.5, 1.5, 4, 8, "#d13a30"),
+    { ...rounded(-4.6, 4.6, -4.6, 4.6, 0, 8.5, 2, "#f4f1e8"), paint: ([x]) => (x < -3.4 ? "#d6d0c4" : "#f4f1e8") },
+    ball(0, 0, 8.4, 3.8, 3.8, 0.5, "#3e2614"),
+    tube([4.6, 0, 6.5], [7.4, 0, 5.2], 0.8, 0.8, "#f4f1e8"),
+    tube([7.4, 0, 5.2], [4.6, 0, 2.6], 0.8, 0.8, "#f4f1e8"),
+    tube([-1, 0, 10], [-1.6, 0, 13], 0.35, 0.2, "#c9ccd2"),
+    tube([1.4, 0, 10], [2, 0, 13.5], 0.35, 0.2, "#c9ccd2"),
   ],
   sugar: () => [
     across(3.25, -2.25, 2.25, 0, 10, "#f4f1e8"),
@@ -686,7 +840,241 @@ Object.assign(MODELS, {
   ],
 });
 
+// ------------------------------------------------------------- people in the store
+// Food small enough for a basket or the till's belt, from z upwards.
+const SMALL_FOOD = {
+  apple: (x, y, z, k = 1) => ball(x, y, z + k, 1.1 * k, 1.1 * k, 1.1 * k, "#d13a30"),
+  orange: (x, y, z, k = 1) => ball(x, y, z + k, 1.05 * k, 1.05 * k, 1.05 * k, "#e8902e"),
+  milk: (x, y, z, k = 1) => ({ ...rounded(x - k, x + k, y - k, y + k, z, z + 3.6 * k, 0.2, "#f4f1e8"), paint: ([, , pz]) => (pz < z + 1.6 * k ? "#3e74c9" : "#f4f1e8") }),
+  bread: (x, y, z, k = 1) => tube([x - 1.5 * k, y, z + 0.8], [x + 1.5 * k, y + 0.5, z + 1.2], k, 0.9 * k, "#c9925a"),
+  cheese: (x, y, z, k = 1) => rounded(x - 1.2 * k, x + 1.2 * k, y - 0.9 * k, y + 0.9 * k, z, z + 1.5 * k, 0.2, "#f2c14e"),
+  greens: (x, y, z, k = 1) => ball(x, y, z + 0.8 * k, 1.3 * k, 1.3 * k, k, "#4f9a3e"),
+};
+
+// A basket on the arm, with what's in it showing over the rim.
+const shoppingBasket = (x, y, z, colour, goods, k) => [
+  ...goods.map((good, i) => SMALL_FOOD[good](x + (i - (goods.length - 1) / 2) * 1.6 * k, y + (i % 2 ? 0.7 : -0.7) * k, z, k)),
+  { ...rounded(x - 3.2 * k, x + 3.2 * k, y - 2.3 * k, y + 2.3 * k, z - 3 * k, z + k, 0.5, colour), paint: ([, , pz]) => (pz > z + 0.2 * k ? "#f4f1e8" : colour) },
+  ...sides((s) => tube([x + s * 2.4 * k, y, z + k], [x, y, z + 4 * k], 0.25, 0.25, "#2c2c36")),
+];
+
+// Bags in the Sámi flag's colours, after a photograph the user gave of a tote with the flag on it: the flag itself with
+// its ring, or just its stripes, up and down or across. Each as a tote with cream handles or as a plastic carrier bag.
+const SAMI_RED = "#d13a30", SAMI_GREEN = "#3e8a4e", SAMI_YELLOW = "#f2c14e", SAMI_BLUE = "#2f5fa8";
+const SAMI_STRIPES = [SAMI_RED, SAMI_GREEN, SAMI_YELLOW, SAMI_BLUE];
+const BAG_PATTERNS = {
+  flag: (across, up) => {
+    const centre = across + 0.3;
+    if (Math.abs(Math.hypot(centre, up) - 2.1) < 0.45) return centre < 0 ? SAMI_BLUE : SAMI_RED;
+    return centre < -0.7 ? SAMI_RED : centre < 0 ? SAMI_GREEN : centre < 0.7 ? SAMI_YELLOW : SAMI_BLUE;
+  },
+  upright: (across) => SAMI_STRIPES[Math.max(0, Math.min(3, Math.floor((across + 3.6) / 1.8)))],
+  level: (across, up) => SAMI_STRIPES[Math.max(0, Math.min(3, Math.floor((3.25 - up) / 1.625)))],
+};
+const BAGS = ["flag", "upright", "level"].flatMap((pattern) => ["tote", "plastic"].map((shape) => ({ pattern, shape })));
+
+function samiBag(x, y, z, k, which) {
+  const { pattern, shape } = BAGS[which];
+  const paint = ([px, , pz]) => BAG_PATTERNS[pattern]((px - x) / k, (pz - z) / k + 3.25);
+  if (shape === "tote") {
+    return [
+      SMALL_FOOD.bread(x, y, z - 0.4 * k, k),
+      { ...rounded(x - 3.6 * k, x + 3.6 * k, y - 1.3 * k, y + 1.3 * k, z - 6.5 * k, z, 0.4, SAMI_RED), paint },
+      ...sides((s) => tube([x + s * 2 * k, y, z], [x, y, z + 3 * k], 0.35, 0.3, "#f0e8d6")),
+    ];
+  }
+  // Soft and bulging, with what's in it showing and two thin handles cut from the bag itself.
+  return [
+    SMALL_FOOD.greens(x, y, z - 1.4 * k, k),
+    { ...ball(x, y, z - 3.6 * k, 3.7 * k, 1.9 * k, 3.5 * k, SAMI_RED), paint },
+    ...sides((s) => ({ ...tube([x + s * 2.6 * k, y, z - 1.8 * k], [x + s * 0.5, y, z + 2.6 * k], 0.55, 0.3, SAMI_RED), paint: () => paint([x + s * 2.6 * k, 0, z - 1.8 * k]) })),
+  ];
+}
+
+const PERSON_HAIR = {
+  bald: (z, r) => sides((s) => ball(s * r * 0.95, 0.2, z - 0.2, r * 0.22, r * 0.25, r * 0.28, SKIN)),
+  fringe: (z, r, c) => [ball(0, -r * 0.5, z - 0.5, r * 0.95, r * 0.7, r * 0.75, c)],
+  short: (z, r, c) => [ball(0, -0.5, z + 0.7, r * 1.04, r, r * 0.92, c)],
+  long: (z, r, c) => [ball(0, -0.7, z + 0.5, r * 1.08, r, r, c), ball(0, -1.6, z - 2.5, r * 0.95, r * 0.7, r * 1.05, c)],
+  bun: (z, r, c) => [ball(0, -0.5, z + 0.7, r * 1.04, r, r * 0.92, c), ball(0, -1.3, z + r + 0.6, r * 0.5, r * 0.5, r * 0.45, c)],
+  braids: (z, r, c) => [ball(0, -0.5, z + 0.5, r * 1.05, r, r * 0.95, c), ...sides((s) => tube([s * r * 0.85, -0.3, z - 0.5], [s * r * 0.95, 0.9, z - 5], 0.8, 0.5, c))],
+  cap: (z, r, c) => [ball(0, -0.3, z + 1.2, r * 1.05, r * 1.02, r * 0.85, c), ball(0, r * 0.9, z + 1.4, r * 0.75, r * 0.65, 0.3, c)],
+  beanie: (z, r, c) => [ball(0, -0.2, z + 1, r * 1.08, r * 1.06, r * 0.95, c), ball(0, -0.2, z + r + 0.7, 0.8, 0.8, 0.7, "#f4f1e8")],
+};
+
+// k is height, w is build. Frames: 0 stands, 1 and 2 walk, 3 reaches forward, 4 pays by card.
+// What they carry comes as the colour: how many goods show in the basket, "none", or "bag" and which one.
+const PERSON_LOOKS = {
+  grandpa: { k: 0.94, w: 1.05, legs: "#54545e", top: "#6b7a4a", hair: "fringe", hairColour: "#c9c9c9", beard: "#d6d6d6", glasses: true, stick: true, basket: "#c84a3a", goods: ["milk", "bread", "cheese"], stoop: true, pace: 0.75 },
+  grandma: { k: 0.88, w: 1.12, legs: "#4a4a58", skirt: "#5a4a7a", top: "#a0607a", hair: "bun", hairColour: "#d9d9d9", glasses: true, basket: "#3e74c9", goods: ["apple", "greens", "cheese"], pace: 0.8 },
+  bald: { k: 1.04, w: 1.18, legs: "#3f4a5a", top: "#c9722e", hair: "bald", basket: "#3e8a4e", goods: ["cheese", "bread", "milk"] },
+  bearded: { k: 1.16, w: 1, legs: "#2f3a4a", top: "#3e6a8a", hair: "short", hairColour: "#5a3a22", beard: "#5a3a22", basket: "#c84a3a", goods: ["orange", "bread", "milk"] },
+  tall: { k: 1.22, w: 0.86, legs: "#6b5338", top: "#d6d0c4", stripe: "#7a2f3a", hair: "long", hairColour: "#2e2620", basket: "#3e74c9", goods: ["milk", "apple", "greens"] },
+  midwoman: { k: 1, w: 1, legs: "#30384a", top: "#3e8a7a", hair: "long", hairColour: "#b0662c", basket: "#d18f2e", goods: ["greens", "orange", "milk"] },
+  midman: { k: 1.02, w: 1.04, legs: "#3a3a48", top: "#4a6ea0", hair: "short", hairColour: "#8f8f8f", basket: "#d18f2e", goods: ["milk", "cheese", "apple"] },
+  youngman: { k: 1.06, w: 0.92, legs: "#28324a", top: "#8e3a4a", hair: "cap", hairColour: "#2f5fa8", basket: "#3e8a4e", goods: ["bread", "orange", "milk"] },
+  youngwoman: { k: 0.97, w: 0.9, legs: "#7a8aa0", top: "#e0b03a", hair: "braids", hairColour: "#d9b45a", basket: "#c84a3a", goods: ["apple", "cheese", "greens"] },
+  teen: { k: 0.86, w: 0.84, legs: "#3a3a48", top: "#6a4aa0", hair: "beanie", hairColour: "#3e8a4e", basket: "#c84a3a", goods: ["orange", "bread", "apple"], pace: 1.15 },
+  girl: { k: 0.66, w: 0.82, legs: "#b5533f", top: "#d8588a", hair: "braids", hairColour: "#8a5a2c", basket: "#3e74c9", goods: ["apple", "orange", "bread"], pace: 1.2 },
+  boy: { k: 0.6, w: 0.8, legs: "#3f5a84", top: "#e6a93a", hair: "cap", hairColour: "#d13a30", basket: "#3e8a4e", goods: ["orange", "apple", "cheese"], pace: 1.2 },
+  cashier: { k: 1, w: 1, legs: "#30384a", top: "#f4f1e8", apron: "#2f5fa8", badge: "#f2c14e", hair: "bun", hairColour: "#5a3a22" },
+  butcher: { k: 1.1, w: 1.12, legs: "#30384a", top: "#f4f1e8", apron: "#c9ccd2", stripe: "#7a2f3a", hair: "cap", hairColour: "#f4f1e8", beard: "#5a3a22", knife: true },
+  stocker: { k: 1.08, w: 1.02, legs: "#30384a", top: "#f4f1e8", apron: "#2f5fa8", badge: "#f2c14e", hair: "short", hairColour: "#2e2620", beard: "#2e2620", pace: 1.2 },
+};
+
+// A shape moved, for carrying a whole model.
+const shifted = (shape, dx, dy, dz) => {
+  const move = ([x, y, z]) => [x + dx, y + dy, z + dz];
+  if (shape.kind === "ball") return { ...shape, at: move(shape.at) };
+  if (shape.kind === "tube") return { ...shape, from: move(shape.from), to: move(shape.to) };
+  const paint = shape.paint && (([x, y, z]) => shape.paint([x - dx, y - dy, z - dz]));
+  return { ...shape, low: move(shape.low), high: move(shape.high), ...(paint ? { paint } : {}) };
+};
+
+function personModel(p) {
+  return (frame, carrying) => {
+    const k = p.k, w = p.w;
+    const leg = 11 * k, body = 7.6 * k, r = 3.6 * (0.8 + 0.2 * k);
+    const top = leg + body, z = top + r + 0.6;
+    const stride = frame === 1 ? 1.7 * k : frame === 2 ? -1.7 * k : 0;
+    const hand = [3.7 * w + 0.5, 0.6, leg + 0.6];
+    const parts = [
+      ...sides((s) => [
+        tube([s * 1.6 * w, 0, leg], [s * 1.6 * w, s * stride, 1.6], 1.75 * w * (0.7 + 0.3 * k), 1.35 * (0.7 + 0.3 * k), p.legs),
+        ball(s * 1.6 * w, s * stride + 0.8, 0.9, 1.3, 2, 0.9, "#2c2c36"),
+      ]).flat(),
+      tube([0, p.stoop ? 0.6 : 0, leg - 0.4], [0, p.stoop ? 1.6 : 0, top], 3.8 * w, 3.2 * w, p.top),
+      tube([-3.7 * w, 0, top], [-hand[0], hand[1], hand[2]], 1.1, 0.95, p.top),
+      ball(-hand[0], hand[1], hand[2], 0.9, 0.9, 0.9, SKIN),
+    ];
+    if (p.skirt) parts.push(tube([0, 0, leg - 3 * k], [0, 0, leg + 1], 3.9 * w + 0.8, 3.6 * w, p.skirt));
+    if (p.stripe) parts.push(tube([0, 0, leg + body * 0.5], [0, 0, leg + body * 0.5 + 1.4], 3.75 * w, 3.5 * w, p.stripe));
+    if (p.apron) parts.push(rounded(-3 * w, 3 * w, 2.5 * w, 3.5 * w, leg - 3, top - 0.8, 0.3, p.apron));
+    if (p.badge) parts.push(ball(1.6 * w, 3.6 * w, top - 1.6, 0.6, 0.2, 0.4, p.badge));
+    if (p.stick) parts.push(tube([-hand[0], hand[1] + 0.6, hand[2]], [-hand[0] - 0.4, 3, 0.3], 0.3, 0.3, "#6b4a32"));
+    if (frame === 3 || frame === 4) {
+      // Up to a shelf, or out with a card.
+      const out = frame === 3 ? [2.6 * w, 7, top + 1.5] : [1.8 * w, 6, leg + 3.5];
+      parts.push(tube([3.7 * w, 0.2, top], out, 1.1, 0.9, p.top), ball(...out, 0.9, 0.9, 0.9, SKIN));
+      if (p.knife) parts.push(rounded(out[0] - 0.25, out[0] + 0.25, out[1], out[1] + 3.6, out[2] - 0.5, out[2] + 0.4, 0.05, "#c9ccd2"));
+      if (frame === 4) parts.push(rounded(out[0] - 0.8, out[0] + 0.8, out[1], out[1] + 1.8, out[2] + 0.3, out[2] + 0.6, 0.05, "#2f5fa8"));
+      else if (p.goods && typeof carrying === "number") parts.push(SMALL_FOOD[p.goods[Math.min(carrying, 2)]](out[0], out[1] + 1, out[2] - 1));
+    } else {
+      parts.push(tube([3.7 * w, 0, top], hand, 1.1, 0.95, p.top), ball(...hand, 0.9, 0.9, 0.9, SKIN));
+    }
+    // In the other hand while reaching, so it stays on the arm that hangs down.
+    const side = frame === 3 || frame === 4 ? -1 : 1;
+    const size = Math.max(0.7, Math.min(1, k + 0.05));
+    const carriedX = side * (hand[0] + 0.3 + 2 * size);
+    if (carrying === "stack") parts.push(...MODELS.basket_stack(0, 4).map((shape) => shifted(shape, 0, 5.5, leg - 1)));
+    else if (`${carrying}`.startsWith("bag")) parts.push(...samiBag(carriedX * 1.1, 0.6, Math.max(leg - 2, size * 9), size * 1.3, Number(carrying.slice(3))));
+    else if (p.basket && carrying !== "none") parts.push(...shoppingBasket(carriedX, 0.6, leg - 2.4, p.basket, p.goods.slice(0, carrying), size));
+    const hair = [...PERSON_HAIR[p.hair](z, r, p.hairColour)];
+    if (p.beard) hair.push(ball(0, 1.7, z - r * 0.62, r * 0.78, r * 0.55, r * 0.55, p.beard));
+    if (p.glasses) hair.push(...sides((s) => ball(s * r * 0.37, r * 0.93, z + 0.4, 0.8, 0.12, 0.7, "#22222c")));
+    return [...parts, ...head(z, hair, r)];
+  };
+}
+
+// On the till's counter, drawn from the counter's top. The belt runs along x, towards the door.
+Object.assign(MODELS, {
+  ...Object.fromEntries(Object.entries(PERSON_LOOKS).map(([name, look]) => [`person_${name}`, personModel(look)])),
+  ...Object.fromEntries(Object.entries(SMALL_FOOD).map(([name, make]) => [`good_${name}`, () => [make(0, 0, 0.5, 1.1)]])),
+  // One tile's length of belt, as the counter is drawn tile by tile; the last stops short of the register.
+  till_belt: () => [rounded(-8, 8, -5, 5, -0.2, 0.5, 0.1, "#23232a")],
+  till_belt_end: () => [rounded(-8, -1, -5, 5, -0.2, 0.5, 0.1, "#23232a")],
+  till_register: () => [
+    rounded(-4, 4, -3, 3, 0, 3, 0.5, "#d6d3ca"),
+    rounded(-3, 3, -2.2, 2.2, 3, 3.6, 0.2, "#3e3e48"),
+    tube([0, -1.8, 3.5], [0, -1.8, 7], 0.6, 0.5, "#8e8e96"),
+    { ...rounded(-3, 3, -2.3, -1.2, 7, 11, 0.3, "#3e3e48"), paint: ([, y, z]) => (y > -1.4 && z > 7.6 && z < 10.4 ? "#7fd6a0" : "#3e3e48") },
+    { ...rounded(-3, 3, -0.8, 0.4, 7, 11, 0.3, "#3e3e48"), paint: ([, y, z]) => (y > 0.2 && z > 7.6 && z < 10.4 ? "#bfe6f2" : "#3e3e48") },
+    rounded(4.6, 8.6, -2.4, 2.4, 0, 1.2, 0.3, "#5a5a64"),
+    ball(6.6, 0, 1.3, 1.1, 1.1, 0.25, "#d13a30"),
+  ],
+  player_basket: () => shoppingBasket(0, 0, 3, "#c84a3a", [], 1),
+  till_bag: (frame, which) => samiBag(0, 0, 9, 1.3, which),
+  // The way out, its glass doors slid aside, with a green sign over it.
+  store_door: () => [
+    ...sides((s) => rounded(s * 17 - 1.2, s * 17 + 1.2, -1.2, 1.2, 0, 32, 0.3, "#5a6670")),
+    rounded(-18.2, 18.2, -1.2, 1.2, 32, 35, 0.4, "#5a6670"),
+    rounded(-4, 4, 1.3, 1.8, 32.6, 34.6, 0.2, "#3e9a5e"),
+    ...sides((s) => ({
+      ...rounded(s * 12 - 3.8, s * 12 + 3.8, -0.5, 0.5, 0.5, 31.5, 0.1, "#bfe0ec"),
+      paint: ([x, , z]) => (Math.abs(x - s * 12) > 3.2 || z < 1.5 || z > 30.5 ? "#7c8a94" : (x + z) % 9 < 1.4 ? "#e6f4f8" : "#bfe0ec"),
+    })),
+  ],
+  store_mat: () => [{ ...rounded(-13, 13, -7, 7, 0, 0.5, 0.2, "#4a5560"), paint: ([x, y]) => (Math.abs(x) > 11.4 || Math.abs(y) > 5.6 || (x + 40) % 4 < 1 ? "#3a444e" : "#4a5560") }],
+  // Baskets stacked inside each other, ready to take.
+  // On the meat counter: the big piece being cut, on a board.
+  meat_board: () => [
+    rounded(-7, 7, -5.5, 5.5, 0, 1.2, 0.2, "#b98249"),
+    { ...ball(-0.5, 0, 4.6, 5.6, 4, 3.6, "#a83a32"), paint: ([x]) => (Math.abs(((x + 30) % 3.4) - 1.7) < 0.3 ? "#f0d8cc" : "#a83a32") },
+    ...[3, 4.6].map((x, i) => rounded(x, x + 0.8, -3, 3, 1.2, 4.6 - i, 0.1, "#b84a40")),
+  ],
+  // For minced meat, which isn't cut: a steel grinder with its handle going round, and mince coming out into a tray.
+  meat_grinder: (frame) => {
+    const [cx, cz] = [[0, 3.4], [3.4, 0], [0, -3.4], [-3.4, 0]][frame % 4];
+    return [
+      rounded(-7, 7, -5.5, 5.5, 0, 1, 0.3, "#c9ccd2"),
+      tube([-2.5, 0, 1], [-2.5, 0, 6.5], 2, 2.4, "#8e96a0"),
+      tube([-5, 0, 7.5], [2.4, 0, 7.5], 2.4, 2.1, "#a8b0ba"),
+      tube([-2.5, 0, 9], [-2.5, 0, 12.5], 2, 3.4, "#c9ccd2"),
+      ball(-2.5, 0, 12.4, 2.6, 2.6, 0.6, "#a83a32"),
+      tube([-5.5, 0, 7.5], [-6.5, 0, 7.5], 0.5, 0.5, "#6a7078"),
+      tube([-6.5, 0, 7.5], [-6.5 , cx, 7.5 + cz], 0.4, 0.4, "#6a7078"),
+      ball(-6.5, cx, 7.5 + cz, 0.8, 0.8, 0.8, "#2c2c36"),
+      rounded(3, 7, -3, 3, 1, 2, 0.3, "#f4f1e8"),
+      { ...ball(5, 0, 2.8, 1.9, 2.4, 1.3, "#b5544a"), paint: ([x, y, z]) => ((Math.round(x * 1.8) + Math.round(y * 1.8) + Math.round(z * 1.8)) % 3 === 0 ? "#d07a6e" : "#b5544a") },
+      ...[0, 1].map((i) => tube([3.4, -0.8 + i * 1.6, 7], [4.4, -0.8 + i * 1.6, 3.6], 0.3, 0.3, "#b5544a")),
+    ];
+  },
+  // A small trolley with up to three cardboard boxes, closed, so what's in them doesn't show.
+  stock_trolley: (frame, boxes = 3) => [
+    ...[[-5, -3.5], [5, -3.5], [-5, 3.5], [5, 3.5]].map(([x, y]) => ball(x, y, 1, 0.9, 0.9, 0.9, "#2c2c36")),
+    rounded(-6.5, 6.5, -4.5, 4.5, 2, 3.2, 0.2, "#8e8e96"),
+    ...(boxes > 0 ? [rounded(-5.5, 0, -3.8, 3.8, 3.2, 8.5, 0.3, "#b9956a"), rounded(-5.5, 0, -0.4, 0.4, 8.4, 8.8, 0.05, "#d9c49a")] : []),
+    ...(boxes > 1 ? [rounded(0.5, 5.5, -3.2, 3.2, 3.2, 7, 0.3, "#c9a57a"), rounded(0.5, 5.5, -0.3, 0.3, 6.9, 7.2, 0.05, "#e0cda8")] : []),
+    ...(boxes > 2 ? [rounded(-3.5, 3, -3, 3, 8.5, 11.5, 0.3, "#a8835a"), rounded(-3.5, 3, -0.3, 0.3, 11.4, 11.7, 0.05, "#c9ae84")] : []),
+    tube([6.5, -4.5, 3.2], [7.5, -4.5, 13], 0.35, 0.35, "#5a6670"),
+    tube([6.5, 4.5, 3.2], [7.5, 4.5, 13], 0.35, 0.35, "#5a6670"),
+    tube([7.5, -4.5, 13], [7.5, 4.5, 13], 0.35, 0.35, "#5a6670"),
+  ],
+  // The way the staff go in and out, on the left wall: no customer goes there.
+  staff_door: () => [
+    rounded(-0.6, 0.6, -11, 11, 0, 30, 0.2, "#5a6670"),
+    rounded(-0.9, 0.9, -9.5, 9.5, 0.5, 28.5, 0.2, "#8e6a4a"),
+    rounded(0.8, 1.2, -4, 4, 19, 25, 0.1, "#f4f1e8"),
+    ball(1.2, 0, 22, 0.2, 2.2, 2.2, "#d13a30"),
+    ball(1.2, -6.5, 13, 0.6, 0.9, 0.9, "#e6c15a"),
+  ],
+  basket_stack: (frame, count = 5) => ["#c84a3a", "#3e74c9", "#3e8a4e", "#d18f2e", "#c84a3a"].slice(0, Math.min(5, count)).flatMap((colour, i, shown) => [
+    { ...rounded(-4.2, 4.2, -3, 3, i * 1.4, i * 1.4 + 3.6, 0.5, colour), paint: ([, , z]) => (z > i * 1.4 + 2.8 ? "#f4f1e8" : colour) },
+    ...(i === shown.length - 1 ? sides((s) => tube([s * 3.2, 0, i * 1.4 + 3.6], [0, 0, i * 1.4 + 7], 0.25, 0.25, "#2c2c36")) : []),
+  ]),
+});
+
 // A peck: these shapes moved forward and down.
+// A plastic bottle with a waist, a label round its middle, a sloping shoulder and a screw cap.
+const fizzyBottle = (drink, label, cap) => [
+  tube([0, 0, 0.9], [0, 0, 4.4], 3.6, 3.5, drink),
+  tube([0, 0, 4.4], [0, 0, 6], 3.1, 3.1, drink),
+  { ...tube([0, 0, 6.4], [0, 0, 11], 3.6, 3.6, label) },
+  tube([0, 0, 11.4], [0, 0, 15.6], 3.5, 1.3, drink),
+  tube([0, 0, 15.6], [0, 0, 17.4], 1.2, 1.2, "#dfeef2"),
+  tube([0, 0, 17.6], [0, 0, 19], 1.4, 1.4, cap),
+];
+
+// Sold at the meat counter on a plate, not in a pack.
+// A tray with clear plastic stretched over it, shown by its pale rim and a couple of shiny streaks.
+const onPlate = (meat, high = 4) => [
+  rounded(-7, 7, -6, 6, 0, 1.2, 0.4, "#f4f1e8"),
+  ...meat,
+  ...[[-7, -6, 7, -6], [7, -6, 7, 6], [7, 6, -7, 6], [-7, 6, -7, -6]].map(([x0, y0, x1, y1]) => tube([x0, y0, 1.4], [x1, y1, 1.4], 0.3, 0.3, "#dfeef2")),
+  tube([-4.5, 2.5, high], [-1, 4.5, high], 0.28, 0.28, "#f8fcfd"),
+  tube([1.5, -4.5, high], [4.5, -2.5, high], 0.28, 0.28, "#f8fcfd"),
+];
+
 const lowered = (shapes, forward, down) => shapes.map((shape) => {
   const move = ([x, y, z]) => [x, y + forward, z - down];
   if (shape.kind === "ball") return { ...shape, at: move(shape.at) };

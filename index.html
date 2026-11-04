@@ -11,7 +11,7 @@
 <div class="stripe"></div>
 <header class="hero">
   <div class="hero-text">
-    <h1 lang="se">Sátnemátki <small>v0.1.4</small></h1>
+    <h1 lang="se">Sátnemátki <small>v0.1.5</small></h1>
     <p class="lead">Pohjoissaamen sanapeli lapsille. Nimi tarkoittaa <em>sanamatkaa</em>: kuljet hahmollasi kodissa, metsässä ja kaupassa ja etsit sen, mitä saamenkielinen sana tarkoittaa.</p>
     <a class="play" href="peli.html">Pelaa selaimessa</a>
     <p class="fine">Maksuton. Ei rekisteröitymistä eikä asennusta.</p>
@@ -35,8 +35,8 @@
     <p>Sátnemátki kokeilee, voisiko pohjoissaamen sanoja oppia liikkumalla tutuissa paikoissa ja kokeilemalla rauhassa. Sitä ei voi hävitä, eikä lukemaan tarvitse osata sujuvasti, koska hahmo sanoo sanat myös ääneen.</p>
     <ol class="steps">
       <li><strong>Peli antaa sanan.</strong> Ylhäällä lukee esimerkiksi <span lang="se">Etsi: <b>eadni</b></span>.</li>
-      <li><strong>Mene sen luo.</strong> Kulje hahmollasi sen luo, joka mielestäsi sopii.</li>
-      <li><strong>Kuule ja näe, mikä se oli.</strong> Väärästäkin arvauksesta oppii, koska hahmo kertoo aina, mikä se oli.</li>
+      <li><strong>Mene sen luo ja paina E.</strong> Kulje hahmollasi sen luo, joka mielestäsi sopii. Puhelimessa paina Ota tai napauta sitä.</li>
+      <li><strong>Kuule ja näe, mikä se oli.</strong> Väärästäkin arvauksesta oppii, koska hahmo pysähtyy hetkeksi ja kertoo, mikä se oli.</li>
     </ol>
   </section>
 
@@ -47,7 +47,7 @@
       <figure><img src="art/site/elaimet.png" width="280" height="190" alt="" loading="lazy"><figcaption><b>Eläimet</b> Metsässä liikkuu 20 eläintä poroista kotkiin.</figcaption></figure>
       <figure><img src="art/site/parkkipaikka.png" width="280" height="190" alt="" loading="lazy"><figcaption><b>Parkkipaikka</b> Ajoneuvot ja värit kolmella tasolla.</figcaption></figure>
       <figure><img src="art/site/kirjasto.png" width="280" height="190" alt="" loading="lazy"><figcaption><b>Kirjasto</b> Kirjat, kynät ja vihot kolmella tasolla.</figcaption></figure>
-      <figure><img src="art/site/kauppa.png" width="280" height="190" alt="" loading="lazy"><figcaption><b>Kauppa</b> Ostoslista haetaan järjestyksessä: 16 ruokaa.</figcaption></figure>
+      <figure><img src="art/site/kauppa.png" width="280" height="190" alt="" loading="lazy"><figcaption><b>Kauppa</b> Kori, ostoslista, kassa ja ovi kahdella tasolla: 40 ruokaa.</figcaption></figure>
       <figure><img src="art/site/luokka.png" width="280" height="190" alt="" loading="lazy"><figcaption><b>Luokka</b> Numerot pulpeteilla, 0–10, 0–20 ja 0–100.</figcaption></figure>
     </div>
   </section>
@@ -60,7 +60,7 @@
       <li><strong>Kielioppia askel kerrallaan.</strong> Väri liitetään sanaan ensin perusmuodossa (<span lang="se">biila: vielgat</span>) ja sitten sanan edessä (<span lang="se">vilges biila</span>).</li>
       <li><strong>Monikko.</strong> Sanakortti näyttää myös monikon, esimerkiksi <span lang="se">eadni – eatnit</span>.</li>
       <li><strong>Lyhyet lauseet.</strong> <span lang="se">Dát lea girji. Son lea eadni.</span></li>
-      <li><strong>Kokeilemalla oppiminen.</strong> Virheitä ei rangaista. Jos haluaa haastetta, kello ottaa aikaa ja parhaat ajat jäävät muistiin.</li>
+      <li><strong>Kokeilemalla oppiminen.</strong> Väärästä valinnasta ei menetä mitään, vain hetken aikaa. Jos haluaa haastetta, kello ottaa aikaa ja parhaat ajat jäävät muistiin.</li>
     </ul>
     <p class="note">Nämä ovat pelin tavoitteita. Oppimisvaikutusta ei ole tutkittu.</p>
   </section>
@@ -71,8 +71,10 @@
       <div><dt>Liiku</dt><dd>Nuolet tai WASD, tai napauta maailmaa</dd></div>
       <div><dt>Juokse</dt><dd>Shift pohjassa. Törmätessä kaadut tai liu'ut mahallasi!</dd></div>
       <div><dt>Hyppää</dt><dd>Välilyönti</dd></div>
-      <div><dt>Kyykisty tai istu</dt><dd>C. Luokassa C istuttaa tuolille</dd></div>
+      <div><dt>Ota tai katso</dt><dd>E, kun olet lähellä. Luokassa E istuttaa tuolille</dd></div>
+      <div><dt>Kyykisty</dt><dd>C. Luokassa C myös istuttaa tuolille</dd></div>
     </dl>
+    <p class="note">Pelin aikana puhekuplat kertovat, milloin E:tä voi käyttää, ja kaupassa nuolet näyttävät tien korille, kassalle ja ovelle. Ohjekuplat ovat aluksi päällä, ja ne voi kytkeä pois valikosta tai pelin alta.</p>
     <p class="note">Peli toimii parhaiten tietokoneella. Puhelimessa on omat painikkeet, mutta niitä ei ole vielä kokeiltu oikealla puhelimella.</p>
   </section>
 
@@ -93,13 +95,14 @@
   </section>
 
   <section>
-    <h2>Uutta versiossa 0.1.4</h2>
+    <h2>Uutta versiossa 0.1.5</h2>
     <ul class="points">
-      <li><strong>Pelkkä ääni.</strong> Pelin voi pelata myös ilman tekstiä, ja sillä on omat parhaat aikansa. Hahmo pyytää nyt ääneen apua etsimiseen.</li>
-      <li><strong>Taustaäänet.</strong> Jokaisessa paikassa kuuluu oma hiljainen taustaäänensä.</li>
-      <li><strong>Saamelaisalueen linnut.</strong> Metsässä on riekko, koppelo, metso, korppi, joutsen, kotka ja tunturipöllö, kierroksella yhdestä kolmeen. Isot linnut lentävät joskus joen yli.</li>
-      <li><strong>Eläimet eri puolilla karttaa.</strong> Eläimet ovat kauempana toisistaan, ja poro näyttää nyt porolta.</li>
-      <li><strong>Törmäykset.</strong> Juostessa kaadut vasta, kun todella osut johonkin. Suoraan osuessa kaadut takapuolellesi, ja sivuun osuessa liu'ut mahallasi.</li>
+      <li><strong>Kauppareissu.</strong> Ota kori, hae tavarat käsin kirjoitetun listan mukaan missä järjestyksessä tahansa, jonota kassalle, maksa, ota kassi ja lähde ovesta. Kaupassa on muita asiakkaita, kassa, lihatiski ja hyllyjä täyttävä työntekijä.</li>
+      <li><strong>Vaikeampi kauppataso.</strong> Samaa tavaraa haetaan useita, ja hinta näppäillään itse. Ruokia on nyt paljon enemmän.</li>
+      <li><strong>Tarkempi grafiikka.</strong> Kauppa ja metsä, niiden ihmiset ja eläimet sekä pelaajan hahmo on piirretty tarkemmin.</li>
+      <li><strong>Eläimet reagoivat.</strong> Eläintä voi silittää, kissa kehrää, koira läähättää, perhonen laskeutuu kädelle ja linnut lentävät pois.</li>
+      <li><strong>Väärä valinta pysäyttää.</strong> Väärästä valinnasta hahmo seisoo kaksi sekuntia paikallaan, kun se kertoo, mikä se oli.</li>
+      <li><strong>Tähdet valikossa.</strong> Kultaiset tähdet kertovat, kuinka pitkällä kukin paikka on, asteikolla nollasta viiteen.</li>
     </ul>
   </section>
 

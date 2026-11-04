@@ -77,6 +77,11 @@ The characters' clothing is based on the article
 [Karasjok-kofta](https://snl.no/Karasjok-kofta) in Store norske leksikon. Only facts from it are used; no
 text or images are copied. See [art/mahtte/README.md](art/mahtte/README.md).
 
+## Handwriting font
+
+The shopping list is written in [Caveat](https://github.com/googlefonts/caveat) by The Caveat Project Authors (`art/fonts/`),
+under the [SIL Open Font License 1.1](art/fonts/OFL.txt). It has all of Northern Sámi's letters.
+
 ## Game
 
 © 2026 Juha Somby, satni@somby.fi. The code and pixel art are licensed under the

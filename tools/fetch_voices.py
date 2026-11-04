@@ -22,7 +22,21 @@ CHARACTERS = {"mahtte": "Máhtte", "biret": "Biret"}
 LINES = {
     "question": "Mii du namma lea? Mu namma lea {name}.",
     "bures": "Bures!",
+    "store-basket": "Váldde márssu.",
+    "store-till": "Mana kássii.",
+    "store-wait": "Vuordde vuoru.",
+    "store-belt": "Bija dan beavdái.",
+    "store-bag": "Váldde seahka.",
+    "store-door": "Mana uksii.",
+    "store-pay": "Mávsse.",
+    "store-no": "Ii.",
+    "store-notonlist": "Dat ii leat mu listtus.",
+    "store-full": "Vuordde.",
+    "store-enough": "Dat lea doarvái.",
 }
+# What the cashier says at the till: whole euros, up to MAX_TOTAL in src/game.js.
+PRICES = range(3, 100)
+PRICE = "Dat máksá {number} euro."
 # Answers, in the same order as TEXT.right and TEXT.wrong in src/game.js. Found: praise, then the word.
 PRAISE = [
     "Riekta!", "Nu lea!", "Buorre!", "Hui buorre!", "Čeahppi!", "Gávdnet dan!", "Dat lei riekta!",
@@ -89,6 +103,8 @@ def wanted_lines():
     numbers = json.loads(numbers[numbers.index("["):numbers.rindex("]") + 1])
     lines += [(f"number-{n}", THIS_IS.format(word=word)) for n, word in enumerate(numbers)]
     lines += [(f"ask-number-{n}", ASK.format(what=NUMBER_OBJECT.get(word, word))) for n, word in enumerate(numbers)]
+    lines += [(f"store-price-{n}", PRICE.format(number=numbers[n])) for n in PRICES]
+    lines += [(f"count-{n}", f"{numbers[n].capitalize()}.") for n in range(2, 6)]
     return list(dict(lines).items())
 
 

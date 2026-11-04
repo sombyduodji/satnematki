@@ -1,6 +1,6 @@
 # Sátnemátki
 
-*Sátnemátki* means "word journey" in Northern Sámi. Version 0.1.4, a technology demo.
+*Sátnemátki* means "word journey" in Northern Sámi. Version 0.1.5, a technology demo.
 
 A Northern Sámi word game for children. The player creates a character, Máhtte or Biret, chooses a place, and
 walks around it in an isometric view with a camera that follows: furniture and family at home, animals in the forest, coloured books on the shelves and
@@ -16,11 +16,15 @@ Move with the arrow keys or WASD, by tapping the world, or with the on-screen pa
 the screen: W goes straight up, and two keys together, such as W+A, go along the paths and across the bridges.
 Only trunks, things and water block the way; the character slides past them and walks behind the branches.
 Space jumps, about half the character's height: over things in the way, but not over the house or the river. Jumping into a tree,
-a shelf, a vehicle or a wall knocks the character down, harmlessly. C crouches. Shift runs, on every map: a runner can't pick
-anything up, and running into anything at all ends in a slide on the tummy. Each map opens with a window of instructions, closed with OK.
+a shelf, a vehicle or a wall knocks the character down, harmlessly. C crouches, or sits at a chair in the classroom. Shift runs, on every map: a runner can't pick
+anything up, and running into something ends on the bottom if it's head-on, or in a slide on the tummy past it if there's room. Each map opens with a window of instructions, closed with OK.
 The animals, store and library things are small 3D models in `src/models.js`. They wander slowly and hop, some birds take short flights, the bigger ones now and then cross the river, the owl's head turns towards the player, birds peck the ground, the dog turns to the player and wags its tail, and they hold still once the player is close or heading for them.
 
-A clock starts at the first move of a round and stops at the last word. Play then stops, and a window shows the
+The store and the forest are drawn at double detail, on a finer canvas: food, fittings, people and animals are modelled finer, and floors, trees, shelves and the player are enlarged with Scale2x. A butcher behind the meat counter cuts a big piece of meat, or grinds it for mince, into plates under plastic. A round has one kind of meat, and it's the only one the list can ask for. A worker fills the shelves from a small trolley, which can't be walked through and never closes an aisle, and carries used baskets back to the door. In the store, five to seven customers of different ages and looks pick things off the shelves into baskets (nothing leaves the shelf), queue at the till, pay the cashier, leave the empty basket at the end of the counter and go with a bag in the Sámi flag's colours, one of six kinds. The player needs a basket too, from the stack by the door, and what they find goes into it. A fall drops the basket and spills the shopping: the character takes the basket back on getting up, and the blinking shopping is gathered by walking over it, without a word. With everything found, the player goes to the till, puts the shopping on the belt one thing at a time, pays, takes the bag and walks to the door, where the clock stops. Things cost whole euros, after real prices. On the harder level the list asks for up to five of each, C takes one at a time, and the price the cashier says must be typed into a calculator.
+
+A wrong pick holds the character still for two seconds while it's explained. E is the key for using things on every map (Q is kept for putting things away later): walking against something does nothing by itself, though what is tapped on is taken on arriving. Help bubbles show when E can be used, and in the store arrows point the way. They're on by default, with a switch in the menu and under the game. What E does just now also shows as text above the game, except when playing by sound only. They are only company: the player walks through them and can't touch them.
+
+A clock starts at the first move of a round and stops at the last word; in the store it runs from taking the basket until the door. Play then stops, and a window shows the
 time, the ten best times for that place (kept in the browser, with the name the player gave), and the choice to
 play again or go to the main menu. The main menu fills the page: pick a place, then its level if it has several, or replay the last one. It also changes the player, which asks for the character and name again.
 

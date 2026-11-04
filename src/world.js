@@ -2,10 +2,10 @@
 // the rules and the movement are in game.js. The places come from tools/make_map.py.
 const TILE = 16;
 let placeName, MAP, START, SPOTS, WIDTH, HEIGHT, WORLD_W, WORLD_H, OX, forestAt, trees, treeMap;
-const SOLID_TILES = new Set("wBWXKSCDRZPETVGHYJI");
-const BLOCK_TILES = new Set("BWXKSCDRZPETVGHYJI");
+const SOLID_TILES = new Set("wBWXKSCMDRZPETVGHYJI");
+const BLOCK_TILES = new Set("BWXKSCMDRZPETVGHYJI");
 // Food stands in its fixture, this far above the floor.
-const RAISED = { shelf: 11, fridge: 8, freezer: 10, produce: 8, desk: 9, bookshelf: 13, table: 10 };
+const RAISED = { meat: 11, shelf: 11, fridge: 8, freezer: 10, produce: 8, desk: 9, bookshelf: 13, table: 10 };
 const canvas = document.getElementById("world");
 const ctx = canvas.getContext("2d");
 const ANIMALS = new Set(["boazu", "beana", "njoammil", "loddi", "guovza", "rieban", "oarri", "sahpan", "gahttu", "savza", "gussa", "spiidni", "vuonccis", "cuoppu", "skuolfi", "beaiveloddi", "rievssat", "goahppil", "garanas", "njukca", "goaskin", "jievjaskuolfi", "beahceloddi"]);
@@ -24,6 +24,9 @@ const pick = (list, value) => list[Math.floor(value * list.length) % list.length
 // picture: the bottom stays put, the top leans, and height changes with squash.
 function drawLiving(image, x, y, { lean = 0, squash = 0, flip = false } = {}) {
   const rows = image.height;
+  // Row by row as always, each taken from the finer picture where the place is drawn finer.
+  const source = viewDetail > 1 ? doubledImage(image) : image;
+  const fine = source.width / image.width;
   let lastY = null;
   for (let row = rows - 1; row >= 0; row--) {
     const up = rows - 1 - row;
@@ -35,10 +38,10 @@ function drawLiving(image, x, y, { lean = 0, squash = 0, flip = false } = {}) {
       ctx.save();
       ctx.translate(destX + image.width, destY);
       ctx.scale(-1, 1);
-      ctx.drawImage(image, 0, row, image.width, 1, 0, 0, image.width, 1);
+      ctx.drawImage(source, 0, row * fine, source.width, fine, 0, 0, image.width, 1);
       ctx.restore();
     } else {
-      ctx.drawImage(image, 0, row, image.width, 1, destX, destY, image.width, 1);
+      ctx.drawImage(source, 0, row * fine, source.width, fine, destX, destY, image.width, 1);
     }
   }
 }
@@ -192,17 +195,23 @@ function bankFace(g, tx, ty, depth, east) {
 }
 
 // ------------------------------------------------------------------ the trees
-function outlined(w, h, paint) {
+function addOutline(g, w, h, thick) {
+  g.fillStyle = OUTLINE;
+  for (let pass = 0; pass < thick; pass++) {
+    const data = g.getImageData(0, 0, w, h).data;
+    const solid = (x, y) => x >= 0 && y >= 0 && x < w && y < h && data[(y * w + x) * 4 + 3] > 0;
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+      if (!solid(x, y) && (solid(x + 1, y) || solid(x - 1, y) || solid(x, y + 1) || solid(x, y - 1))) g.fillRect(x, y, 1, 1);
+    }
+  }
+}
+
+function outlined(w, h, paint, thick = 1) {
   const c = document.createElement("canvas");
   c.width = w; c.height = h;
   const g = c.getContext("2d");
   paint(g);
-  const data = g.getImageData(0, 0, w, h).data;
-  const solid = (x, y) => x >= 0 && y >= 0 && x < w && y < h && data[(y * w + x) * 4 + 3] > 0;
-  g.fillStyle = OUTLINE;
-  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
-    if (!solid(x, y) && (solid(x + 1, y) || solid(x - 1, y) || solid(x, y + 1) || solid(x, y - 1))) g.fillRect(x, y, 1, 1);
-  }
+  addOutline(g, w, h, thick);
   return c;
 }
 
@@ -281,6 +290,7 @@ const BLOCK_STYLE = {
   V: { height: 32, top: "#54483f", left: "#d8cdb6", right: "#ac9f88" },
   G: { height: 32, top: "#54483f", left: "#d8cdb6", right: "#ac9f88" },
   C: { height: 11, top: "#7c8a94", left: "#5a6670", right: "#46525c" },
+  M: { height: 11, top: "#dfe6e8", left: "#a8c4cc", right: "#7f98a0" },
   D: { height: 10, top: "#b98249", left: "#7a4c28", right: "#5c3a1e" },
   // Home: warm walls with a faint stripe, windows in two of the three, and low walls between the rooms.
   H: { height: 9, top: "#8a5a3a", left: "#e8d3ac", right: "#c9ae84" },
@@ -320,7 +330,7 @@ function makeBlock(tile, seed) {
         const shelf = row % 7;
         if (shelf >= 2 && shelf <= 5 && across > 0 && across < 15) colour = pick(FOOD_COLOURS, noise(Math.floor(across / 3) + seed * 5, Math.floor(row / 7) + seed));
         if (shelf >= 2 && !onLeft && colour !== right) colour = n > 0.5 ? "#7c7a70" : right;
-      } else if (tile === "C" && row === 2) {
+      } else if ((tile === "C" || tile === "M") && row === 2) {
         colour = "#c8372d";
       } else if (tile === "R") {
         // Lit glass doors with cold shelves behind.
@@ -393,6 +403,7 @@ function placeThings() {
 // Sets everything up for one of the places. Each is drawn once and kept.
 const builtWorlds = new Map();
 function loadPlace(name) {
+  setViewDetail(name);
   const place = window.MAHTTE_MAPS[name];
   placeName = name;
   MAP = place.rows;
@@ -862,15 +873,18 @@ const MODEL_LIGHT = (() => {
 
 // Looks at each pixel along the world's viewing angle until it meets a shape, and lights it in a few flat bands,
 // which is what keeps it looking like pixel art. Slow, but done once for each thing and then kept.
-function drawRoundModel(g, shapes) {
+function* roundModelRows(g, shapes, detail) {
   const distance = (p) => Math.min(...shapes.map((shape) => shapeDistance(shape, p)));
   const bounds = shapes.map(shapeBounds);
   const left = Math.floor(Math.min(...bounds.map(([low, high]) => low[0] - high[1]))) + MODEL_ANCHOR.x - 1;
   const right = Math.ceil(Math.max(...bounds.map(([low, high]) => high[0] - low[1]))) + MODEL_ANCHOR.x + 1;
   const top = Math.floor(Math.min(...bounds.map(([low, high]) => (low[0] + low[1]) / 2 - high[2]))) + MODEL_ANCHOR.y - 1;
   const bottom = Math.ceil(Math.max(...bounds.map(([low, high]) => (high[0] + high[1]) / 2 - low[2]))) + MODEL_ANCHOR.y + 1;
-  for (let py = Math.max(0, top); py < Math.min(g.canvas.height, bottom); py++) for (let px = Math.max(0, left); px < Math.min(g.canvas.width, right); px++) {
-    const sx = px + 0.5 - MODEL_ANCHOR.x, sy = py + 0.5 - MODEL_ANCHOR.y;
+  const fine = (edge) => edge * detail;
+  for (let py = Math.max(0, fine(top)); py < Math.min(g.canvas.height, fine(bottom)); py++) {
+    yield; // a row at a time, for pictures made bit by bit while the game runs
+    for (let px = Math.max(0, fine(left)); px < Math.min(g.canvas.width, fine(right)); px++) {
+    const sx = (px + 0.5) / detail - MODEL_ANCHOR.x, sy = (py + 0.5) / detail - MODEL_ANCHOR.y;
     const x0 = sy + sx / 2, y0 = sy - sx / 2;
     let t = 40, hit = null;
     for (let step = 0; step < 70 && t > -40; step++) {
@@ -900,15 +914,23 @@ function drawRoundModel(g, shapes) {
     const colour = inHole ? "#c9992e" : shape.paint ? shape.paint(built) : shape.colour;
     g.fillStyle = shaded(colour, lit > 0.82 ? 1.14 : lit > 0.45 ? 1 : lit > 0.05 ? 0.84 : 0.68);
     g.fillRect(px, py, 1, 1);
+    }
   }
 }
 
-function drawModel(g, sprite, facing, frame, headFacing, colour) {
+function drawRoundModel(g, shapes, detail = 1) {
+  const rows = roundModelRows(g, shapes, detail);
+  while (!rows.next().done);
+}
+
+function drawModel(g, sprite, facing, frame, headFacing, colour, detail = 1) {
   const parts = MODELS[sprite](frame, colour);
   if (parts[0].kind) {
-    drawRoundModel(g, parts.map((shape) => turnedShape(shape, MODEL_FACINGS[shape.head ? headFacing : facing])));
+    drawRoundModel(g, parts.map((shape) => turnedShape(shape, MODEL_FACINGS[shape.head ? headFacing : facing])), detail);
     return;
   }
+  g.save();
+  g.scale(detail, detail);
   // Turns a box from facing +y to the way the animal, or its head, faces.
   const turned = parts.map(([x0, x1, y0, y1, z0, z1, colour, isHead]) => {
     const [fx, fy] = MODEL_FACINGS[isHead ? headFacing : facing];
@@ -922,16 +944,124 @@ function drawModel(g, sprite, facing, frame, headFacing, colour) {
     fillShapeOn(g, [point(x0, y1, z0), point(x1, y1, z0), point(x1, y1, z1), point(x0, y1, z1)], shaded(colour, 0.92));
     fillShapeOn(g, [point(x0, y0, z1), point(x1, y0, z1), point(x1, y1, z1), point(x0, y1, z1)], shaded(colour, 1.1));
   }
+  g.restore();
 }
 
 const modelImages = new Map();
+// These places are drawn at double detail, so that things are easier to recognize.
+const DETAIL_PLACES = { store: 2, forest: 2 };
+let viewDetail = 1;
+
+function setViewDetail(place) {
+  viewDetail = DETAIL_PLACES[place] ?? 1;
+  canvas.width = VIEW_W * viewDetail;
+  canvas.height = VIEW_H * viewDetail;
+  fineQueue.length = 0;
+  fineQueued.clear();
+}
+
+// Draws a picture at its size in the world, however finely it was made.
+function paintImage(image, x, y) {
+  const detail = image.detail ?? 1;
+  ctx.drawImage(image, x, y, image.width / detail, image.height / detail);
+}
+
+function makeModelImage(sprite, facing, frame, headFacing, colour, detail) {
+  const paint = (g) => drawModel(g, sprite, facing, frame, headFacing, colour, detail);
+  // A butterfly's wings are thin enough that an outline would make them all outline.
+  const image = sprite === "beaiveloddi" ? unoutlined(120 * detail, 90 * detail, paint) : outlined(120 * detail, 90 * detail, paint, detail);
+  image.detail = detail;
+  return image;
+}
+
+function plainModelImage(sprite, facing, frame, headFacing = facing, colour) {
+  const key = `${sprite}/${facing}/${frame}/${headFacing}/${colour}/1`;
+  if (!modelImages.has(key)) modelImages.set(key, makeModelImage(sprite, facing, frame, headFacing, colour, 1));
+  return modelImages.get(key);
+}
+
+// People and animals have many pictures, so a fine one is made only when it's needed, a little at a time between frames,
+// with the plain one showing until it's ready. That keeps the game from stuttering.
+const FINE_BUDGET_MS = 4, FINE_REST_MS = 8;
+const fineQueue = [];
+const fineQueued = new Set();
+let finePumping = false;
+
+function queueFinePicture(key, sprite, facing, frame, headFacing, colour) {
+  if (fineQueued.has(key)) return;
+  if (!MODELS[sprite](frame, colour)[0].kind) { // built of boxes, which is quick
+    modelImages.set(key, makeModelImage(sprite, facing, frame, headFacing, colour, viewDetail));
+    return;
+  }
+  fineQueued.add(key);
+  fineQueue.push(function* make() {
+    const detail = viewDetail, w = 120 * detail, h = 90 * detail;
+    const c = document.createElement("canvas");
+    c.width = w; c.height = h;
+    const g = c.getContext("2d");
+    const shapes = MODELS[sprite](frame, colour).map((shape) => turnedShape(shape, MODEL_FACINGS[shape.head ? headFacing : facing]));
+    yield* roundModelRows(g, shapes, detail);
+    yield;
+    addOutline(g, w, h, detail);
+    c.detail = detail;
+    modelImages.set(key, c);
+    fineQueued.delete(key);
+  }());
+  if (!finePumping) {
+    finePumping = true;
+    setTimeout(pumpFinePictures, 0);
+  }
+}
+
+function pumpFinePictures() {
+  const start = performance.now();
+  while (fineQueue.length && performance.now() - start < FINE_BUDGET_MS) {
+    // The newest first, as that's what is on the screen now.
+    const job = fineQueue[fineQueue.length - 1];
+    if (job.next().done) fineQueue.splice(fineQueue.indexOf(job), 1);
+  }
+  if (fineQueue.length) setTimeout(pumpFinePictures, FINE_REST_MS);
+  else finePumping = false;
+}
+
 function modelImage(sprite, facing, frame, headFacing = facing, colour) {
-  const key = `${sprite}/${facing}/${frame}/${headFacing}/${colour}`;
+  if (viewDetail === 1) return plainModelImage(sprite, facing, frame, headFacing, colour);
+  const key = `${sprite}/${facing}/${frame}/${headFacing}/${colour}/${viewDetail}`;
   if (!modelImages.has(key)) {
-    const paint = (g) => drawModel(g, sprite, facing, frame, headFacing, colour);
-    modelImages.set(key, sprite === "beaiveloddi" ? unoutlined(120, 90, paint) : outlined(120, 90, paint)); // an outline would make it heavy
+    if (sprite.startsWith("person_") || ANIMALS.has(sprite)) {
+      queueFinePicture(key, sprite, facing, frame, headFacing, colour);
+      return modelImages.get(key) ?? plainModelImage(sprite, facing, frame, headFacing, colour);
+    }
+    modelImages.set(key, makeModelImage(sprite, facing, frame, headFacing, colour, viewDetail));
   }
   return modelImages.get(key);
+}
+
+// Twice the size with Scale2x, which rounds off stair-steps and keeps a picture's drawing and colours exactly.
+function doubledImage(image) {
+  if (image.fine) return image.fine;
+  const w = image.width, h = image.height;
+  const from = new Uint32Array(image.getContext("2d").getImageData(0, 0, w, h).data.buffer);
+  const c = document.createElement("canvas");
+  c.width = w * 2; c.height = h * 2;
+  const g = c.getContext("2d");
+  const out = g.createImageData(w * 2, h * 2);
+  const to = new Uint32Array(out.data.buffer);
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    const at = y * w + x, e = from[at];
+    const b = y ? from[at - w] : e, d = x ? from[at - 1] : e, f = x + 1 < w ? from[at + 1] : e, u = y + 1 < h ? from[at + w] : e;
+    const top = y * 2 * w * 2 + x * 2, under = top + w * 2;
+    if (b !== u && d !== f) {
+      to[top] = d === b ? d : e;
+      to[top + 1] = b === f ? f : e;
+      to[under] = d === u ? d : e;
+      to[under + 1] = u === f ? f : e;
+    } else to[top] = to[top + 1] = to[under] = to[under + 1] = e;
+  }
+  g.putImageData(out, 0, 0);
+  c.detail = 2;
+  image.fine = c;
+  return c;
 }
 
 // An image cut out of its empty surroundings, for the menu and the word card.
@@ -952,6 +1082,7 @@ function croppedImage(image) {
   c.width = x1 - x0 + 1;
   c.height = y1 - y0 + 1;
   c.getContext("2d").drawImage(image, -x0, -y0);
+  c.detail = image.detail;
   return c;
 }
 
@@ -1012,6 +1143,32 @@ function paintPuff(puff, now) {
   }
 }
 
+const SPILLED_SCALE = 0.7;
+const IN_BASKET = { high: 6, wide: 6, apart: 2, sinks: 3, rim: 1 }; // the front rim, below the basket's middle, hides what is under it
+
+// The player's basket, with the tops of the last things put in it just showing inside.
+function paintCarried(cx, cy, [dx, dy]) {
+  const [swingX, swingY] = basketSwing();
+  const x = cx + dx + swingX, y = cy + dy + swingY;
+  if (cart.bag) {
+    paintImage(modelImage("till_bag", 0, 0, 0, Number(cart.bag.slice(3))), x - MODEL_ANCHOR.x, y - MODEL_ANCHOR.y + 8);
+    return;
+  }
+  paintImage(modelImage("player_basket", 0, 0), x - MODEL_ANCHOR.x, y - MODEL_ANCHOR.y + 3);
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(x - 12, y - 20, 24, 20 + IN_BASKET.rim);
+  ctx.clip();
+  ctx.imageSmoothingEnabled = true; // at this size, single pixels picked out would only be speckles
+  cart.goods.slice(-3).forEach((word, i, shown) => {
+    const image = pictureOf(word);
+    const fit = Math.min(IN_BASKET.wide / image.width, IN_BASKET.high / image.height);
+    const wide = image.width * fit, high = image.height * fit;
+    ctx.drawImage(image, x + (i - (shown.length - 1) / 2) * IN_BASKET.apart - wide / 2, y + IN_BASKET.sinks - high, wide, high);
+  });
+  ctx.restore();
+}
+
 function draw(now) {
   if (!worldImage) worldImage = buildWorld();
   const dt = lastDraw === null ? 16 : Math.max(0, Math.min(now - lastDraw, 100));
@@ -1031,8 +1188,11 @@ function draw(now) {
   const seen = (x, y, pad = 60) => x > camX - pad && x < camX + VIEW_W + pad && y > camY - pad && y < camY + VIEW_H + pad;
 
   ctx.save();
+  ctx.scale(viewDetail, viewDetail);
+  ctx.imageSmoothingEnabled = false;
   ctx.translate(-camX, -camY);
-  ctx.drawImage(worldImage, camX, camY, VIEW_W, VIEW_H, camX, camY, VIEW_W, VIEW_H);
+  if (viewDetail > 1) ctx.drawImage(doubledImage(worldImage), camX * 2, camY * 2, VIEW_W * 2, VIEW_H * 2, camX, camY, VIEW_W, VIEW_H);
+  else ctx.drawImage(worldImage, camX, camY, VIEW_W, VIEW_H, camX, camY, VIEW_W, VIEW_H);
 
   // River glints along the flow, and grass moving in the wind.
   for (let ty = 0; ty < HEIGHT; ty++) for (let tx = 0; tx < WIDTH; tx++) {
@@ -1064,11 +1224,12 @@ function draw(now) {
     if (!seen(t.x, t.y, 70)) continue;
     // In front of the character and covering them, a tree turns see-through.
     const left = t.x - t.image.width / 2, top = t.y + 2 - t.image.height;
-    const covers = t.mx + t.my > me.x + me.y && footX + 8 > left && footX - 8 < left + t.image.width && footY > top && footY - 30 < t.y;
+    const covers = !"CM".includes(MAP[t.ty]?.[t.tx]) && t.mx + t.my > me.x + me.y && footX + 8 > left && footX - 8 < left + t.image.width && footY > top && footY - 30 < t.y;
     scene.push({ d: t.mx + t.my, paint: () => {
       if (covers) ctx.globalAlpha = 0.5;
       if (t.block) {
-        ctx.drawImage(t.image, t.x - 16, t.y + 2 - t.image.height);
+        if (viewDetail > 1) paintImage(doubledImage(t.image), t.x - 16, t.y + 2 - t.image.height);
+        else ctx.drawImage(t.image, t.x - 16, t.y + 2 - t.image.height);
       } else {
         const wind = Math.sin(now / 1300 + t.tx * 2 + t.ty) + Math.sin(now / 470 + t.tx) * 0.4;
         drawLiving(t.image, t.x - Math.floor(t.image.width / 2), t.y + 2 - t.image.height, { lean: wind * 1.4 });
@@ -1111,7 +1272,7 @@ function draw(now) {
           castShadow(ctx, Math.round(isoX(box.x1, box.y1)) - 2, Math.round(isoY(box.x1, box.y1)) - 2, 16, 6);
           ctx.globalAlpha = 1;
         }
-        ctx.drawImage(modelImage(o.word.sprite, pose.facing, pose.frame, pose.head, o.word.colour), Math.round(hx) - MODEL_ANCHOR.x, Math.round(hy) - MODEL_ANCHOR.y);
+        paintImage(modelImage(o.word.sprite, pose.facing, pose.frame, pose.head, o.word.colour), Math.round(hx) - MODEL_ANCHOR.x, Math.round(hy) - MODEL_ANCHOR.y);
       }});
       continue;
     }
@@ -1136,7 +1297,9 @@ function draw(now) {
       if (MODELS[o.word.sprite]) {
         const pose = animalPose(o, now);
         const bob = onWater ? Math.round(Math.sin((now + o.phase) / 520)) : 0;
-        ctx.drawImage(modelImage(o.word.sprite, pose.facing, pose.frame, pose.head, o.word.colour), Math.round(cx) - MODEL_ANCHOR.x, Math.round(cy) - MODEL_ANCHOR.y - pose.lift - bob);
+        ctx.globalAlpha = o.fade ?? 1;
+        paintImage(modelImage(o.word.sprite, pose.facing, pose.frame, pose.head, o.word.colour), Math.round(cx) - MODEL_ANCHOR.x, Math.round(cy) - MODEL_ANCHOR.y - pose.lift - bob);
+        ctx.globalAlpha = 1;
         return;
       }
       const image = pictureOf(o.word);
@@ -1146,6 +1309,34 @@ function draw(now) {
         lean = Math.sin((now + o.phase) / 700) * 1.5;
       }
       drawLiving(image, cx - Math.floor(image.width / 2), cy + 3 - image.height - lift, { lean, squash, flip });
+    }});
+  }
+  for (const thing of storeLife(now)) {
+    const cx = Math.round(isoX(thing.x, thing.y)), cy = Math.round(isoY(thing.x, thing.y) + HH - (thing.lift || 0));
+    if (!seen(cx, cy)) continue;
+    scene.push({ d: thing.d ?? thing.x + thing.y + 1 + (thing.order || 0), paint: () => {
+      ctx.globalAlpha = (thing.alpha ?? 1) * 0.34;
+      if (thing.shadow) {
+        ctx.fillStyle = SHADOW;
+        castShadow(ctx, cx - 3, cy + 1, 13, 5);
+      }
+      ctx.globalAlpha = thing.alpha ?? 1;
+      if (thing.marker) {
+        // Points out the basket to take first.
+        ctx.fillStyle = "#ffd25a";
+        for (let row = 0; row < 5; row++) ctx.fillRect(cx - 5 + row, cy - 12 + row, 11 - row * 2, 1);
+        ctx.globalAlpha = 1;
+        return;
+      }
+      if (thing.picture) {
+        const image = pictureOf(thing.picture), worldWide = image.width / (image.detail ?? 1), worldHigh = image.height / (image.detail ?? 1);
+        const scale = Math.min(thing.scale ?? SPILLED_SCALE, (thing.fits ?? Infinity) / Math.max(worldWide, worldHigh)), wide = Math.round(worldWide * scale), high = Math.round(worldHigh * scale);
+        ctx.drawImage(image, cx - Math.floor(wide / 2), cy - high + 2, wide, high);
+        ctx.globalAlpha = 1;
+        return;
+      }
+      paintImage(modelImage(thing.sprite, thing.facing, thing.frame, thing.facing, thing.carrying), cx - MODEL_ANCHOR.x, cy - MODEL_ANCHOR.y);
+      ctx.globalAlpha = 1;
     }});
   }
   // Eight directions: the game's own sheet for straight ones, the diagonal sheet for the rest.
@@ -1159,23 +1350,23 @@ function draw(now) {
   const knocked = me.knockedAt === null ? null : now - me.knockedAt;
   if (me.sittingOn) {
     const since = now - me.sitAt;
-    sheet = sheetFor(look);
+    sheet = sheetFor(look, viewDetail > 1);
     row = SIT_ROW;
     flip = false;
     if (since < SIT.downMs || since > SIT.downMs + SIT.lookMs) frameCol = 0;
     else frameCol = 1 + Math.floor((since - SIT.downMs) / SIT.swingMs) % 6; // the legs swing from the seat's edge
   } else if (me.slideAt !== null) {
-    sheet = sheetFor(look);
+    sheet = sheetFor(look, viewDetail > 1);
     row = SLIDE_ROW;
     frameCol = now - me.slideAt < 50 ? 0 : 1 + Math.floor((now - me.slideAt) / 70) % 3;
     flip = me.slideLeft;
   } else if (me.restAt !== null) {
-    sheet = sheetFor(look);
+    sheet = sheetFor(look, viewDetail > 1);
     row = SLIDE_ROW;
     frameCol = now - me.restAt < SLIDE.restMs * 0.7 ? 4 : 5;
     flip = me.slideLeft;
   } else if (knocked !== null) {
-    sheet = sheetFor(look);
+    sheet = sheetFor(look, viewDetail > 1);
     flip = false;
     if (knocked < KNOCK.sitAt) {
       row = FALL_ROW;
@@ -1195,24 +1386,24 @@ function draw(now) {
       }
     }
   } else if (me.running) {
-    sheet = sheetFor(look);
+    sheet = sheetFor(look, viewDetail > 1);
     row = RUN_ROWS + RUN_FACING[facingName] * RUN_SWAYS + sway + 3;
   } else if (me.jumpedAt !== null) {
     const t = (now - me.jumpedAt) / JUMP.ms;
-    sheet = sheetFor(look);
+    sheet = sheetFor(look, viewDetail > 1);
     row = JUMP_ROWS[facingName];
     frameCol = t < 0.35 ? 0 : t < 0.65 ? 1 : 2;
   } else if (action || crouching) {
-    sheet = sheetFor(look);
+    sheet = sheetFor(look, viewDetail > 1);
     [row, frameCol] = playerFrame(now);
-    flip = false;
+    flip = !!action?.flip;
   } else if (straight) {
-    sheet = sheetFor(look);
+    sheet = sheetFor(look, viewDetail > 1);
     row = !me.moving && sway === 0 && straight in LIFT_ROW && Math.abs(cloth.y) > CLOTH.liftAt
       ? LIFT_ROW[straight]
       : poseRow(me.moving, straight, sway);
   } else {
-    sheet = sheetFor(look);
+    sheet = sheetFor(look, viewDetail > 1);
     row = DIAGONAL_ROWS + ((me.moving ? 2 : 0) + (facingName.startsWith("N") ? 1 : 0)) * 5 + sway + 2;
   }
   scene.push({ d: me.x + me.y, paint: () => {
@@ -1224,15 +1415,18 @@ function draw(now) {
     castShadow(ctx, cx - 3, ground + 2, 19 - Math.round(me.height * 0.4), 7 - Math.round(me.height * 0.15));
     ctx.globalAlpha = 1;
     if (!sheet.complete) return;
+    const carried = carriedBasket();
+    if (carried && !carried[2]) paintCarried(cx, cy, carried);
     if (flip) {
       ctx.save();
       ctx.translate(cx + 12, cy + 4 - FRAME_H);
       ctx.scale(-1, 1);
-      ctx.drawImage(sheet, frameCol * FRAME_W, row * FRAME_H, FRAME_W, FRAME_H, 0, 0, FRAME_W, FRAME_H);
+      ctx.drawImage(sheet, frameCol * FRAME_W * viewDetail, row * FRAME_H * viewDetail, FRAME_W * viewDetail, FRAME_H * viewDetail, 0, 0, FRAME_W, FRAME_H);
       ctx.restore();
     } else {
-      ctx.drawImage(sheet, frameCol * FRAME_W, row * FRAME_H, FRAME_W, FRAME_H, cx - 12, cy + 4 - FRAME_H, FRAME_W, FRAME_H);
+      ctx.drawImage(sheet, frameCol * FRAME_W * viewDetail, row * FRAME_H * viewDetail, FRAME_W * viewDetail, FRAME_H * viewDetail, cx - 12, cy + 4 - FRAME_H, FRAME_W, FRAME_H);
     }
+    if (carried && carried[2]) paintCarried(cx, cy, carried);
   }});
   // Foot dust lies on the ground where the foot landed, so someone walking towards the viewer leaves it behind them.
   for (const puff of puffs) {

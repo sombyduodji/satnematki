@@ -1,3 +1,4 @@
+@font-face { font-family: "Satnematki Hand"; src: url("../art/fonts/Caveat.ttf") format("truetype"); font-display: swap; }
 * { box-sizing: border-box; }
 html { background: #20303a; }
 :root {
@@ -66,6 +67,28 @@ body.menu #game-title { display: block; }
   cursor: pointer;
 }
 #view { position: relative; }
+#hint { position: absolute; transform: translateX(-50%); padding: 3px 8px; border-radius: 10px; background: #f4f1e8; color: #14213d; font-size: 14px; white-space: nowrap; pointer-events: none; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3); }
+#hint[hidden] { display: none; }
+.paper-list {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 0 18px; flex: 1; margin: 2px 12px 4px 0; padding: 10px 18px 10px 30px; list-style: none;
+  color: #23305e; font-family: "Satnematki Hand", "Segoe Script", "Bradley Hand", "Comic Sans MS", cursive; font-size: 25px; font-weight: 600; line-height: 28px;
+  background: repeating-linear-gradient(#fbf6e4 0 27px, #bcd0e4 27px 28px); background-position: 0 10px; border-left: 3px solid #e2a0a0;
+  box-shadow: 1px 3px 6px rgba(0, 0, 0, 0.4); transform: rotate(-0.6deg);
+}
+.paper-list small { margin-left: 8px; font-size: 19px; font-weight: 400; color: #7a6a4a; }
+.paper-list li[data-left]::after { content: " (" attr(data-left) ")"; font-size: 18px; font-weight: 400; color: #7a6a4a; }
+.paper-list .bought { text-decoration: line-through; text-decoration-color: #b5342c; text-decoration-thickness: 2px; color: #8a90a8; }
+#top-hint { min-height: 24px; margin-bottom: 4px; font-size: 15px; visibility: hidden; }
+#top-hint kbd { padding: 0 6px; border-radius: 4px; background: var(--sami-yellow); color: #14213d; font: bold 13px sans-serif; }
+#top-hint small { opacity: 0.75; }
+body.menu #top-hint { display: none; }
+#card.keypad { display: block; text-align: center; }
+#card.keypad .sum { font-size: 28px; font-weight: bold; margin-bottom: 6px; }
+#card.keypad .keys { display: grid; grid-template-columns: repeat(3, 64px); gap: 6px; justify-content: center; margin-bottom: 8px; }
+#card.keypad .keys button { min-height: 44px; font-size: 20px; }
+#hint::after { content: ""; position: absolute; left: 50%; bottom: -5px; margin-left: -5px; border: 5px solid transparent; border-bottom: 0; border-top-color: #f4f1e8; }
+#hint kbd { padding: 0 5px; border-radius: 4px; background: #14213d; color: #ffd25a; font: bold 13px sans-serif; }
+#hint small { color: #5a6670; }
 #timer {
   position: absolute;
   top: 8px;
@@ -139,6 +162,8 @@ body.menu #game-title { display: block; }
 body.menu #view, body.menu #pad, body.menu #in-game { display: none; }
 #card.places { display: block; padding: 24px 14px 14px; background: var(--sami-stripe), var(--sami-blue); border-radius: 10px; }
 .demo-notice { margin: 0 0 10px; padding: 6px 10px; font-size: 14px; line-height: 1.3; color: #14213d; background: #f4f1e8; border-left: 5px solid var(--sami-red); border-radius: 4px; }
+#card.places .help-switch { display: block; width: 100%; min-height: 36px; margin-bottom: 10px; font-weight: 400; }
+#card.places .help-switch[aria-pressed=true] { color: #14213d; background: var(--sami-yellow); border-color: var(--sami-yellow); }
 .modes { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 10px; }
 #card.places .modes button { flex-direction: row; justify-content: center; min-height: 40px; font-weight: 400; }
 #card.places .modes button[aria-pressed=true] { color: #14213d; background: var(--sami-yellow); border-color: var(--sami-yellow); font-weight: 700; }
@@ -306,7 +331,7 @@ body.menu #view, body.menu #pad, body.menu #in-game { display: none; }
   border: 2px solid #3b5564;
   border-radius: 8px;
 }
-#change-outfit, #change-place {
+#change-outfit, #change-place, #help-toggle {
   font: inherit;
   padding: 0;
   border: 0;
@@ -317,8 +342,8 @@ body.menu #view, body.menu #pad, body.menu #in-game { display: none; }
 }
 #pad {
   display: none;
-  grid-template-areas: ". up run jump" "left down right crouch";
-  grid-template-columns: repeat(4, 64px);
+  grid-template-areas: ". up . run jump" "left down right use crouch";
+  grid-template-columns: repeat(5, 62px);
   grid-auto-rows: 56px;
   gap: 6px;
   justify-content: center;
@@ -339,6 +364,14 @@ body.menu #view, body.menu #pad, body.menu #in-game { display: none; }
 #run { grid-area: run; }
 #jump { grid-area: jump; }
 #crouch { grid-area: crouch; }
+#use { grid-area: use; }
 @media (pointer: coarse) { #pad { display: grid; } }
 footer { font-size: 13px; color: #a9bac2; }
 footer a { color: #cfe3ee; }
+
+/* Gold stars in a corner of each place in the menu, for how far along it is, out of five. */
+#card.places button.has-stars { position: relative; }
+.place-stars { position: absolute; top: 6px; right: 7px; display: flex; gap: 1px; font-size: 15px; line-height: 1; pointer-events: none; }
+.place-stars i { font-style: normal; color: transparent; }
+.place-stars i.full { color: #ffc61e; text-shadow: 0 0 4px rgba(255, 170, 0, 0.7); }
+.place-stars i.half { background: linear-gradient(90deg, #ffc61e 50%, transparent 50%); -webkit-background-clip: text; background-clip: text; }

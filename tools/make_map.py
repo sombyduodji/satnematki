@@ -4,7 +4,7 @@
 Test maps for now. The forest has a river with two bridges, two paths each way and forest at the edges.
 Tiles: g grass, t tree, w water, b bridge, p path; a asphalt, q parking bay, s pavement; F wooden floor, f tiled floor;
 and the solid B building, W wall, X low wall, K bookshelf, S store shelf, R fridge, Z freezer, P produce crate,
-C till, D desk; and in the classroom L floor, E pupil's desk, T teacher's desk, V blackboard wall, G window wall.
+C till, M meat counter, D desk; and in the classroom L floor, E pupil's desk, T teacher's desk, V blackboard wall, G window wall.
 Spots are where things can be placed. The game drops any that something would hide; see openSpot in src/game.js.
 
 Usage: python3 tools/make_map.py
@@ -149,6 +149,9 @@ shelves(store, "P", (9,), ((16, 24),))
 shelves(store, "S", (14,), ((5, 13),))
 shelves(store, "Z", (14,), ((16, 24),))
 shelves(store, "C", (18,), ((6, 9), (20, 23)))
+# The meat counter by the left wall: M, with the butcher in a pocket of floor behind it that nobody else can get into.
+shelves(store, "M", (5, 6, 7, 8), ((3, 3),))
+shelves(store, "M", (4, 9), ((2, 3),))
 
 
 def fixture_spots(grid, tile):
@@ -158,8 +161,8 @@ def fixture_spots(grid, tile):
 
 library_place = rooms(library, (14, 19), [])
 library_place["spots"].update(bookshelf=fixture_spots(library, "K"), table=fixture_spots(library, "D"))
-store_place = rooms(store, (15, 19), [])
-store_place["spots"].update(shelf=fixture_spots(store, "S"), fridge=fixture_spots(store, "R"), freezer=fixture_spots(store, "Z"), produce=fixture_spots(store, "P"))
+store_place = rooms(store, (15, 18), [])
+store_place["spots"].update(meat=[spot for spot in fixture_spots(store, "M") if spot[0] == 3 and 6 <= spot[1] <= 8], shelf=fixture_spots(store, "S"), fridge=fixture_spots(store, "R"), freezer=fixture_spots(store, "Z"), produce=fixture_spots(store, "P"))
 
 # Car park: rows of marked bays, with buildings around and a pavement along them.
 city = blank(36, 28, "a")

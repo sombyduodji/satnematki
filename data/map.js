@@ -1888,12 +1888,12 @@ window.MAHTTE_MAPS = {
    "WWWWWWWWWWWWWWWWWWWWWWWWWWWWXX",
    "WWffffffffffffffffffffffffffXX",
    "WWffffffffffffffffffffffffffXX",
-   "WWfffRRRRRRRRRffZZZZZZZZZfffXX",
-   "WWffffffffffffffffffffffffffXX",
-   "WWffffffffffffffffffffffffffXX",
-   "WWffffffffffffffffffffffffffXX",
-   "WWffffffffffffffffffffffffffXX",
-   "WWfffSSSSSSSSSffPPPPPPPPPfffXX",
+   "WWMMfRRRRRRRRRffZZZZZZZZZfffXX",
+   "WWfMffffffffffffffffffffffffXX",
+   "WWfMffffffffffffffffffffffffXX",
+   "WWfMffffffffffffffffffffffffXX",
+   "WWfMffffffffffffffffffffffffXX",
+   "WWMMfSSSSSSSSSffPPPPPPPPPfffXX",
    "WWffffffffffffffffffffffffffXX",
    "WWffffffffffffffffffffffffffXX",
    "WWffffffffffffffffffffffffffXX",
@@ -1909,11 +1909,25 @@ window.MAHTTE_MAPS = {
   ],
   "start": {
    "x": 15,
-   "y": 19
+   "y": 18
   },
   "spots": {
    "land": [],
    "water": [],
+   "meat": [
+    [
+     3,
+     6
+    ],
+    [
+     3,
+     7
+    ],
+    [
+     3,
+     8
+    ]
+   ],
    "shelf": [
     [
      5,
