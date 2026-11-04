@@ -2,6 +2,7 @@
 // means. Touching anything shows its word and translation, so a child who knows
 // no words yet can learn by exploring. There is no way to lose.
 const WORDS_PER_ROUND = 8;
+const FOREST_APART = 10; // tiles between things placed in the forest, if there's room
 const PLACING_TRIES = 20;
 const BEST_TIMES = 10;
 
@@ -60,7 +61,7 @@ const TEXT = {
   guide: {
     goal: {
       home: "Etsi se tai hän, jonka nimi lukee ylhäällä. Mene lähelle, niin näet, oliko se oikea.",
-      animals: "Etsi eläin, jonka nimi lukee ylhäällä. Mene sen luo, niin näet, oliko se oikea.",
+      forest: "Etsi eläin, jonka nimi lukee ylhäällä. Mene sen luo, niin näet, oliko se oikea.",
       "city-names": "Etsi se, jonka nimi lukee ylhäällä. Mene sen luo, niin näet, oliko se oikea.",
       "city-mixed": "Etsi ajoneuvo, jonka nimi ja väri lukevat ylhäällä, esimerkiksi biila: ruoksat.",
       city: "Etsi ajoneuvo, joka lukee ylhäällä, esimerkiksi rukses biila.",
@@ -71,13 +72,14 @@ const TEXT = {
       classroom: "Etsi oikea numero pulpetilta. Mene pulpetin tuolin luo ja paina C, niin istut ja katsot numeron. Puhelimessa paina Istu tai napauta pulpettia.",
     },
     move: "Liiku nuolilla tai WASD-näppäimillä tai napauta. Puhelimessa käytä painikkeita.",
-    run: "Juokse: pidä Shift pohjassa. Juostessa et voi koskea mihinkään, ja jos osut johonkin, liu'ut mahallasi!",
+    run: "Juokse: pidä Shift pohjassa. Juostessa et voi koskea mihinkään, ja jos osut johonkin, kaadut tai liu'ut mahallasi!",
     jump: {
       forest: "Hyppää: välilyönti. Jos hyppäät päin puuta, kaadut!",
       city: "Hyppää: välilyönti. Jos hyppäät päin ajoneuvoa tai seinää, kaadut!",
       indoors: "Hyppää: välilyönti. Jos hyppäät päin hyllyä tai seinää, kaadut!",
-      classroom: "Luokassa ei hypitä.",
+      classroom: "Hyppää: välilyönti. Jos hyppäät päin pulpettia, kaadut!",
     },
+    listen: "Kuuntele, mitä hahmo pyytää etsimään, ja mene sen luo. Kuule pyyntö uudelleen painikkeesta tai R-näppäimestä. Sanat näkyvät kierroksen lopussa.",
     crouch: "Kyykisty: C.",
     crouchClassroom: "Kyykisty: C, kun tuoli ei ole lähellä.",
     ok: "OK",
@@ -88,11 +90,19 @@ const TEXT = {
   sit: "Istu",
   yourTime: "Aikasi:",
   bestTimes: "Parhaat ajat",
+  bestTimesAudio: "Parhaat ajat, vain ääni",
   newRecord: "Uusi ennätys!",
   choosePlace: (name) => (name ? `Hei, ${name}! Minne mennään?` : "Minne mennään?"),
   mainMenu: "Päävalikkoon",
   changePlayer: "Vaihda pelaajaa",
   playAgain: "Pelaa taas",
+  modeBoth: "Ääni ja teksti",
+  modeAudio: "Vain ääni",
+  modeHint: "Sanat kuuluvat vain ääneen, ja ne näkyvät kierroksen lopussa.",
+  listen: "Kuuntele",
+  hearAgain: "Kuuntele uudelleen",
+  notYet: "Ei vielä. Kuuntele, mitä etsimme.",
+  heardWords: "Kuulit nämä sanat",
   demoNotice: "Tämä on vain teknologiademo. Ominaisuudet ja pelattavuus voivat vielä muuttua paljon mahdollista lopullista versiota varten. Yhtäkään käännöstä ei ole tarkistettu, ja ne on tehty automaattisesti.",
   best: "Paras:",
   back: "← Takaisin",
@@ -173,9 +183,20 @@ function carParkWords(findCount, extraCount) {
   return { find: words.slice(0, findCount), extra: words.slice(findCount, findCount + extraCount) };
 }
 
+// A round in the forest has one to three birds on the map, at least one of them to find; the rest are other animals.
+const FOREST_BIRDS = new Set(["rievssat", "goahppil", "beahceloddi", "garanas", "njukca", "goaskin", "jievjaskuolfi"]);
+
+function forestWords(findCount, extraCount) {
+  const animals = shuffled(wordsOfTheme("animal"));
+  const [firstBird, ...birds] = animals.filter((w) => FOREST_BIRDS.has(w.sprite)).slice(0, 1 + Math.floor(Math.random() * 3));
+  const others = animals.filter((w) => !FOREST_BIRDS.has(w.sprite)).slice(0, findCount + extraCount - birds.length - 1);
+  const words = [firstBird, ...shuffled([...birds, ...others])];
+  return { find: words.slice(0, findCount), extra: words.slice(findCount) };
+}
+
 const THEMES = [
   { id: "home", title: "Koti", place: "home", sprite: "sofa", words: () => plainWords("home", 8, 99) },
-  { id: "animals", title: "Eläimet", place: "forest", sprite: "rieban", words: () => plainWords("animal", 8, 3) },
+  { id: "forest", title: "Eläimet", place: "forest", sprite: "rieban", words: () => forestWords(8, 3) },
   { id: "city-names", title: "Parkkipaikka", level: "helppo", example: "biila", place: "city", sprite: "car", colour: "red", words: () => carParkWords(8, 4) },
   { id: "city-mixed", title: "Parkkipaikka", level: "keskitaso", example: "biila: vielgat", place: "city", sprite: "bus", colour: "yellow", words: () => colouredWords("vehicle", 6, 5, easyPhrase) },
   { id: "city", title: "Parkkipaikka", level: "vaikeampi", example: "vilges biila", place: "city", sprite: "truck", colour: "blue", words: () => colouredWords("vehicle", 6, 5, attributivePhrase) },
@@ -241,7 +262,7 @@ const SIT_ROW = 98;
 // lookAhead: a straight run into something within this many tiles dives in time. pathWidth: how close to the runner's
 // centre line it must be. contact: how much of a step being pushed back by anything counts as hitting it, so only
 // a shallow brush along something is run past.
-const SLIDE = { ms: 340, lookAhead: 1.1, pathWidth: 0.1, contact: 0.3, restMs: 380 };
+const SLIDE = { ms: 340, lookAhead: 1.1, contact: 0.3, headOn: 0.35, freeAhead: 0.8, restMs: 380 };
 const RUN = { speed: 1.8, animation: 1.7, cloth: 1.9, stepStrength: 1.5 };
 const JUMP = { ms: 520, height: 14, clears: 6 }; // height is half the character; above clears, low things pass under
 const dusty = () => placeName === "forest"; // puffs of dust are for outdoors in the forest, not town or indoors
@@ -368,9 +389,20 @@ function saveName(name) {
   }
 }
 
+// Playing by ear is a different game, so it has best times of its own, as different levels do.
+const timesKey = (themeId) => `mahtte.times.${themeId}${audioOnly ? ".audio" : ""}`;
+
+// The forest's animals changed, so times from before that no longer compare and are forgotten.
+try {
+  localStorage.removeItem("mahtte.times.animals");
+  localStorage.removeItem("mahtte.times.animals.audio");
+} catch {
+  // Private windows may refuse; those old times are no longer read anyway.
+}
+
 function loadTimes(themeId) {
   try {
-    const saved = JSON.parse(localStorage.getItem(`mahtte.times.${themeId}`));
+    const saved = JSON.parse(localStorage.getItem(timesKey(themeId)));
     return Array.isArray(saved) ? saved.filter((t) => Number.isFinite(t?.ms)) : [];
   } catch {
     return [];
@@ -382,7 +414,7 @@ function addTime(ms, name, themeId) {
   const entry = { ms, name };
   const times = [...loadTimes(themeId), entry].sort((a, b) => a.ms - b.ms).slice(0, BEST_TIMES);
   try {
-    localStorage.setItem(`mahtte.times.${themeId}`, JSON.stringify(times));
+    localStorage.setItem(timesKey(themeId), JSON.stringify(times));
   } catch {
     // Private windows may refuse; the list still shows for this round.
   }
@@ -427,6 +459,15 @@ async function finishRound(name, speech) {
 function showResults(times, place) {
   closeResults();
   const results = document.createElement("div");
+  queueMicrotask(() => {
+    // What was heard during the round, now shown with its meaning.
+    const list = results.querySelector(".heard");
+    for (const word of list ? heardWords : []) {
+      const row = document.createElement("li");
+      row.innerHTML = `<b lang="se">${escapeText(word.lemma)}</b> = ${escapeText(translation(word))}`;
+      list.append(row);
+    }
+  });
   results.id = "results";
   results.setAttribute("role", "dialog");
   results.innerHTML = `<div class="panel">
@@ -434,8 +475,9 @@ function showResults(times, place) {
       <div class="note">${TEXT.yourTime}</div>
       <div class="time">${formatTime(timer.ms)}</div>
       ${place === 0 ? `<div class="record">${TEXT.newRecord}</div>` : ""}
-      <h3>${TEXT.bestTimes}</h3>
+      <h3>${audioOnly ? TEXT.bestTimesAudio : TEXT.bestTimes}</h3>
       <ol></ol>
+      ${audioOnly ? `<h3>${TEXT.heardWords}</h3><ul class="heard"></ul>` : ""}
       <div class="buttons"><button id="again">${TEXT.again}</button><button id="places">${TEXT.mainMenu}</button></div>
     </div>`;
   times.forEach((time, i) => {
@@ -462,6 +504,7 @@ function shuffled(list) {
 function enterTheme(chosenTheme) {
   theme = chosenTheme;
   document.body.classList.remove("menu");
+  setAmbience(theme.place);
   try {
     localStorage.setItem("mahtte.last", theme.id);
   } catch {
@@ -474,9 +517,8 @@ function enterTheme(chosenTheme) {
   showGuide();
 }
 
-// In the classroom the on-screen pad sits instead of jumping and crouching.
+// In the classroom the on-screen pad's crouch button sits at a chair.
 function setPadForTheme() {
-  document.getElementById("jump").hidden = !!theme?.desks;
   document.getElementById("crouch").textContent = theme?.desks ? TEXT.sit : "Kyykky";
 }
 
@@ -488,7 +530,8 @@ function showGuide() {
   const guide = TEXT.guide;
   const inClassroom = theme.place === "classroom";
   const lines = [
-    guide.goal[inClassroom ? "classroom" : theme.id],
+    ...(audioOnly ? [guide.listen] : []),
+    ...(audioOnly && !inClassroom ? [] : [guide.goal[inClassroom ? "classroom" : theme.id]]),
     guide.move,
     guide.run,
     guide.jump[theme.place] || guide.jump.indoors,
@@ -528,6 +571,8 @@ function newRound() {
   const picked = [...find, ...extra];
   for (let attempt = 0; attempt < PLACING_TRIES; attempt++) {
     const used = new Set();
+    const placed = [];
+    const place = { forest: theme.place === "forest" };
     objects = picked.map((word) => {
       if (word.place === "home") {
         const [x, y, facing] = SPOTS.home[word.sprite];
@@ -537,7 +582,19 @@ function newRound() {
       const large = word.big || word.sprite === "viessu";
       const spots = word.place === "land" && large ? OPEN_SPOTS.large : OPEN_SPOTS[word.place];
       // Only a thing standing free could land on the character; the rest are in fixtures.
-      const spot = shuffled(spots).find((s) => (word.place !== "land" || clear(s)) && !used.has(`${s}`));
+      const open = shuffled(spots).filter((s) => (word.place !== "land" || clear(s)) && !used.has(`${s}`));
+      // In the forest things are spread around the map, as far apart as the spots left allow.
+      let spot = open[0];
+      if (place.forest && word.place === "land") {
+        for (let apart = FOREST_APART; apart > 0; apart--) {
+          const found = open.find(([x, y]) => placed.every(([px, py]) => Math.hypot(px - x, py - y) >= apart));
+          if (found) {
+            spot = found;
+            break;
+          }
+        }
+        placed.push(spot);
+      }
       used.add(`${spot}`);
       return { word, x: spot[0], y: spot[1], phase: Math.random() * 3000 };
     });
@@ -546,6 +603,8 @@ function newRound() {
   prepareLines(objects.map((o) => wordLine(o.word))); // only this round's, as there are hundreds in all
   buildAnimalsAhead();
   targets = shuffled(find);
+  heardWords = [];
+  prepareLines(targets.map((word) => askLine(word)));
   shoppingList = theme.ordered ? [...targets] : [];
   roundSize = find.length;
   stars = 0;
@@ -569,6 +628,11 @@ function showPrompt() {
   const starRow = "★".repeat(stars) + "☆".repeat(roundSize - stars);
   if (!theme) {
     promptEl.innerHTML = `<span>${escapeText(TEXT.choosePlace(loadName()))}</span>`;
+  } else if (targets.length && audioOnly) {
+    promptEl.innerHTML = `<span>${TEXT.listen}</span>
+      <button id="hear-again">🔊 ${TEXT.hearAgain}</button>
+      <span class="stars" aria-label="${stars}/${roundSize}">${starRow}</span>`;
+    promptEl.querySelector("#hear-again").addEventListener("click", hearAgain);
   } else if (targets.length) {
     const aim = targets[0].aim || targets[0].lemma;
     const aimOf = targets[0].aimOf ? `<span class="aim-of" lang="se">${escapeText(targets[0].aimOf)}:</span>` : "";
@@ -627,6 +691,34 @@ function answerLines() {
   return [...TEXT.right.map((_, i) => `audio/praise-${i}-${id}.wav`), ...TEXT.wrong.map((_, i) => `audio/wrong-${i}-${id}.wav`)];
 }
 
+// Audio only: the words are heard and not shown until the round has ended, to practise understanding spoken Sámi.
+let audioOnly = false;
+try {
+  audioOnly = localStorage.getItem("mahtte.mode") === "audio";
+} catch {
+  // Private windows may refuse; the game then starts with text.
+}
+
+function setAudioOnly(on) {
+  audioOnly = on;
+  try {
+    localStorage.setItem("mahtte.mode", on ? "audio" : "both");
+  } catch {
+    // It still holds for this visit.
+  }
+}
+
+// The line that asks for what to find next.
+function askLine(word, id = VOICES[look.gender]) {
+  if (word.number !== undefined) return `audio/ask-number-${word.number}-${id}.wav`;
+  if (word.spoken) return `audio/ask-${word.spoken}-${word.sprite}-${word.colour}-${id}.wav`;
+  return `audio/ask-${word.sprite}-${id}.wav`;
+}
+
+function hearAgain() {
+  if (!paused && targets.length && !rightSpeech) playVoice(askLine(targets[0]));
+}
+
 // The line that says what a thing is, as fetched by tools/fetch_voices.py.
 function wordLine(word, id = VOICES[look.gender]) {
   if (word.number !== undefined) return `audio/number-${word.number}-${id}.wav`;
@@ -638,12 +730,14 @@ async function playNextLine() {
   const src = voiceQueue.shift();
   if (!src) {
     voiceBusy = false;
+    duckAmbience(false);
     const done = voiceDone;
     voiceDone = null;
     done?.();
     return;
   }
   voiceBusy = true;
+  duckAmbience(true);
   const mine = ++lineNumber;
   const next = () => {
     if (mine !== lineNumber) return;
@@ -715,6 +809,7 @@ function stopVoice() {
   silenceLine();
   voiceQueue = [];
   voiceBusy = false;
+  duckAmbience(false);
   voiceDone?.();
   voiceDone = null;
 }
@@ -734,6 +829,7 @@ function pickLine(lines) {
 let announcement = 0;
 function announce() {
   announcement++;
+  if (targets.length) playVoice(askLine(targets[0]));
   document.getElementById("announce")?.remove();
   const target = promptEl.querySelector(".target");
   if (!target) return;
@@ -866,6 +962,8 @@ function showPlaces() {
   timer.running = false;
   showPrompt();
   document.body.classList.add("menu");
+  stopVoice();
+  setAmbience(null);
   menuPlaces();
   buildPlacesAhead();
 }
@@ -936,7 +1034,29 @@ function menuPlaces() {
   const notice = document.createElement("p");
   notice.className = "demo-notice";
   notice.textContent = TEXT.demoNotice;
-  cardEl.append(notice, who);
+  const modes = document.createElement("div");
+  modes.className = "modes";
+  modes.setAttribute("role", "group");
+  modes.setAttribute("aria-label", TEXT.listen);
+  const modeHint = document.createElement("p");
+  modeHint.className = "mode-hint";
+  const showModes = () => {
+    modes.querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String((b.dataset.mode === "audio") === audioOnly)));
+    modeHint.textContent = audioOnly ? TEXT.modeHint : "";
+  };
+  for (const [mode, label] of [["both", TEXT.modeBoth], ["audio", TEXT.modeAudio]]) {
+    const button = document.createElement("button");
+    button.dataset.mode = mode;
+    button.textContent = label;
+    button.addEventListener("click", () => {
+      setAudioOnly(mode === "audio");
+      menuPlaces(); // the best times shown are for this way of playing
+      cardEl.querySelector(`.modes [data-mode=${mode}]`).focus();
+    });
+    modes.append(button);
+  }
+  showModes();
+  cardEl.append(notice, who, modes, modeHint);
   const last = lastTheme();
   if (last) {
     cardEl.append(menuButton({
@@ -1126,12 +1246,15 @@ function showStartCard() {
 }
 
 let rightSpeech = null;
+let heardWords = [];
 
 function showCard(word, right) {
   preview = null;
   cardEl.className = right ? "right" : "";
   const plural = word.forms?.["Pl+Nom"]?.[0];
-  cardEl.innerHTML = `<div>
+  if (audioOnly) {
+    cardEl.innerHTML = `<div class="note">${right ? TEXT.found : TEXT.notYet}</div>`;
+  } else cardEl.innerHTML = `<div>
       <div class="note">${right ? TEXT.found : FAMILY.has(word.sprite) ? TEXT.thisIsPerson : TEXT.thisIs}</div>
       <div><span class="word" lang="se">${escapeText(word.lemma)}</span>
         <span class="translation">= ${escapeText(translation(word))}</span></div>
@@ -1152,9 +1275,10 @@ function showCard(word, right) {
   const person = FAMILY.has(word.sprite);
   bubble.querySelector(".say").textContent = `${say} ${word.thisWord || (person ? TEXT.thisPerson : TEXT.thisWord)(word.lemma)}`;
   bubble.querySelector(".note").textContent = `${sayFi} ${word.thisWordFi || (person ? TEXT.thisPersonFi : TEXT.thisWordFi)(translation(word))}`;
-  cardEl.append(bubble);
+  if (!audioOnly) cardEl.append(bubble);
   const id = VOICES[look.gender];
   const lines = [`audio/${right ? "praise" : "wrong"}-${line}-${id}.wav`, wordLine(word, id)];
+  if (!right && targets.length) lines.push(askLine(targets[0], id)); // and again what is being looked for
   // A find is always said in full: what is bumped into meanwhile stays quiet, and another find waits its turn.
   if (right) {
     if (rightSpeech) {
@@ -1174,6 +1298,7 @@ function touch(object, now) {
   const speech = showCard(object.word, right);
   if (!right) return;
   stars++;
+  heardWords.push(object.word);
   targets.shift();
   // Furniture and family stay where they are, but aren't asked about or spoken for again.
   if (object.word.place === "home") object.done = true;
@@ -1238,7 +1363,7 @@ function poseRow(walking, dir, sway) {
 let crouchClock = 0;
 // Rounded, as an animal can be between tiles.
 // At home things have their sizes, and the smallest wins, so someone on the sofa is found before the sofa.
-const objectAt = (x, y) => objects.find((o) => Math.round(o.x) === x && (Math.round(o.y) === y || (o.word.place === "bay" && o.y + 1 === y)));
+const objectAt = (x, y) => objects.find((o) => !o.animal?.crossing && Math.round(o.x) === x && (Math.round(o.y) === y || (o.word.place === "bay" && o.y + 1 === y)));
 function thingAtPoint(x, y) {
   const homeThings = objects.filter((o) => o.word.place === "home" && pointToBox(x, y, vehicleBox(o)) < 0.2);
   const area = (o) => HOME_THINGS[o.word.sprite][0] * HOME_THINGS[o.word.sprite][1];
@@ -1265,7 +1390,7 @@ const isLarge = (o) => o.word.sprite === "viessu" || o.word.big;
 const solidSize = (o) => (isLarge(o) ? MOVE.house : MOVE.thing);
 const canPassOver = (o) => me.height >= JUMP.clears && !isLarge(o);
 // A thing in water or in a fixture stands on a tile that is solid already, and is touched from beside it.
-const standsFree = (o) => o.word.place === "land";
+const standsFree = (o) => o.word.place === "land" && !o.animal?.crossing; // a bird on its way over the river is up in the air
 const thingReach = (o) => (boxed(o) ? MOVE.radius + 0.12 : standsFree(o) ? solidSize(o) + MOVE.radius + 0.1 : 0.95);
 
 // Width and length of a parked vehicle in tiles, in the two-tile bay that starts at its tile.
@@ -1368,7 +1493,10 @@ function collide() {
         pushOutOfCircle(tree.mx, tree.my, MOVE.trunk + MOVE.radius);
       }
     }
-    for (const chair of chairs) pushOutOfCircle(chair.x, chair.y, SIT_CHAIR_SIZE + MOVE.radius);
+    for (const chair of chairs) {
+      if (Math.hypot(me.x - chair.x, me.y - chair.y) < SIT_CHAIR_SIZE + MOVE.radius) me.hitTree = { mx: chair.x, my: chair.y };
+      pushOutOfCircle(chair.x, chair.y, SIT_CHAIR_SIZE + MOVE.radius);
+    }
     for (const o of objects) {
       if (boxed(o) && !FLAT_THINGS.has(o.word.sprite)) pushOutOfBox(vehicleBox(o));
       if (!standsFree(o) || canPassOver(o)) continue;
@@ -1383,7 +1511,7 @@ function collide() {
 function touchThings(now) {
   const reached = [];
   for (const o of objects) {
-    if (o.word.place === "desk" || o.done) continue; // these are read by sitting at the desk
+    if (o.word.place === "desk" || o.done || o.animal?.crossing) continue; // desk things are read by sitting at the desk
     const reach = thingReach(o);
     const away = awayFrom(o, me.x, me.y);
     if (away < reach && !touching.has(o)) {
@@ -1623,6 +1751,7 @@ function wakeSound() {
     if (!Context) return;
     sound = new Context();
     noiseBuffer = makeNoise(sound); // ready now, not during the first step
+    startAmbience();
   }
   if (sound.state !== "running") sound.resume().catch(() => {});
 }
@@ -1632,6 +1761,375 @@ function makeNoise(context) {
   const samples = buffer.getChannelData(0);
   for (let i = 0; i < samples.length; i++) samples[i] = Math.random() * 2 - 1;
   return buffer;
+}
+
+// ---------------------------------------------------- background sounds
+// Each place has its own quiet sounds, made here rather than recorded and kept well under the voices.
+// They also keep the sound channel open all the time, which should stop lines cutting in as it wakes.
+const AMBIENCE_FADE = 1.2;
+const AMBIENCE_STOP = 0.25; // seconds to fall silent on leaving a place
+const AMBIENCE_NOISE_SECONDS = 41;
+const AMBIENCE_SPEAKING = 0.5;
+// How loud each place is overall, so that all of them are heard at about the same level.
+const AMBIENCE_LEVEL = { forest: 1, city: 1, home: 1, store: 1, library: 1, classroom: 1 };
+let ambiencePlace = null;
+let ambienceRun = null; // what is playing: its output, its endless sounds and its timers
+
+// Long enough, and started at random points, that nothing is heard to repeat.
+let longNoise = null;
+function ambienceNoise() {
+  if (!longNoise) {
+    longNoise = sound.createBuffer(1, Math.round(sound.sampleRate * AMBIENCE_NOISE_SECONDS), sound.sampleRate);
+    // Deep rather than hissing: each sample wanders from the one before, which leaves little of the static in white noise.
+    const samples = longNoise.getChannelData(0);
+    let last = 0;
+    for (let i = 0; i < samples.length; i++) {
+      last = (last + 0.02 * (Math.random() * 2 - 1)) / 1.02;
+      samples[i] = last * 3.5;
+    }
+  }
+  return longNoise;
+}
+
+function endlessNoise(run, { type, frequency, q = 0.7, level, changes = 0 }) {
+  const source = sound.createBufferSource();
+  source.buffer = ambienceNoise();
+  source.loop = true;
+  const filter = sound.createBiquadFilter();
+  filter.type = type;
+  filter.frequency.value = frequency;
+  filter.Q.value = q;
+  const gain = sound.createGain();
+  gain.gain.value = level;
+  source.connect(filter).connect(gain).connect(run.output);
+  source.start(0, Math.random() * AMBIENCE_NOISE_SECONDS);
+  run.endless.push(source);
+  // Wanders up and down at no fixed pace, as wind does.
+  if (changes) {
+    nowAndThen(run, 2, 9, (at) => {
+      gain.gain.setTargetAtTime(level * (1 - changes + Math.random() * changes * 2), at, 1 + Math.random() * 2);
+      filter.frequency.setTargetAtTime(frequency * (0.8 + Math.random() * 0.45), at, 2);
+    });
+  }
+}
+
+function endlessHum(run, frequency, level, type = "sine") {
+  const hum = sound.createOscillator();
+  hum.type = type;
+  hum.frequency.value = frequency;
+  const gain = sound.createGain();
+  gain.gain.value = level;
+  hum.connect(gain).connect(run.output);
+  hum.start();
+  run.endless.push(hum);
+  return gain;
+}
+
+// Calls back at random intervals, as long as this place is still the one playing.
+function nowAndThen(run, fromSeconds, toSeconds, play) {
+  const next = () => {
+    const timer = setTimeout(() => {
+      run.timers.delete(timer);
+      if (run !== ambienceRun) return;
+      if (sound.state === "running") play(sound.currentTime + 0.02);
+      next();
+    }, (fromSeconds + Math.random() * (toSeconds - fromSeconds)) * 1000);
+    run.timers.add(timer);
+  };
+  next();
+}
+
+function softBeep(output, at, frequency, level, ms) {
+  const tone = sound.createOscillator();
+  tone.frequency.value = frequency;
+  const gain = sound.createGain();
+  gain.gain.setValueAtTime(0.0001, at);
+  gain.gain.exponentialRampToValueAtTime(level, at + 0.01);
+  gain.gain.setValueAtTime(level, at + ms / 1000 - 0.02);
+  gain.gain.exponentialRampToValueAtTime(0.0001, at + ms / 1000);
+  tone.connect(gain).connect(output);
+  tone.start(at);
+  tone.stop(at + ms / 1000 + 0.02);
+}
+
+// Noise whose pitch moves, faded in and out slowly enough that it has no hard edge.
+function softNoise(output, at, { from, to, q = 1, level, attack, release }) {
+  const source = sound.createBufferSource();
+  source.buffer = noiseBuffer;
+  source.loop = true;
+  const filter = sound.createBiquadFilter();
+  filter.type = "bandpass";
+  filter.Q.value = q;
+  filter.frequency.setValueAtTime(from, at);
+  filter.frequency.exponentialRampToValueAtTime(to, at + attack + release);
+  const gain = sound.createGain();
+  gain.gain.setValueAtTime(0.0001, at);
+  gain.gain.exponentialRampToValueAtTime(level, at + attack);
+  gain.gain.exponentialRampToValueAtTime(0.0001, at + attack + release);
+  source.connect(filter).connect(gain).connect(output);
+  source.start(at, Math.random() * 0.8);
+  source.stop(at + attack + release + 0.05);
+}
+
+// A sheet lifted and laid over: a soft rising swish, then a fall with a little flutter.
+function pageTurn(output, at) {
+  const size = 0.7 + Math.random() * 0.5;
+  softNoise(output, at, { from: 1200, to: 3200, q: 0.8, level: 0.006 * size, attack: 0.14, release: 0.16 });
+  softNoise(output, at + 0.2, { from: 3000, to: 1400, q: 0.8, level: 0.008 * size, attack: 0.05, release: 0.22 });
+  softNoise(output, at + 0.3, { from: 1800, to: 1100, q: 1.5, level: 0.003 * size, attack: 0.03, release: 0.09 });
+}
+
+// A pencil on paper: a run of small uneven strokes, high and dry, with short lifts between them.
+function pencilWriting(output, at) {
+  let when = at;
+  const strokes = 4 + Math.floor(Math.random() * 9);
+  for (let i = 0; i < strokes; i++) {
+    const long = 0.05 + Math.random() * 0.14;
+    const pitch = 3000 + Math.random() * 1800;
+    softNoise(output, when, { from: pitch, to: pitch * (0.8 + Math.random() * 0.4), q: 3, level: 0.004 + Math.random() * 0.004, attack: 0.012, release: long });
+    when += long + 0.02 + Math.random() * (Math.random() < 0.2 ? 0.3 : 0.07);
+  }
+}
+
+// Water over stones is mostly many small bubbles: tones that rise quickly as they fade.
+function bubble(output, at) {
+  const low = 380 + Math.random() * Math.random() * 1300;
+  const long = 0.03 + Math.random() * 0.07;
+  const tone = sound.createOscillator();
+  tone.frequency.setValueAtTime(low, at);
+  tone.frequency.exponentialRampToValueAtTime(low * (1.25 + Math.random() * 0.5), at + long);
+  const gain = sound.createGain();
+  const level = 0.0015 + Math.random() * 0.0035;
+  gain.gain.setValueAtTime(0.0001, at);
+  gain.gain.exponentialRampToValueAtTime(level, at + 0.006);
+  gain.gain.exponentialRampToValueAtTime(0.0001, at + long);
+  tone.connect(gain).connect(output);
+  tone.start(at);
+  tone.stop(at + long + 0.02);
+}
+
+// A car driving by: an engine and not a hiss, its note falling as it passes, moving from one side to the other.
+function carPassing(output, at) {
+  const seconds = 3.5 + Math.random() * 3;
+  const note = 62 + Math.random() * 34;
+  const middle = at + seconds * (0.4 + Math.random() * 0.2);
+  const filter = sound.createBiquadFilter();
+  filter.type = "lowpass";
+  filter.frequency.setValueAtTime(240, at);
+  filter.frequency.linearRampToValueAtTime(620, middle);
+  filter.frequency.linearRampToValueAtTime(220, at + seconds);
+  const gain = sound.createGain();
+  gain.gain.setValueAtTime(0.0001, at);
+  gain.gain.exponentialRampToValueAtTime(0.016, middle);
+  gain.gain.exponentialRampToValueAtTime(0.0001, at + seconds);
+  const from = Math.random() < 0.5 ? -0.8 : 0.8;
+  let last = gain;
+  filter.connect(gain);
+  if (sound.createStereoPanner) {
+    const pan = sound.createStereoPanner();
+    pan.pan.setValueAtTime(from, at);
+    pan.pan.linearRampToValueAtTime(-from, at + seconds);
+    gain.connect(pan);
+    last = pan;
+  }
+  last.connect(output);
+  for (const detune of [1, 1.012, 2.01]) {
+    const engine = sound.createOscillator();
+    engine.type = "sawtooth";
+    engine.frequency.setValueAtTime(note * detune * 1.05, at);
+    engine.frequency.linearRampToValueAtTime(note * detune * 1.03, middle - 0.3);
+    engine.frequency.linearRampToValueAtTime(note * detune * 0.95, middle + 0.3);
+    engine.connect(filter);
+    engine.start(at);
+    engine.stop(at + seconds + 0.05);
+  }
+}
+
+// A car door shut somewhere across the car park, and a car being locked.
+function carDoor(output, at) {
+  softNoise(output, at, { from: 420, to: 220, q: 1, level: 0.022, attack: 0.012, release: 0.14 });
+  softBeep(output, at + 0.01, 92, 0.012, 110);
+}
+
+function carLock(output, at) {
+  softBeep(output, at, 1320, 0.003, 70);
+  softBeep(output, at + 0.13, 1320, 0.003, 70);
+}
+
+const AMBIENCE = {
+  forest(run) {
+    endlessNoise(run, { type: "lowpass", frequency: 650, level: 0.04, changes: 0.7 }); // wind, coming and going
+    nowAndThen(run, 0.05, 0.28, (at) => bubble(run.output, at)); // the river
+    nowAndThen(run, 1.5, 6, (at) => { // leaves rustling
+      const count = 2 + Math.floor(Math.random() * 6);
+      for (let i = 0; i < count; i++) noiseBurst(sound, run.output, noiseBuffer, at + i * (0.05 + Math.random() * 0.12), { type: "bandpass", frequency: 1800 + Math.random() * 1200, level: 0.003 + Math.random() * 0.004, ms: 60 + Math.random() * 90 });
+    });
+  },
+  city(run) {
+    endlessHum(run, 55, 0.0015); // keeps the sound channel open between the cars
+    nowAndThen(run, 5, 16, (at) => carPassing(run.output, at));
+    nowAndThen(run, 11, 28, (at) => carDoor(run.output, at));
+    nowAndThen(run, 25, 60, (at) => carLock(run.output, at));
+  },
+  home(run) {
+    // Small speakers can't play a low hum alone, so the fridge has higher parts too, and it comes and goes.
+    const fridge = endlessHum(run, 116, 0.006);
+    const upper = endlessHum(run, 233, 0.004);
+    let humming = true;
+    nowAndThen(run, 15, 40, (at) => {
+      humming = !humming;
+      fridge.gain.setTargetAtTime(humming ? 0.006 : 0.001, at, 1.5);
+      upper.gain.setTargetAtTime(humming ? 0.004 : 0.0005, at, 1.5);
+    });
+    nowAndThen(run, 6, 18, (at) => { // a cup set down in the kitchen
+      const high = 1400 + Math.random() * 500;
+      softBeep(run.output, at, high, 0.006, 80);
+      softBeep(run.output, at + 0.11 + Math.random() * 0.08, high * 0.86, 0.004, 65);
+    });
+    nowAndThen(run, 9, 26, (at) => { // steps or a door somewhere else in the home
+      const count = 1 + Math.floor(Math.random() * 4);
+      for (let i = 0; i < count; i++) noiseBurst(sound, run.output, noiseBuffer, at + i * (0.4 + Math.random() * 0.2), { type: "lowpass", frequency: 420, level: 0.05, ms: 70 });
+    });
+  },
+  store(run) {
+    endlessHum(run, 240, 0.003); // the lights
+    const compressor = endlessHum(run, 124, 0.008, "triangle");
+    let running = true;
+    nowAndThen(run, 12, 34, (at) => { // the freezers' compressor comes and goes
+      running = !running;
+      compressor.gain.setTargetAtTime(running ? 0.008 : 0.001, at, 1.2);
+    });
+    nowAndThen(run, 3, 12, (at) => { // the till, sometimes more than one item at a time
+      const count = 1 + Math.floor(Math.random() * 3);
+      for (let i = 0; i < count; i++) softBeep(run.output, at + i * (0.35 + Math.random() * 0.5), 1760, 0.005, 95);
+    });
+  },
+  library(run) {
+    endlessHum(run, 110, 0.002); // keeps the sound channel open between the small noises
+    nowAndThen(run, 5, 16, (at) => pageTurn(run.output, at));
+  },
+  classroom(run) {
+    endlessHum(run, 110, 0.002); // keeps the sound channel open between the small noises
+    nowAndThen(run, 2, 9, (at) => pencilWriting(run.output, at));
+    nowAndThen(run, 10, 30, (at) => pageTurn(run.output, at));
+  },
+};
+
+// Quieter while someone speaks, so the voices stay clear.
+function duckAmbience(speaking) {
+  if (ambienceRun) ambienceRun.output.gain.setTargetAtTime(AMBIENCE_LEVEL[ambienceRun.place] * (speaking ? AMBIENCE_SPEAKING : 1), sound.currentTime, 0.12);
+}
+
+// Recordings where there are good ones, with how loud each should end up on average, in decibels below full scale.
+const AMBIENCE_TRACKS = { forest: 40, city: 40, home: 45, library: 47, classroom: 45, store: 43 };
+// Places whose recording has a hiss, and the pitch above which it's softened.
+const AMBIENCE_SOFTEN = { city: 5000 };
+const AMBIENCE_BLEND = 5; // seconds of a track's end blended into its start, so its loop has no join
+const AMBIENCE_SPIKE = 3; // nothing goes further above a track's average than this many times
+
+// Turns down anything sudden, like a dropped basket, starting a moment before it and recovering slowly, so that
+// no spike comes through and the turning down itself isn't heard.
+function limitSpikes(loop, loudness) {
+  const ceiling = loudness * AMBIENCE_SPIKE;
+  const channels = Array.from({ length: loop.numberOfChannels }, (_, c) => loop.getChannelData(c));
+  const wanted = new Float32Array(loop.length);
+  for (let i = 0; i < loop.length; i++) {
+    let peak = 0;
+    for (const channel of channels) peak = Math.max(peak, Math.abs(channel[i]));
+    wanted[i] = peak > ceiling ? ceiling / peak : 1;
+  }
+  const ahead = Math.round(0.01 * loop.sampleRate);
+  const recover = 1 / (0.25 * loop.sampleRate);
+  // Backwards, so the turning down starts before the spike; then forwards, so it comes back slowly.
+  let gain = 1;
+  for (let i = loop.length - 1; i >= 0; i--) {
+    gain = Math.min(wanted[i], gain + 1 / ahead);
+    wanted[i] = gain;
+  }
+  gain = 1;
+  for (let i = 0; i < loop.length; i++) {
+    gain = Math.min(wanted[i], gain + recover);
+    for (const channel of channels) channel[i] *= gain;
+  }
+}
+
+function blendedLoop(buffer) {
+  const blend = Math.round(AMBIENCE_BLEND * buffer.sampleRate);
+  const skip = Math.round(0.1 * buffer.sampleRate); // a cut MP3 can stumble on its first moment
+  const length = buffer.length - skip - blend;
+  const loop = sound.createBuffer(buffer.numberOfChannels, length, buffer.sampleRate);
+  let total = 0;
+  for (let channel = 0; channel < buffer.numberOfChannels; channel++) {
+    const from = buffer.getChannelData(channel), to = loop.getChannelData(channel);
+    for (let i = 0; i < length; i++) {
+      let sample = from[skip + i];
+      if (i < blend) sample = sample * Math.sqrt(i / blend) + from[skip + length + i] * Math.sqrt(1 - i / blend);
+      to[i] = sample;
+      total += sample * sample;
+    }
+  }
+  const loudness = Math.sqrt(total / (length * buffer.numberOfChannels));
+  limitSpikes(loop, loudness);
+  return { loop, loudness };
+}
+
+async function playTrack(run, place) {
+  try {
+    const response = await fetch(`audio/ambience/${place}.mp3`);
+    if (!response.ok) throw new Error(response.status);
+    const decoded = await sound.decodeAudioData(await response.arrayBuffer());
+    if (run !== ambienceRun) return;
+    const { loop, loudness } = blendedLoop(decoded);
+    const source = sound.createBufferSource();
+    source.buffer = loop;
+    source.loop = true;
+    const gain = sound.createGain();
+    gain.gain.value = Math.pow(10, -AMBIENCE_TRACKS[place] / 20) / loudness;
+    if (AMBIENCE_SOFTEN[place]) {
+      const soften = sound.createBiquadFilter();
+      soften.type = "lowpass";
+      soften.frequency.value = AMBIENCE_SOFTEN[place];
+      source.connect(soften).connect(gain).connect(run.output);
+    } else {
+      source.connect(gain).connect(run.output);
+    }
+    source.start(0, Math.random() * loop.duration);
+    run.endless.push(source);
+  } catch {
+    // Opened as a file, or the recording is missing: the generated sounds are there instead.
+    if (run === ambienceRun) AMBIENCE[place]?.(run);
+  }
+}
+
+function stopAmbience() {
+  const run = ambienceRun;
+  ambienceRun = null;
+  if (!run) return;
+  run.timers.forEach(clearTimeout);
+  const at = sound.currentTime;
+  run.output.gain.cancelScheduledValues(at);
+  run.output.gain.setTargetAtTime(0, at, AMBIENCE_STOP / 3);
+  for (const part of run.endless) part.stop(at + AMBIENCE_STOP + 0.1);
+}
+
+function startAmbience() {
+  if (!sound || ambienceRun?.place === ambiencePlace) return;
+  stopAmbience();
+  const make = AMBIENCE[ambiencePlace];
+  if (!make) return;
+  const recorded = ambiencePlace in AMBIENCE_TRACKS;
+  const output = sound.createGain();
+  output.gain.setValueAtTime(0, sound.currentTime);
+  output.gain.linearRampToValueAtTime(AMBIENCE_LEVEL[ambiencePlace], sound.currentTime + AMBIENCE_FADE);
+  output.connect(sound.destination);
+  ambienceRun = { place: ambiencePlace, output, endless: [], timers: new Set() };
+  if (recorded) playTrack(ambienceRun, ambiencePlace);
+  else make(ambienceRun);
+}
+
+function setAmbience(place) {
+  ambiencePlace = place;
+  startAmbience();
 }
 
 function noiseBurst(context, output, noise, at, { type, frequency, q = 0.7, level, ms }) {
@@ -1778,11 +2276,11 @@ function updateJump(now) {
 // ---------------------------------------------------- animals
 // They potter between the open spots near where they started, so they are never behind a tree or in the way of a
 // path, and hold still once the player is close or heading for them, so they can always be reached.
-const WANDER = { walk: 0.00028, hop: 0.00055, fly: 0.0005, flight: 0.0016, flightHigh: 18, beatMs: 110, landMs: 300, lookEveryMs: 350, flutterMs: 70, wagMs: 90, peckEveryMs: 1500, peckMs: 560, peckRestMs: 3500, peckBeatMs: 140, step: 3.5, home: 6, near: 1.8, restMs: 1300, moreRestMs: 3600, hopMs: 340, stepMs: 170 };
+const WANDER = { walk: 0.00028, hop: 0.00055, fly: 0.0005, flight: 0.0016, flightHigh: 18, crossHigh: 34, crossAfter: 70000, crossMore: 120000, crossFrom: 8, crossTo: 22, beatMs: 110, landMs: 300, lookEveryMs: 350, flutterMs: 70, wagMs: 90, peckEveryMs: 1500, peckMs: 560, peckRestMs: 3500, peckBeatMs: 140, step: 3.5, home: 6, near: 1.8, restMs: 1300, moreRestMs: 3600, hopMs: 340, stepMs: 170 };
 
 const facingTowards = (dx, dy) => (Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 1 : 3) : (dy > 0 ? 0 : 2));
 // A short flight rises and comes down over its whole length.
-const flightHeight = (o, a) => Math.sin((1 - Math.hypot(a.aim[0] - o.x, a.aim[1] - o.y) / a.total) * Math.PI) * WANDER.flightHigh;
+const flightHeight = (o, a) => Math.sin((1 - Math.hypot(a.aim[0] - o.x, a.aim[1] - o.y) / a.total) * Math.PI) * (a.crossing ? WANDER.crossHigh : WANDER.flightHigh);
 // Comes down where it is, so that a bird stopped in the air doesn't drop.
 function endFlight(o, a, now) {
   if (ANIMAL_WAYS[o.word.sprite].flights) {
@@ -1804,14 +2302,23 @@ function updateAnimals(dt, now) {
     const close = Math.hypot(me.x - o.x - 0.5, me.y - o.y - 0.5) < (way.near ?? WANDER.near);
     a.greeting = !!way.greets && close;
     if (a.greeting) a.facing = a.head; // turns to the player and stays to wag its tail
-    if (o === me.goal || close) {
+    // Over the river there's nowhere to come down, so a crossing is always finished.
+    if ((o === me.goal || close) && !a.crossing) {
       if (a.aim) endFlight(o, a, now);
       a.restUntil = Math.max(a.restUntil, now + 500);
       continue;
     }
     if (!a.aim) {
       if (now < a.restUntil) continue;
-      a.aim = nextAnimalSpot(o, a);
+      // Bigger birds now and then cross the river. Never the one being looked for, so the player isn't sent back again.
+      a.nextCross ??= now + WANDER.crossAfter * Math.random() + WANDER.crossAfter;
+      if (way.crosses && now >= a.nextCross && targets[0] !== o.word) {
+        a.aim = spotOverTheRiver(o);
+        a.crossing = !!a.aim;
+        a.nextCross = now + WANDER.crossAfter + Math.random() * WANDER.crossMore;
+        if (a.aim) [a.homeX, a.homeY] = a.aim;
+      }
+      a.aim ??= nextAnimalSpot(o, a);
       if (a.aim) a.total = Math.hypot(a.aim[0] - o.x, a.aim[1] - o.y);
       a.restUntil = now + WANDER.restMs + Math.random() * WANDER.moreRestMs + (way.pecks ? WANDER.peckRestMs : 0); // birds stay to feed
       if (!a.aim) a.hopAt = now; // nowhere to go, so a jump on the spot
@@ -1819,25 +2326,45 @@ function updateAnimals(dt, now) {
     }
     const dx = a.aim[0] - o.x, dy = a.aim[1] - o.y;
     const left = Math.hypot(dx, dy);
-    const step = (way.flights ? WANDER.flight : way.flies ? WANDER.fly : way.hops ? WANDER.hop : WANDER.walk) * dt;
+    const step = (way.flights || a.crossing ? WANDER.flight : way.flies ? WANDER.fly : way.hops ? WANDER.hop : WANDER.walk) * dt;
     a.clock += dt;
     a.facing = facingTowards(dx, dy);
     const nextX = left <= step ? a.aim[0] : o.x + (dx / left) * step, nextY = left <= step ? a.aim[1] : o.y + (dy / left) * step;
-    if (blockedAt(nextX + 0.5, nextY + 0.5, o, 0.2)) {
+    if (!a.crossing && blockedAt(nextX + 0.5, nextY + 0.5, o, 0.2)) {
       endFlight(o, a, now);
     } else {
       o.x = nextX;
       o.y = nextY;
       if (left <= step) {
         a.aim = null;
+        a.crossing = false;
         if (!way.flights && Math.random() < 0.5) a.hopAt = now; // and sometimes a jump on arriving
       }
     }
   }
 }
 
+// Open ground that can't be walked to in a straight line and isn't too far, which here means across the river.
+function spotOverTheRiver(o) {
+  return shuffled(OPEN_SPOTS.land).find(([x, y]) => {
+    const away = Math.hypot(x - o.x, y - o.y);
+    return away >= WANDER.crossFrom && away <= WANDER.crossTo
+      && !clearLine(o.x + 0.5, o.y + 0.5, x + 0.5, y + 0.5, o)
+      && overWater(o.x + 0.5, o.y + 0.5, x + 0.5, y + 0.5)
+      && Math.hypot(x + 0.5 - me.x, y + 0.5 - me.y) > WANDER.near + 2
+      && !objects.some((other) => other !== o && Math.hypot(other.x - x, other.y - y) < 4);
+  }) || null;
+}
+
+function overWater(ax, ay, bx, by) {
+  for (let along = 0; along <= 1; along += 0.05) {
+    if (tileOr(Math.floor(ax + (bx - ax) * along), Math.floor(ay + (by - ay) * along), "g") === "w") return true;
+  }
+  return false;
+}
+
 function nextAnimalSpot(o, a) {
-  const taken = (x, y) => objects.some((other) => other !== o && (Math.hypot(other.x - x, other.y - y) < 1.2 || (other.animal?.aim && Math.hypot(other.animal.aim[0] - x, other.animal.aim[1] - y) < 1.2)));
+  const taken = (x, y) => objects.some((other) => other !== o && (Math.hypot(other.x - x, other.y - y) < 4 || (other.animal?.aim && Math.hypot(other.animal.aim[0] - x, other.animal.aim[1] - y) < 4)));
   return shuffled(OPEN_SPOTS.land).find(([x, y]) => {
     const away = Math.hypot(x - o.x, y - o.y);
     return away > 0.5 && away < WANDER.step
@@ -1874,6 +2401,7 @@ async function buildAnimalsAhead() {
 function animalPose(o, now) {
   const a = o.animal;
   const way = ANIMAL_WAYS[o.word.sprite];
+  if (a?.crossing && !way.flights) return { facing: a.facing, frame: 3 + (Math.floor(now / WANDER.beatMs) % 2), lift: Math.round(flightHeight(o, a)) };
   if (way?.acts) return { facing: o.facing ?? 0, frame: Math.floor((now + o.phase) / way.acts) % 2, lift: 0, head: way.head };
   if (!a) return { facing: o.facing ?? 0, frame: 0, lift: 0 };
   if (way.flights) {
@@ -1967,12 +2495,12 @@ function showEmptyDesk() {
   cardEl.querySelector(".say").textContent = TEXT.emptyDesk;
 }
 
-// A straight line ahead, narrow enough that only a real hit counts: the runner's centre would meet something.
-function runningIntoSomething(mx, my, furthest) {
-  for (let along = 0.1; along <= Math.min(furthest, SLIDE.lookAhead); along += 0.1) {
-    if (blockedAt(me.x + mx * along, me.y + my * along, undefined, SLIDE.pathWidth)) return true;
+// Whether a runner glancing off something has room to slide on past it.
+function slidePathFree(mx, my) {
+  for (let along = 0.1; along <= SLIDE.freeAhead; along += 0.1) {
+    if (blockedAt(me.x + mx * along, me.y + my * along)) return false;
   }
-  return false;
+  return true;
 }
 
 function startSlide(mx, my, now) {
@@ -2083,14 +2611,6 @@ function moveCharacter(dt, now) {
   const arriving = !ix && !iy && me.goal && me.route.length && awayFrom(me.goal, me.x, me.y) < thingReach(me.goal) + SLIDE.lookAhead;
   me.running = moving && runKey && !arriving;
   if (moving) {
-    // Keys run on until stopped, but a tapped route turns at its next point.
-    const ahead = ix || iy ? Infinity : len;
-    if (me.running && me.jumpedAt === null && runningIntoSomething(mx / len, my / len, ahead)) {
-      if (!timer.running && timer.ms === 0 && targets.length) timer.running = true;
-      startSlide(mx / len, my / len, now);
-      me.moving = false;
-      return;
-    }
     if (!timer.running && timer.ms === 0 && targets.length) timer.running = true; // the first move of the round
     if (action) action = null; // moving ends a cheer or a jump at once
     const beforeX = me.x, beforeY = me.y;
@@ -2101,8 +2621,17 @@ function moveCharacter(dt, now) {
     me.y += (my / len) * step;
     const aimX = me.x, aimY = me.y;
     collide();
+    // A runner only falls on really touching something: straight into it onto the bottom, or past it onto the tummy
+    // if there's room to slide.
     if (me.running && me.jumpedAt === null && Math.hypot(me.x - aimX, me.y - aimY) > step * SLIDE.contact) {
-      startSlide(mx / len, my / len, now);
+      const movedX = me.x - beforeX, movedY = me.y - beforeY, moved = Math.hypot(movedX, movedY);
+      const forward = (movedX * mx + movedY * my) / (len * step);
+      if (forward > SLIDE.headOn && slidePathFree(movedX / moved, movedY / moved)) {
+        startSlide(movedX / moved, movedY / moved, now);
+      } else {
+        knockDown({ mx: aimX, my: aimY }, now);
+      }
+      me.running = false;
       me.moving = false;
       return;
     }
@@ -2147,7 +2676,7 @@ function moveCharacter(dt, now) {
   }
   me.moving = moving;
   // Reaching something counts on landing, not in the air. A runner can't pick anything up.
-  if (!paused && me.jumpedAt === null && !me.running) touchThings(now);
+  if (!paused && me.jumpedAt === null && !me.running && me.knockedAt === null && me.slideAt === null && me.restAt === null) touchThings(now);
 }
 
 // Jumping and crouching; walking and standing are chosen where the character is drawn.
@@ -2179,7 +2708,9 @@ function frame(now) {
   if (action && now - action.start > ACTIONS[action.name].ms) action = null;
   if (!crouching) crouchClock = 0;
   moveCharacter(dt, now);
-  if (!paused) updateAnimals(dt, now);
+  if (!paused) {
+    updateAnimals(dt, now);
+  }
   if (timer.running && !paused) {
     timer.ms += dt;
     showTimer();
@@ -2192,7 +2723,7 @@ function frame(now) {
 }
 
 function jump() {
-  if (paused || crouching || theme?.desks || me.jumpedAt !== null || me.knockedAt !== null) return;
+  if (paused || crouching || me.sittingOn || me.jumpedAt !== null || me.knockedAt !== null) return;
   action = null;
   me.jumpedAt = performance.now();
 }
@@ -2218,6 +2749,10 @@ document.addEventListener("keydown", (event) => {
   if (event.key === " ") {
     event.preventDefault();
     if (!event.repeat) jump();
+    return;
+  }
+  if (event.key.toLowerCase() === "r") {
+    if (!event.repeat) hearAgain();
     return;
   }
   if (event.key.toLowerCase() === "c") {

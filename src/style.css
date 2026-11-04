@@ -139,6 +139,13 @@ body.menu #game-title { display: block; }
 body.menu #view, body.menu #pad, body.menu #in-game { display: none; }
 #card.places { display: block; padding: 24px 14px 14px; background: var(--sami-stripe), var(--sami-blue); border-radius: 10px; }
 .demo-notice { margin: 0 0 10px; padding: 6px 10px; font-size: 14px; line-height: 1.3; color: #14213d; background: #f4f1e8; border-left: 5px solid var(--sami-red); border-radius: 4px; }
+.modes { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 10px; }
+#card.places .modes button { flex-direction: row; justify-content: center; min-height: 40px; font-weight: 400; }
+#card.places .modes button[aria-pressed=true] { color: #14213d; background: var(--sami-yellow); border-color: var(--sami-yellow); font-weight: 700; }
+.mode-hint { margin: -4px 0 10px; font-size: 14px; color: #dbe6f5; }
+.mode-hint:empty { display: none; }
+#hear-again { min-height: 38px; padding: 4px 14px; font: inherit; font-weight: 700; color: #14213d; background: #f7c919; border: 0; border-radius: 8px; cursor: pointer; }
+.heard { max-height: 160px; overflow-y: auto; }
 .who { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; font-weight: 700; }
 #card .who canvas { width: 36px; height: 60px; }
 .menu-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }

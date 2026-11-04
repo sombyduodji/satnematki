@@ -1,6 +1,6 @@
 # Sátnemátki
 
-*Sátnemátki* means "word journey" in Northern Sámi. Version 0.1.3, a technology demo.
+*Sátnemátki* means "word journey" in Northern Sámi. Version 0.1.4, a technology demo.
 
 A Northern Sámi word game for children. The player creates a character, Máhtte or Biret, chooses a place, and
 walks around it in an isometric view with a camera that follows: furniture and family at home, animals in the forest, coloured books on the shelves and
@@ -18,7 +18,7 @@ Only trunks, things and water block the way; the character slides past them and 
 Space jumps, about half the character's height: over things in the way, but not over the house or the river. Jumping into a tree,
 a shelf, a vehicle or a wall knocks the character down, harmlessly. C crouches. Shift runs, on every map: a runner can't pick
 anything up, and running into anything at all ends in a slide on the tummy. Each map opens with a window of instructions, closed with OK.
-The animals, store and library things are small 3D models in `src/models.js`. They wander slowly and hop, the owl and the small bird take short flights, the owl's head turns towards the player, birds peck the ground, the dog turns to the player and wags its tail, and they hold still once the player is close or heading for them.
+The animals, store and library things are small 3D models in `src/models.js`. They wander slowly and hop, some birds take short flights, the bigger ones now and then cross the river, the owl's head turns towards the player, birds peck the ground, the dog turns to the player and wags its tail, and they hold still once the player is close or heading for them.
 
 A clock starts at the first move of a round and stops at the last word. Play then stops, and a window shows the
 time, the ten best times for that place (kept in the browser, with the name the player gave), and the choice to

@@ -54,6 +54,23 @@ answers, the names of things and the numbers are generated once and included in 
 Divvun's permission to keep generated samples covers Sátni FST. It has not yet been confirmed for this game,
 which is for now a technology demo.
 
+## Background sounds
+
+The background sounds of these places are cut from recordings on [Freesound](https://freesound.org/), all marked
+[CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/) by their authors. CC0 needs no credit, but they earned it.
+Shortened by [`tools/make_ambience.py`](tools/make_ambience.py), from Freesound's preview files.
+
+| Place | Recording | Author |
+|---|---|---|
+| Forest | [forest with stream](https://freesound.org/people/bruno.auzet/sounds/632006/) | bruno.auzet |
+| Car park | [Carpark ambience](https://freesound.org/people/richwise/sounds/407585/) | richwise |
+| Home | [empty home kitchen room tone](https://freesound.org/people/pryanic/sounds/780515/) | pryanic |
+| Library | [Quiet library ambience](https://freesound.org/people/xkeril/sounds/620683/) | xkeril |
+| Classroom | [classroom_ambiance](https://freesound.org/people/joedeshon/sounds/258094/) | joedeshon |
+| Store | [Grocery store ambience](https://freesound.org/people/thaighaudio/sounds/350488/) | thaighaudio |
+
+If a recording can't load, the game makes its own sounds instead.
+
 ## Gákti reference
 
 The characters' clothing is based on the article

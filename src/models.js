@@ -35,19 +35,35 @@ const eyes = (x, y, z, r = 0.7, colour = "#22222c") => sides((s) => ball(s * x, 
 const asHead = (shapes) => shapes.map((shape) => ({ ...shape, head: true }));
 
 const MODELS = {
-  boazu: (frame) => [
-    ...legs(2.6, 5.5, 7, 0.95, "#5f4a34", frame),
-    ball(0, 0, 10, 3.9, 8.2, 4, "#8a6a48"),
-    ball(0, -7, 10.6, 2.6, 2, 2.6, "#efe6d4"),
-    tube([0, 6, 11], [0, 9.5, 16], 3, 2.2, "#efe6d4"),
-    ball(0, 11, 16.5, 2, 3.8, 2.2, "#8a6a48"),
-    ball(0, 14, 15.5, 1.3, 1.6, 1.2, "#5f4a34"),
-    ...eyes(2, 11.5, 17.3),
-    ...sides((s) => ball(s * 2.4, 9.5, 18.2, 1.2, 0.6, 0.6, "#5f4a34")),
-    ...sides((s) => tube([s * 1.3, 10, 18.5], [s * 2.8, 8.5, 24], 0.5, 0.4, "#5c3a1e")),
-    ...sides((s) => tube([s * 2.2, 9, 22], [s * 2.2, 12, 24], 0.45, 0.35, "#5c3a1e")),
-    ...sides((s) => tube([s * 2.8, 8.5, 24], [s * 4.5, 7, 26], 0.4, 0.3, "#5c3a1e")),
-  ],
+  // After a photograph the user gave, of reindeer on a road in summer: a pale tan coat with darker patches where it is
+  // moulting, a long thick neck carried low, a dark muzzle and dark around the eye, long thin legs that darken towards
+  // big splayed hooves, and thick antlers in dark velvet that sweep back and up, with blunt tips and a tine over the face.
+  boazu: (frame) => {
+    const stride = frame === 1 ? 1.8 : frame === 2 ? -1.8 : 0;
+    const feet = [[3, 5.6, stride], [-3, 5.6, -stride], [3, -5.6, -stride], [-3, -5.6, stride]];
+    return [
+      ...feet.flatMap(([x, y, swing]) => [
+        tube([x, y, 13], [x, y + swing * 0.5, 7], 1.1, 0.65, "#a08a6c"),
+        tube([x, y + swing * 0.5, 7], [x, y + swing, 1.6], 0.6, 0.5, "#4e3f30"),
+        ball(x, y + swing + 0.5, 0.9, 1.25, 1.7, 0.9, "#2b2219"),
+      ]),
+      { ...ball(0, -0.5, 14.5, 4.6, 8.8, 4.7, "#cdbc9f"), paint: mottled(["#d9cbb0", "#cdbc9f", "#cdbc9f", "#7d6a55"], 1) },
+      ball(0, -9, 15.8, 1.4, 1, 1.2, "#f0ead9"),
+      tube([0, 6, 15.6], [0, 11.5, 16.2], 3.4, 2.2, "#d9cbb0"),
+      ball(0, 8, 12.2, 2.2, 3, 2, "#e8decb"),
+      {
+        ...ball(0, 13.6, 16.4, 2.2, 3.6, 2.2, "#cdbc9f"),
+        paint: ([, y, z]) => (y > 15 || (y > 13.4 && z < 16.2) ? "#4a3b2d" : "#cdbc9f"),
+      },
+      ball(0, 17, 15.2, 1.9, 1.8, 1.6, "#2b2219"),
+      ...eyes(2.1, 14.2, 17.2, 0.95, "#2b2219"),
+      ...sides((s) => ball(s * 2.6, 11.8, 18.2, 1.3, 0.6, 0.7, "#8a7458")),
+      ...sides((s) => tube([s * 1.2, 12, 18.2], [s * 5, 9, 25], 0.75, 0.6, "#5c4430")),
+      ...sides((s) => tube([s * 5, 9, 25], [s * 6.6, 11.5, 33], 0.6, 0.45, "#5c4430")),
+      ...sides((s) => tube([s * 5.3, 9.4, 27], [s * 8.4, 7.6, 29.5], 0.4, 0.3, "#5c4430")),
+      ...sides((s) => tube([s * 1.3, 12.4, 19.2], [s * 1.8, 17.2, 21.5], 0.55, 0.4, "#5c4430")),
+    ];
+  },
   beana: (frame) => {
     const wag = frame === 5 ? 1 : frame === 6 ? -1 : 0;
     return [
@@ -670,13 +686,141 @@ Object.assign(MODELS, {
   ],
 });
 
+// A peck: these shapes moved forward and down.
+const lowered = (shapes, forward, down) => shapes.map((shape) => {
+  const move = ([x, y, z]) => [x, y + forward, z - down];
+  if (shape.kind === "ball") return { ...shape, at: move(shape.at) };
+  return { ...shape, from: move(shape.from), to: move(shape.to) };
+});
+
+// Birds of the Sámi region, for the forest.
+const mottled = (colours, size) => ([x, y, z]) => {
+  const n = Math.sin(x * 1.7 + y * 0.9) + Math.sin(y * 1.3 - z * 1.1) + Math.sin(z * 1.9 + x * 0.7);
+  return colours[Math.min(colours.length - 1, Math.max(0, Math.floor((n + 3) / 6 * colours.length * size)))];
+};
+
+Object.assign(MODELS, {
+  // In summer colours, to suit the green forest: finely mottled rust brown, with a white belly and a white patch on the
+  // wing, white feathered legs, a raised neck and a red comb over the eye. Turns white in winter, if there's ever snow.
+  rievssat: (frame) => {
+    const feathers = mottled(["#7a4f28", "#a06a38", "#b98249", "#d0a468"], 1);
+    return [
+      ...(frame === 3 || frame === 4 ? [] : sides((s) => tube([s * 1.5, 0.5, 3.4], [s * 1.5, 1.2, 0.6], 0.9, 0.8, "#f4f1e8"))),
+      tube([0, -5, 6.5], [0, -8.5, 7], 1.5, 1, "#3a2a1c"),
+      { ...ball(0, -0.5, 6.8, 4.2, 6, 4, "#a06a38"), paint: (p) => (p[2] < 5 ? "#f4f1e8" : feathers(p)) },
+      ...(frame === 3 || frame === 4 ? birdWings(3.8, -0.5, 8, 9, frame, "#f4f1e8") : sides((s) => ball(s * 3.9, -2, 5.6, 0.5, 2.8, 1.2, "#f4f1e8"))),
+      tube([0, 3.4, 9], [0, 4.4, 13], 2.1, 1.7, "#b5763c"),
+      ball(0, 4.8, 14.4, 2.4, 2.6, 2.3, "#b5763c"),
+      ...sides((s) => ball(s * 1.8, 5.1, 15.8, 0.7, 1.1, 0.5, "#e0342c")),
+      ...eyes(2, 5.7, 14.7, 0.5),
+      tube([0, 7.2, 14.2], [0, 8.4, 13.7], 0.6, 0.25, "#2b2b3a"),
+    ];
+  },
+  // A large mottled brown ground bird with a rusty breast and a barred, rounded tail.
+  goahppil: (frame) => [
+    ...(frame === 3 || frame === 4 ? [] : birdLegs(1.5, 4, "#6b5338", frame > 2 ? 0 : frame)),
+    { ...ball(0, -0.5, 8.5, 5, 7.5, 5.2, "#8a6a48"), paint: mottled(["#5f4a34", "#8a6a48", "#a98258"], 1) },
+    ball(0, 4.5, 8.5, 3.2, 2.6, 3.4, "#c47a3a"),
+    { ...tube([0, -6.5, 8.5], [0, -10.5, 7], 1.2, 2.2, "#5f4a34"), paint: ([, y]) => (y < -10 ? "#2f2418" : "#6b5338") },
+    ...birdWings(4.8, -1, 9.5, 12, frame, "#6b5338"),
+    ...lowered([
+      tube([0, 5, 11], [0, 6.5, 15], 2, 1.5, "#8a6a48"),
+      ball(0, 7, 16, 2, 2.4, 1.9, "#8a6a48"),
+      tube([0, 8.8, 16], [0, 10.2, 15.6], 0.7, 0.3, "#d9c9a4"),
+      ...eyes(1.7, 7.8, 16.6, 0.45),
+    ], frame === 5 ? 2 : 0, frame === 5 ? 8 : 0),
+  ],
+  // The male in display, after a photograph the user gave: dark, with a great fan of a tail raised behind him, a
+  // shining green breast, a white spot at the shoulder, a brown wing, a red brow, a pale beak and a shaggy beard.
+  beahceloddi: (frame) => [
+    ...(frame === 3 || frame === 4 ? [] : birdLegs(1.8, 5, "#6b5338", frame > 2 ? 0 : frame)),
+    ...[-68, -50, -33, -17, 0, 17, 33, 50, 68].map((angle) => {
+      const a = (angle * Math.PI) / 180;
+      return {
+        ...tube([0, -5, 10], [Math.sin(a) * 11, -9 + Math.abs(Math.sin(a)) * 2, 10 + Math.cos(a) * 12], 0.9, 1.5, "#2b2b36"),
+        paint: ([x, , z]) => (Math.hypot(x, z - 10) > 9.5 ? "#4a4a58" : "#2b2b36"),
+      };
+    }),
+    { ...ball(0, 0, 9, 5, 6.5, 5.2, "#2f2f3a"), paint: ([x, y, z]) => (y > 2.5 && z > 8 && z < 12.5 ? "#2f8a6a" : z < 5.5 ? "#23232c" : "#2f2f3a") },
+    ...(frame === 3 || frame === 4 ? birdWings(4.5, -1.5, 10, 14, frame, "#7a5433") : sides((s) => ball(s * 4.5, -1.5, 9.5, 1, 4, 3.2, "#7a5433"))),
+    ...sides((s) => ball(s * 5, 2, 11.4, 0.6, 0.9, 0.9, "#f4f1e8")),
+    ...lowered([
+      tube([0, 3, 12], [0, 4.5, 19], 2.4, 1.7, "#3a3a48"),
+      ball(0, 5, 20.5, 2.1, 2.7, 2, "#2f2f3a"),
+      ...sides((s) => ball(s * 1.6, 5.2, 22, 0.8, 1.1, 0.5, "#d13a30")),
+      tube([0, 7, 20.8], [0, 9, 21.6], 1, 0.5, "#e6dfc8"),
+      tube([0, 5.6, 19], [0, 6, 16.5], 1.1, 0.4, "#20202a"),
+      ...eyes(1.9, 6, 20.6, 0.45),
+    ], frame === 5 ? 3 : 0, frame === 5 ? 11 : 0),
+  ],
+  // All black, big and sleek, with a heavy beak and a wedge of a tail.
+  garanas: (frame) => [
+    ...(frame === 3 || frame === 4 ? [] : birdLegs(1.3, 4, "#20202a", frame)),
+    ball(0, -0.5, 8, 3.7, 7, 4.3, "#33333f"),
+    ball(0, 4.8, 8.6, 2.5, 2.2, 2.8, "#2b2b36"),
+    tube([0, -6.5, 8], [0, -12, 6.8], 2, 0.6, "#2b2b36"),
+    ...birdWings(3.5, -1.5, 9.2, 13, frame, "#3f3f50"),
+    ...lowered([
+      ball(0, 6.5, 12, 2.6, 3.2, 2.6, "#33333f"),
+      tube([0, 9, 12.2], [0, 13, 11.3], 1.2, 0.35, "#15151b"),
+      ...eyes(2.2, 7.6, 12.8, 0.5, "#a4aab0"),
+    ], frame === 5 ? 1.5 : 0, frame === 5 ? 7 : 0),
+  ],
+  // White and long-necked, its beak yellow with a black tip, as on a whooper swan.
+  njukca: (frame) => [
+    ...(frame === 3 || frame === 4 ? [] : birdLegs(1.8, 4, "#2b2b3a", frame > 2 ? 0 : frame)),
+    ball(0, -2, 8, 5, 8.5, 5, "#f4f1e8"),
+    tube([0, -9.5, 9], [0, -12, 10.5], 2, 0.8, "#f4f1e8"),
+    ...birdWings(4.6, -3, 9.6, 12, frame, "#ece8dc"),
+    tube([0, 5, 10], [0, 6.5, 15], 2, 1.6, "#f4f1e8"),
+    tube([0, 6.5, 15], [0, 6, 21], 1.6, 1.3, "#f4f1e8"),
+    ball(0, 7, 22.2, 1.9, 2.5, 1.7, "#f4f1e8"),
+    tube([0, 9, 22], [0, 11.2, 21.2], 0.9, 0.6, "#f2c14e"),
+    tube([0, 11.2, 21.2], [0, 12.6, 20.8], 0.6, 0.3, "#22222c"),
+    ...eyes(1.6, 8, 22.6, 0.4),
+  ],
+  // Big and brown with a paler head, feathered legs and a hooked yellow beak.
+  goaskin: (frame) => [
+    ...(frame === 3 || frame === 4 ? [] : [
+      ...sides((s) => tube([s * 2.2, 0.5, 6], [s * 2.2, 1, 1.6], 1.5, 1, "#6b4a2c")),
+      ...sides((s) => ball(s * 2.2, 2, 0.8, 1.3, 1.8, 0.8, "#e6b93a")),
+    ]),
+    { ...ball(0, 0, 11, 5.2, 7, 7, "#6b4a2c"), paint: mottled(["#4f341f", "#6b4a2c", "#7a5433"], 1) },
+    tube([0, -6, 8], [0, -11, 4.5], 2.4, 1.6, "#4f341f"),
+    ...birdWings(5, -0.5, 13, 19, frame, "#4f341f"),
+    ball(0, 4.5, 18.5, 3.2, 3.4, 3.2, "#b89268"),
+    tube([0, 7.4, 18.8], [0, 9.6, 18.4], 1.2, 0.8, "#e6b93a"),
+    tube([0, 9.6, 18.4], [0, 10, 16.8], 0.7, 0.3, "#3a2a1c"),
+    ...eyes(2.6, 6, 19.6, 0.55, "#2b1a10"),
+  ],
+  // The white owl of the fells: egg-shaped with the head running into the body, fine dark bars, no ear tufts and
+  // narrow yellow eyes. The head still turns to the player.
+  jievjaskuolfi: (frame) => {
+    const barred = ([x, , z]) => (Math.abs(((z + 40) % 2.2) - 1.1) < 0.28 && Math.sin(x * 2.1 + z) > -0.2 ? "#6e6e78" : "#f7f4ea");
+    return [
+      ...(frame === 3 || frame === 4 ? [] : sides((s) => ball(s * 1.7, 1.6, 0.9, 1.6, 2, 0.9, "#f7f4ea"))),
+      { ...ball(0, 0, 8, 5.4, 4.8, 7.4, "#f7f4ea"), paint: barred },
+      tube([0, -3.5, 4], [0, -6, 1.8], 1.8, 1.1, "#ece8dc"),
+      ...birdWings(5, -0.3, 9, 11, frame, "#ece8dc"),
+      ...asHead([
+        ball(0, 0, 15.5, 4.8, 4.4, 3.8, "#fbf8ee"),
+        ...sides((s) => ball(s * 2, 4, 16, 1.5, 0.5, 0.75, "#f2c14e")),
+        ...sides((s) => ball(s * 2, 4.4, 16, 0.7, 0.25, 0.65, "#22222c")),
+        tube([0, 4.2, 15], [0, 4.9, 13.9], 0.55, 0.2, "#3a3a48"),
+      ]),
+    ];
+  },
+});
+
 // How each animal moves, and the shape of its shadow. Things only have a shadow.
 const ANIMAL_WAYS = {
-  boazu: { shadow: [20, 7] }, beana: { greets: true, near: 3.2, shadow: [15, 6] }, loddi: { flights: true, pecks: true, shadow: [9, 4] },
+  boazu: { shadow: [23, 8] }, beana: { greets: true, near: 3.2, shadow: [15, 6] }, loddi: { flights: true, pecks: true, shadow: [9, 4] },
   njoammil: { hops: true, shadow: [12, 5] }, guovza: { shadow: [22, 9] }, rieban: { shadow: [16, 5] },
   oarri: { hops: true, shadow: [9, 3] }, skuolfi: { flights: true, looks: true, shadow: [11, 5] }, cuoppu: { hops: true, shadow: [12, 5] },
   sahpan: { shadow: [9, 4] }, beaiveloddi: { flies: true, shadow: [4, 2] }, gahttu: { shadow: [14, 5] },
   bin: { shadow: [12, 6] }, guolli: { shadow: [12, 3] }, savza: { shadow: [15, 7] }, gussa: { shadow: [22, 8] }, spiidni: { shadow: [15, 7] }, vuonccis: { pecks: true, shadow: [11, 5] },
+  rievssat: { flights: true, shadow: [12, 5] }, goahppil: { pecks: true, crosses: true, shadow: [16, 6] }, beahceloddi: { pecks: true, crosses: true, shadow: [18, 7] }, garanas: { flights: true, pecks: true, crosses: true, shadow: [15, 5] },
+  njukca: { crosses: true, shadow: [18, 7] }, goaskin: { flights: true, crosses: true, shadow: [18, 7] }, jievjaskuolfi: { flights: true, looks: true, crosses: true, shadow: [12, 5] },
   // Those who stay where they are and keep doing something: the time each picture lasts, and where they look.
   eadni: { acts: 300, shadow: [0, 0] }, viellja: { acts: 900, shadow: [0, 0] }, oabbá: { acts: 700, shadow: [12, 5] },
   áhčči: { acts: 420, head: 0, shadow: [12, 5] }, tv: { acts: 1100, shadow: [14, 6] },

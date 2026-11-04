@@ -9,6 +9,7 @@ Usage: python3 tools/fetch_voices.py [--list] [--limit N] [--pause SECONDS]
 """
 import argparse
 import json
+import re
 import sys
 import time
 import urllib.error
@@ -42,6 +43,11 @@ WRONG = [
 ]
 THIS_IS = "Dát lea {word}."
 THIS_PERSON = "Son lea {word}."
+# Asking for what to find. The object form is the accusative; family are "my mother", with iežan.
+ASK = "Veahket mu gávdnat {what}!"
+ASK_RELATIVE = "Veahket mu gávdnat {noun} mii lea {colour}!"
+# The numbers whose object form differs from the base form, from Sátni FST's generator. The rest stay the same.
+NUMBER_OBJECT = {"okta": "ovtta", "čuohti": "čuođi"}
 FAMILY = ("eadni", "áhčči", "oabbá", "viellja")  # the same as in src/game.js
 THIS_ONE_IS = "Dát {noun} lea {colour}."
 
@@ -49,6 +55,11 @@ THIS_ONE_IS = "Dát {noun} lea {colour}."
 def load_words():
     text = (OUT.parent / "data/starter-words.js").read_text(encoding="utf-8")
     return json.loads(text[text.index("["):text.rindex("]") + 1])
+
+
+def accusative(word):
+    forms = word["forms"].get("Sg+Acc")
+    return forms[0] if forms else word["lemma"]
 
 
 def wanted_lines():
@@ -62,6 +73,9 @@ def wanted_lines():
         if word["theme"] in ("river", "animal", "food", "vehicle", "lot", "home"):
             said = THIS_PERSON if word["sprite"] in FAMILY else THIS_IS
             lines.append((f"word-{word['sprite']}", said.format(word=word["lemma"])))
+            if word["theme"] != "river":  # no level asks for these any more
+                what = accusative(word)
+                lines.append((f"ask-{word['sprite']}", ASK.format(what=f"iežan {what}" if word["sprite"] in FAMILY else what)))
         if word["theme"] in ("item", "vehicle"):
             for colour in colours:
                 # Harder level: "Dát lea rukses biila." Easy level: "Dát biila lea ruoksat."
@@ -69,9 +83,12 @@ def wanted_lines():
                 lines.append((f"hard-{word['sprite']}-{colour['sprite']}", THIS_IS.format(word=attributive)))
                 base = colour["forms"]["Sg+Nom"][0]
                 lines.append((f"easy-{word['sprite']}-{colour['sprite']}", THIS_ONE_IS.format(noun=word["lemma"], colour=base)))
+                lines.append((f"ask-hard-{word['sprite']}-{colour['sprite']}", ASK.format(what=f"{colour['forms']['Attr'][0]} {accusative(word)}")))
+                lines.append((f"ask-easy-{word['sprite']}-{colour['sprite']}", ASK_RELATIVE.format(noun=accusative(word), colour=base)))
     numbers = (OUT.parent / "data/numbers.js").read_text(encoding="utf-8")
     numbers = json.loads(numbers[numbers.index("["):numbers.rindex("]") + 1])
     lines += [(f"number-{n}", THIS_IS.format(word=word)) for n, word in enumerate(numbers)]
+    lines += [(f"ask-number-{n}", ASK.format(what=NUMBER_OBJECT.get(word, word))) for n, word in enumerate(numbers)]
     return list(dict(lines).items())
 
 
@@ -100,11 +117,20 @@ def main():
     args = parser.parse_args()
     OUT.mkdir(exist_ok=True)
     jobs = []
-    for voice, name in CHARACTERS.items():
-        for line, text in wanted_lines():
+    # Line by line in every voice, so that all the voices advance together.
+    for line, text in wanted_lines():
+        for voice, name in CHARACTERS.items():
             path = OUT / f"{line}-{voice}.wav"
             if not path.exists():
                 jobs.append((path, voice, text.replace("{name}", name)))
+    # Whole places first: home, then other plain names, before the many colour phrases and numbers.
+    home = {word["sprite"] for word in load_words() if word["theme"] == "home"}
+    def order(job):
+        name = job[0].name
+        if re.match(r"ask-(easy|hard|number)-", name):
+            return 2
+        return 0 if name.startswith("ask-") and name[4:].rsplit("-", 1)[0] in home else 1
+    jobs.sort(key=order)
     print(f"{len(jobs)} lines missing", flush=True)
     if args.list:
         for path, voice, text in jobs:

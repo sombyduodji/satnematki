@@ -8,7 +8,7 @@ const BLOCK_TILES = new Set("BWXKSCDRZPETVGHYJI");
 const RAISED = { shelf: 11, fridge: 8, freezer: 10, produce: 8, desk: 9, bookshelf: 13, table: 10 };
 const canvas = document.getElementById("world");
 const ctx = canvas.getContext("2d");
-const ANIMALS = new Set(["boazu", "beana", "njoammil", "loddi", "guovza", "rieban", "oarri", "sahpan", "gahttu", "savza", "gussa", "spiidni", "vuonccis", "cuoppu", "skuolfi", "beaiveloddi"]);
+const ANIMALS = new Set(["boazu", "beana", "njoammil", "loddi", "guovza", "rieban", "oarri", "sahpan", "gahttu", "savza", "gussa", "spiidni", "vuonccis", "cuoppu", "skuolfi", "beaiveloddi", "rievssat", "goahppil", "garanas", "njukca", "goaskin", "jievjaskuolfi", "beahceloddi"]);
 const FLOATING = new Set(["guolli", "fanas"]);
 
 function noise(x, y) {
@@ -995,6 +995,23 @@ function drawChairBack(chair) {
   panel(0.04, backBottom + 1, backBottom + 3, shade);
 }
 
+const isFootDust = (puff) => puff.step && !puff.high;
+
+function paintPuff(puff, now) {
+  const age = (now - puff.born) / (puff.life || 420);
+  if (age < 0 || age >= 1) return;
+  const x0 = isoX(puff.x, puff.y) + (puff.side || 0), y0 = isoY(puff.x, puff.y) - (puff.high || 0);
+  // Step dust stays strong for a while and hangs where the foot landed, so it leaves a trail.
+  const strength = puff.step ? 1 - age * age : 1 - age;
+  ctx.fillStyle = `rgba(${puff.colour || "226, 212, 178"}, ${(puff.step ? 0.95 : 0.8) * strength})`;
+  for (let i = 0; i < puff.count; i++) {
+    const angle = (i / puff.count) * Math.PI * 2 + puff.born;
+    const r = (puff.step ? 2 + (i % 3) : 3) + age * (puff.step ? 5 : 9);
+    const size = puff.step ? (age < 0.5 ? 3 : age < 0.8 ? 2 : 1) : age > 0.65 ? 1 : 2;
+    ctx.fillRect(Math.round(x0 + Math.cos(angle) * r), Math.round(y0 + Math.sin(angle) * r * 0.5 - age * (puff.step ? 7 : 3)), size, size);
+  }
+}
+
 function draw(now) {
   if (!worldImage) worldImage = buildWorld();
   const dt = lastDraw === null ? 16 : Math.max(0, Math.min(now - lastDraw, 100));
@@ -1217,6 +1234,10 @@ function draw(now) {
       ctx.drawImage(sheet, frameCol * FRAME_W, row * FRAME_H, FRAME_W, FRAME_H, cx - 12, cy + 4 - FRAME_H, FRAME_W, FRAME_H);
     }
   }});
+  // Foot dust lies on the ground where the foot landed, so someone walking towards the viewer leaves it behind them.
+  for (const puff of puffs) {
+    if (isFootDust(puff)) scene.push({ d: puff.x + puff.y - 0.01, paint: () => paintPuff(puff, now) });
+  }
   scene.sort((a, b) => a.d - b.d);
   for (const item of scene) item.paint();
 
@@ -1233,25 +1254,14 @@ function draw(now) {
     }
   }
 
-  // Dust: where the character sat down, landed or brushed the gákti.
+  // Dust from sitting down or brushing the gákti stays in front; foot dust was drawn in the scene above.
   for (let p = puffs.length - 1; p >= 0; p--) {
     const puff = puffs[p];
-    const age = (now - puff.born) / (puff.life || 420);
-    if (age >= 1) {
+    if (now - puff.born >= (puff.life || 420)) {
       puffs.splice(p, 1);
       continue;
     }
-    if (age < 0) continue;
-    const x0 = isoX(puff.x, puff.y) + (puff.side || 0), y0 = isoY(puff.x, puff.y) - (puff.high || 0);
-    // Step dust stays strong for a while and hangs where the foot landed, so it leaves a trail.
-    const strength = puff.step ? 1 - age * age : 1 - age;
-    ctx.fillStyle = `rgba(${puff.colour || "226, 212, 178"}, ${(puff.step ? 0.95 : 0.8) * strength})`;
-    for (let i = 0; i < puff.count; i++) {
-      const angle = (i / puff.count) * Math.PI * 2 + puff.born;
-      const r = (puff.step ? 2 + (i % 3) : 3) + age * (puff.step ? 5 : 9);
-      const size = puff.step ? (age < 0.5 ? 3 : age < 0.8 ? 2 : 1) : age > 0.65 ? 1 : 2;
-      ctx.fillRect(Math.round(x0 + Math.cos(angle) * r), Math.round(y0 + Math.sin(angle) * r * 0.5 - age * (puff.step ? 7 : 3)), size, size);
-    }
+    if (!isFootDust(puff)) paintPuff(puff, now);
   }
 
   sparkles = sparkles.filter((sp) => now - sp.born < 700);

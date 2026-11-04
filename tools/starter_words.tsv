@@ -1,7 +1,7 @@
 # Hand-picked words the game actually shows. The export stops if a word or a
 # chosen translation is no longer in satni.db, or if the word is filtered out.
 # Being listed here overrides only the frequency limit, not the filters.
-# theme: river, animal, item, vehicle, lot (only in the car park's first level), home, food, or colour (sprite is then the colour's id).
+# theme: river, animal, later (kept for a place to come), item, vehicle, lot (only in the car park's first level), home, food, or colour (sprite is then the colour's id).
 # place: land or water; food goes on a shelf, in a fridge, in a freezer or in a produce crate;
 # library things go on a bookshelf or a table; vehicles park in a bay; things at home have a place of their own.
 # Norwegian may be empty for a home word the dictionary gives no Norwegian for.
@@ -16,12 +16,12 @@ biila	N	auto	bil	biila	land	river
 muohtaskohter	N	moottorikelkka	snøskuter	skuter	land	river
 boazu	N	poro	rein	boazu	land	animal
 beana	N	koira	hund	beana	land	animal
-loddi	N	lintu	fugl	loddi	land	animal
+loddi	N	lintu	fugl	loddi	land	later
 njoammil	N	jänis	hare	njoammil	land	animal
 guovža	N	karhu	bjørn	guovza	land	animal
 rieban	N	kettu	rev	rieban	land	animal
 oarri	N	orava	ekorn	oarri	land	animal
-skuolfi	N	pöllö	ugle	skuolfi	land	animal
+skuolfi	N	pöllö	ugle	skuolfi	land	later
 cuoppu	N	sammakko	frosk	cuoppu	land	animal
 sáhpán	N	hiiri	mus	sahpan	land	animal
 beaiveloddi	N	perhonen	sommerfugl	beaiveloddi	land	animal
@@ -29,7 +29,7 @@ gáhttu	N	kissa	katt	gahttu	land	animal
 sávza	N	lammas	sau	savza	land	animal
 gussa	N	lehmä	ku	gussa	land	animal
 spiidni	N	sika	gris	spiidni	land	animal
-vuonccis	N	kana	høne	vuonccis	land	animal
+vuonccis	N	kana	høne	vuonccis	land	later
 girji	N	kirja	bok	book	bookshelf	item
 peanna	N	kynä	penn	pen	table	item
 bliánta	N	lyijykynä	blyant	pencil	table	item
@@ -94,3 +94,10 @@ eadni	N	äiti	mor	eadni	home	home
 áhčči	N	isä	far	áhčči	home	home
 oabbá	N	sisko	søster	oabbá	home	home
 viellja	N	veli	bror	viellja	home	home
+rievssat	N	riekko	rype	rievssat	land	animal
+goahppil	N	koppelo	røy	goahppil	land	animal
+gáranas	N	korppi	ravn	garanas	land	animal
+njukča	N	joutsen	svane	njukca	land	animal
+goaskin	N	kotka	ørn	goaskin	land	animal
+jievjaskuolfi	N	tunturipöllö	snøugle	jievjaskuolfi	land	animal
+beahceloddi	N	metso	storfugl	beahceloddi	land	animal

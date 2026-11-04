@@ -85,11 +85,10 @@ def count_near(t, tile, reach):
     )
 
 
-# Open ground close to a path, where a thing is easy to see, and not in the way at a bridge.
+# Open ground all over the map, where a thing is easy to see, and not in the way at a bridge.
 land = sorted(
     t for t in seen
-    if m[t[1]][t[0]] == "g" and near(t, 18)
-    and count_near(t, "t", 2) <= 2 and count_near(t, "p", 3) > 0 and count_near(t, "b", 2) == 0
+    if m[t[1]][t[0]] == "g" and count_near(t, "t", 2) <= 2 and count_near(t, "b", 2) == 0
 )
 water = [(x, y) for y in range(H) for x in range(W) if m[y][x] == "w" and near((x, y), 18) and
          any((x + a, y + b) in seen for a, b in ((1, 0), (-1, 0), (0, 1), (0, -1)))]
