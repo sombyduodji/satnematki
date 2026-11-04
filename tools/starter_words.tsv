@@ -1,0 +1,96 @@
+# Hand-picked words the game actually shows. The export stops if a word or a
+# chosen translation is no longer in satni.db, or if the word is filtered out.
+# Being listed here overrides only the frequency limit, not the filters.
+# theme: river, animal, item, vehicle, lot (only in the car park's first level), home, food, or colour (sprite is then the colour's id).
+# place: land or water; food goes on a shelf, in a fridge, in a freezer or in a produce crate;
+# library things go on a bookshelf or a table; vehicles park in a bay; things at home have a place of their own.
+# Norwegian may be empty for a home word the dictionary gives no Norwegian for.
+# lemma	pos	fi	nb	sprite	place	theme
+viessu	N	talo	hus	viessu	land	river
+goahti	N	kota	gamme	goahti	land	river
+geađgi	N	kivi	stein	geadgi	land	river
+fanas	N	vene	båt	fanas	water	river
+guolli	N	kala	fisk	guolli	water	river
+girji	N	kirja	bok	girji	land	river
+biila	N	auto	bil	biila	land	river
+muohtaskohter	N	moottorikelkka	snøskuter	skuter	land	river
+boazu	N	poro	rein	boazu	land	animal
+beana	N	koira	hund	beana	land	animal
+loddi	N	lintu	fugl	loddi	land	animal
+njoammil	N	jänis	hare	njoammil	land	animal
+guovža	N	karhu	bjørn	guovza	land	animal
+rieban	N	kettu	rev	rieban	land	animal
+oarri	N	orava	ekorn	oarri	land	animal
+skuolfi	N	pöllö	ugle	skuolfi	land	animal
+cuoppu	N	sammakko	frosk	cuoppu	land	animal
+sáhpán	N	hiiri	mus	sahpan	land	animal
+beaiveloddi	N	perhonen	sommerfugl	beaiveloddi	land	animal
+gáhttu	N	kissa	katt	gahttu	land	animal
+sávza	N	lammas	sau	savza	land	animal
+gussa	N	lehmä	ku	gussa	land	animal
+spiidni	N	sika	gris	spiidni	land	animal
+vuonccis	N	kana	høne	vuonccis	land	animal
+girji	N	kirja	bok	book	bookshelf	item
+peanna	N	kynä	penn	pen	table	item
+bliánta	N	lyijykynä	blyant	pencil	table	item
+čállingirji	N	kirjoitusvihko	skrivebok	notebook	table	item
+biila	N	auto	bil	car	bay	vehicle
+sihkkel	N	polkupyörä	sykkel	bike	bay	vehicle
+mohtorsihkkel	N	moottoripyörä	motorsykkel	moto	bay	vehicle
+busse	N	bussi	buss	bus	bay	vehicle
+guorbmebiila	N	kuorma-auto	lastebil	truck	bay	vehicle
+tráktor	N	traktori	traktor	tractor	bay	vehicle
+eappel	N	omena	eple	apple	produce	food
+banána	N	banaani	banan	banana	produce	food
+láibi	N	leipä	brød	bread	shelf	food
+mielki	N	maito	melk	milk	fridge	food
+vuostá	N	juusto	ost	cheese	fridge	food
+monni	N	muna	egg	egg	fridge	food
+buđet	N	peruna	potet	potato	produce	food
+rušpi	N	porkkana	gulrot	carrot	produce	food
+vuodja	N	voi	smør	butter	fridge	food
+márfi	N	makkara	pølse	sausage	fridge	food
+muorji	N	marja	bær	berries	produce	food
+lákcajiekŋa	N	jäätelö	iskrem	icecream	freezer	food
+guolli	N	kala	fisk	guolli	freezer	food
+gáffe	N	kahvi	kaffe	coffee	shelf	food
+sohkar	N	sokeri	sukker	sugar	shelf	food
+sálti	N	suola	salt	salt	shelf	food
+ruoksat	A	punainen	rød	red	land	colour
+alit	A	sininen	blå	blue	land	colour
+fiskat	A	keltainen	gul	yellow	land	colour
+ruoná	A	vihreä	grønn	green	land	colour
+vielgat	A	valkoinen	hvit	white	land	colour
+čáhppat	A	musta	svart	black	land	colour
+ránis	A	harmaa	grå	grey	land	colour
+tákse	N	taksi	taxi	taxi	bay	lot
+ambulánsa	N	ambulanssi	ambulanse	ambulance	bay	lot
+čáskadanbiila	N	paloauto	brannbil	firetruck	bay	lot
+gálvobiila	N	pakettiauto	varebil	van	bay	lot
+muohtaskohter	N	moottorikelkka	snøskuter	snowmobile	bay	lot
+gálvojorri	N	peräkärry	tilhenger	trailer	bay	lot
+ruskalihtti	N	roskakori	søppelkurv	bin	land	lot
+beavdi	N	pöytä	bord	table	home	home
+suffá	N	sohva	sofa	sofa	home	home
+seaŋga	N	sänky	seng	bed	home	home
+jiekŋaskáhppe	N	jääkaappi		fridge	home	home
+galmmiheaddji	N	pakastin		freezer	home	home
+hivsset	N	vessa	WC	toilet	home	home
+stuollu	N	tuoli	stol	chair	home	home
+lámpá	N	lamppu	lampe	lamp	home	home
+speajal	N	peili	speil	mirror	home	home
+bivttasskáhppe	N	vaatekaappi		wardrobe	home	home
+lávgungárri	N	kylpyamme	badekar	bathtub	home	home
+riššu	N	suihku	dusj	shower	home	home
+omman	N	hella	stekeovn	stove	home	home
+bassanlihtti	N	pesuallas		sink	home	home
+TV	N	televisio	fjernsyn	tv	home	home
+girjehildu	N	kirjahylly	bokhylle	bookcase	home	home
+rátnu	N	matto	matte	rug	home	home
+skábe	N	kaappi	skap	cupboard	home	home
+bassaladdanmašiidna	N	pesukone	vaskemaskin	washer	home	home
+lieđđi	N	kukka	blomst	flower	home	home
+eadni	N	äiti	mor	eadni	home	home
+áhčči	N	isä	far	áhčči	home	home
+oabbá	N	sisko	søster	oabbá	home	home
+viellja	N	veli	bror	viellja	home	home

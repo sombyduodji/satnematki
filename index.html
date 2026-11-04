@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="fi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sátnemátki: pohjoissaamen sanapeli lapsille</title>
+<meta name="description" content="Sátnemátki on maksuton pohjoissaamen sanapeli lapsille. Tämä on vielä vain teknologiademo.">
+<link rel="stylesheet" href="src/site.css">
+</head>
+<body>
+<div class="stripe"></div>
+<header class="hero">
+  <div class="hero-text">
+    <h1 lang="se">Sátnemátki <small>v0.1.3</small></h1>
+    <p class="lead">Pohjoissaamen sanapeli lapsille. Nimi tarkoittaa <em>sanamatkaa</em>: kuljet hahmollasi kodissa, metsässä ja kaupassa ja etsit sen, mitä saamenkielinen sana tarkoittaa.</p>
+    <a class="play" href="peli.html">Pelaa selaimessa</a>
+    <p class="fine">Maksuton. Ei rekisteröitymistä eikä asennusta.</p>
+  </div>
+  <img class="hero-picture" src="art/site/koti.png" width="560" height="380" alt="Koti ylhäältä nähtynä: pelihahmo olohuoneessa, sohvalla äiti ja veli, seinällä televisio ja kirjahylly.">
+</header>
+
+<main>
+  <aside class="warning" aria-label="Varoitus käännöksistä">
+    <h2>Käännökset ovat konetekoisia, eikä niitä ole tarkistettu</h2>
+    <p>Kaikki pelin käännökset ja saamenkieliset lauseet on tehty koneellisesti, eikä kukaan ole tarkistanut niitä. Niissä voi olla virheitä, joten älä käytä peliä vielä kielen oppimisen ainoana lähteenä.</p>
+  </aside>
+
+  <aside class="demo" aria-label="Tärkeä huomautus">
+    <h2>Tämä on vain teknologiademo</h2>
+    <p>Ominaisuudet ja pelattavuus voivat vielä muuttua paljon mahdollista lopullista versiota varten, eikä lopullisesta versiosta ole päätetty.</p>
+  </aside>
+
+  <section>
+    <h2>Idea</h2>
+    <p>Sátnemátki kokeilee, voisiko pohjoissaamen sanoja oppia liikkumalla tutuissa paikoissa ja kokeilemalla rauhassa. Sitä ei voi hävitä, eikä lukemaan tarvitse osata sujuvasti, koska hahmo sanoo sanat myös ääneen.</p>
+    <ol class="steps">
+      <li><strong>Peli antaa sanan.</strong> Ylhäällä lukee esimerkiksi <span lang="se">Etsi: <b>eadni</b></span>.</li>
+      <li><strong>Mene sen luo.</strong> Kulje hahmollasi sen luo, joka mielestäsi sopii.</li>
+      <li><strong>Kuule ja näe, mikä se oli.</strong> Väärästäkin arvauksesta oppii, koska hahmo kertoo aina, mikä se oli.</li>
+    </ol>
+  </section>
+
+  <section>
+    <h2>Paikat</h2>
+    <div class="places">
+      <figure><img src="art/site/koti.png" width="280" height="190" alt="" loading="lazy"><figcaption><b>Koti</b> Viisi huonetta, huonekalut ja perhe: 24 sanaa.</figcaption></figure>
+      <figure><img src="art/site/elaimet.png" width="280" height="190" alt="" loading="lazy"><figcaption><b>Eläimet</b> Metsässä liikkuu 16 eläintä poroista perhosiin.</figcaption></figure>
+      <figure><img src="art/site/parkkipaikka.png" width="280" height="190" alt="" loading="lazy"><figcaption><b>Parkkipaikka</b> Ajoneuvot ja värit kolmella tasolla.</figcaption></figure>
+      <figure><img src="art/site/kirjasto.png" width="280" height="190" alt="" loading="lazy"><figcaption><b>Kirjasto</b> Kirjat, kynät ja vihot kolmella tasolla.</figcaption></figure>
+      <figure><img src="art/site/kauppa.png" width="280" height="190" alt="" loading="lazy"><figcaption><b>Kauppa</b> Ostoslista haetaan järjestyksessä: 16 ruokaa.</figcaption></figure>
+      <figure><img src="art/site/luokka.png" width="280" height="190" alt="" loading="lazy"><figcaption><b>Luokka</b> Numerot pulpeteilla, 0–10, 0–20 ja 0–100.</figcaption></figure>
+    </div>
+  </section>
+
+  <section>
+    <h2>Mitä pelissä harjoitellaan</h2>
+    <ul class="points">
+      <li><strong>Sanasto arjesta.</strong> Perhe, koti, eläimet, ruoka, ajoneuvot, koulutavarat ja numerot.</li>
+      <li><strong>Sanan kuuleminen ja lukeminen yhdessä.</strong> Jokainen sana näkyy ja kuuluu, ja suomennos on vieressä.</li>
+      <li><strong>Kielioppia askel kerrallaan.</strong> Väri liitetään sanaan ensin perusmuodossa (<span lang="se">biila: vielgat</span>) ja sitten sanan edessä (<span lang="se">vilges biila</span>).</li>
+      <li><strong>Monikko.</strong> Sanakortti näyttää myös monikon, esimerkiksi <span lang="se">eadni – eatnit</span>.</li>
+      <li><strong>Lyhyet lauseet.</strong> <span lang="se">Dát lea girji. Son lea eadni.</span></li>
+      <li><strong>Kokeilemalla oppiminen.</strong> Virheitä ei rangaista. Jos haluaa haastetta, kello ottaa aikaa ja parhaat ajat jäävät muistiin.</li>
+    </ul>
+    <p class="note">Nämä ovat pelin tavoitteita. Oppimisvaikutusta ei ole tutkittu.</p>
+  </section>
+
+  <section>
+    <h2>Näin pelaat</h2>
+    <dl class="controls">
+      <div><dt>Liiku</dt><dd>Nuolet tai WASD, tai napauta maailmaa</dd></div>
+      <div><dt>Juokse</dt><dd>Shift pohjassa. Törmätessä liu'ut mahallasi!</dd></div>
+      <div><dt>Hyppää</dt><dd>Välilyönti</dd></div>
+      <div><dt>Kyykisty tai istu</dt><dd>C. Luokassa C istuttaa tuolille</dd></div>
+    </dl>
+    <p class="note">Peli toimii parhaiten tietokoneella. Puhelimessa on omat painikkeet, mutta niitä ei ole vielä kokeiltu oikealla puhelimella.</p>
+  </section>
+
+  <section>
+    <h2>Mitä demo tarkoittaa käytännössä</h2>
+    <ul class="points">
+      <li><strong>Sanat:</strong> Sanat ja suomennokset on poimittu sanakirjoista koneellisesti, ja lauseet on muodostettu koneellisesti. Niitä ei ole tarkistettu.</li>
+      <li><strong>Puhe:</strong> Ääni on puhesynteesiä eikä oikean puhujan puhetta, joten ääntämys voi olla paikoin väärä.</li>
+      <li><strong>Grafiikka:</strong> Hahmojen ja gáktien yksityiskohtia ei ole tarkistettu kattavasti. Ulkoasu on luonnosmainen.</li>
+      <li><strong>Kieli:</strong> Pelin ohjeet ovat toistaiseksi vain suomeksi.</li>
+      <li><strong>Muutokset:</strong> Paikkoja, tasoja ja sääntöjä voi tulla, muuttua tai poistua. Tallennetut ajat voivat kadota päivityksissä.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Yksityisyys</h2>
+    <p>Pelissä ei ole mainoksia, seurantaa eikä käyttäjätilejä. Nimi, hahmo ja parhaat ajat tallentuvat vain omaan selaimeesi, eikä niitä lähetetä minnekään.</p>
+  </section>
+
+  <section>
+    <h2>Kiitokset ja lähteet</h2>
+    <p>Sanat ja kieliteknologia tulevat saamen kieliteknologian yhteisöltä: <a href="https://giellalt.github.io/">GiellaLT</a>, <a href="https://divvun.no/">Divvun</a> ja <a href="https://giellatekno.uit.no/">Giellatekno</a> (UiT Norjan arktinen yliopisto). Puhe on tehty Divvunin ja Giellateknon puhesynteesillä. Sanat kulkevat pelille <a href="https://github.com/sombyduodji/satni-fst">Sátni FST</a> -sanakirjan kautta.</p>
+    <p>Grafiikka ja koodi on tehty tätä peliä varten tekoälyn avulla. Tekijä: Juha Somby, <a href="mailto:satni@somby.fi">satni@somby.fi</a>. Lisenssi GPL-3.0. <a href="CREDITS.md">Tekijät ja lisenssit</a> · <a href="https://github.com/sombyduodji/satnematki">Lähdekoodi</a> · <a href="https://github.com/sombyduodji/satnematki/issues">Anna palautetta</a></p>
+  </section>
+
+  <p class="again"><a class="play" href="peli.html">Pelaa selaimessa</a></p>
+</main>
+</body>
+</html>
