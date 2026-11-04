@@ -375,3 +375,11 @@ footer a { color: #cfe3ee; }
 .place-stars i { font-style: normal; color: transparent; }
 .place-stars i.full { color: #ffc61e; text-shadow: 0 0 4px rgba(255, 170, 0, 0.7); }
 .place-stars i.half { background: linear-gradient(90deg, #ffc61e 50%, transparent 50%); -webkit-background-clip: text; background-clip: text; }
+
+/* The place itself, showing faintly behind its button in the menu. */
+#card.places button.has-map { position: relative; overflow: hidden; isolation: isolate; }
+#card.places button.has-map > * { position: relative; }
+#card.places button.has-map > .place-stars { position: absolute; }
+.place-map { position: absolute !important; inset: 0; z-index: -1; width: 100%; height: 100%; object-fit: cover; opacity: 0.35; image-rendering: pixelated; transition: opacity 0.15s; }
+#card.places button.has-map:hover .place-map, #card.places button.has-map:focus-visible .place-map { opacity: 0.55; }
+#card.places button.has-map .title, #card.places button.has-map small { text-shadow: 0 1px 3px #000c, 0 0 2px #000c; }

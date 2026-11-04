@@ -235,7 +235,7 @@ function storeWords(findCount, extraCount) {
 
 const THEMES = [
   { id: "home", title: "Koti", place: "home", sprite: "sofa", words: () => plainWords("home", 8, 99) },
-  { id: "forest", title: "Eläimet", place: "forest", sprite: "rieban", words: () => forestWords(8, 3) },
+  { id: "forest", title: "Metsä", place: "forest", sprite: "rieban", words: () => forestWords(8, 3) },
   { id: "city-names", title: "Parkkipaikka", level: "helppo", example: "biila", place: "city", sprite: "car", colour: "red", words: () => carParkWords(8, 4) },
   { id: "city-mixed", title: "Parkkipaikka", level: "keskitaso", example: "biila: vielgat", place: "city", sprite: "bus", colour: "yellow", words: () => colouredWords("vehicle", 6, 5, easyPhrase) },
   { id: "city", title: "Parkkipaikka", level: "vaikeampi", example: "vilges biila", place: "city", sprite: "truck", colour: "blue", words: () => colouredWords("vehicle", 6, 5, attributivePhrase) },
@@ -1063,11 +1063,21 @@ function showPlaces() {
 // Pictures carry it for a child who doesn't read yet.
 // Stars out of five in the menu for how far along a place is; the rest have half a star.
 const PLACE_STARS = { store: 2, forest: 1 };
+// The start page's picture of each place, showing faintly behind its button in the menu.
+const PLACE_MAPS = { home: "koti", forest: "elaimet", city: "parkkipaikka", library: "kirjasto", store: "kauppa", classroom: "luokka" };
 const HALF_STAR = 0.5;
 
-function menuButton({ look: picture, title, small, example, onClick, className, starCount }) {
+function menuButton({ look: picture, title, small, example, onClick, className, starCount, map }) {
   const button = document.createElement("button");
   if (className) button.className = className;
+  if (map) {
+    const mapEl = document.createElement("img");
+    mapEl.className = "place-map";
+    mapEl.src = `art/site/${map}.png`;
+    mapEl.alt = "";
+    button.classList.add("has-map");
+    button.append(mapEl);
+  }
   if (picture) {
     const image = pictureOf(picture);
     const canvasEl = document.createElement("canvas");
@@ -1191,6 +1201,7 @@ function menuPlaces() {
       title,
       small: levels.length > 1 ? `${"●".repeat(played)}${"○".repeat(levels.length - played)} ${TEXT.levels(levels.length)}` : bestText(levels[0]),
       starCount: PLACE_STARS[levels[0].place] ?? HALF_STAR,
+      map: PLACE_MAPS[levels[0].place],
       onClick: () => (levels.length > 1 ? menuLevels(title, levels) : enterTheme(levels[0])),
     }));
   }

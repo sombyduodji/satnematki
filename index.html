@@ -11,7 +11,7 @@
 <div class="stripe"></div>
 <header class="hero">
   <div class="hero-text">
-    <h1 lang="se">Sátnemátki <small>v0.1.5</small></h1>
+    <h1 lang="se">Sátnemátki <small>v0.1.6</small></h1>
     <p class="lead">Pohjoissaamen sanapeli lapsille. Nimi tarkoittaa <em>sanamatkaa</em>: kuljet hahmollasi kodissa, metsässä ja kaupassa ja etsit sen, mitä saamenkielinen sana tarkoittaa.</p>
     <a class="play" href="peli.html">Pelaa selaimessa</a>
     <p class="fine">Maksuton. Ei rekisteröitymistä eikä asennusta.</p>
@@ -44,7 +44,7 @@
     <h2>Paikat</h2>
     <div class="places">
       <figure><img src="art/site/koti.png" width="280" height="190" alt="" loading="lazy"><figcaption><b>Koti</b> Viisi huonetta, huonekalut ja perhe: 24 sanaa.</figcaption></figure>
-      <figure><img src="art/site/elaimet.png" width="280" height="190" alt="" loading="lazy"><figcaption><b>Eläimet</b> Metsässä liikkuu 20 eläintä poroista kotkiin.</figcaption></figure>
+      <figure><img src="art/site/elaimet.png" width="280" height="190" alt="" loading="lazy"><figcaption><b>Metsä</b> Metsässä liikkuu 20 eläintä poroista kotkiin.</figcaption></figure>
       <figure><img src="art/site/parkkipaikka.png" width="280" height="190" alt="" loading="lazy"><figcaption><b>Parkkipaikka</b> Ajoneuvot ja värit kolmella tasolla.</figcaption></figure>
       <figure><img src="art/site/kirjasto.png" width="280" height="190" alt="" loading="lazy"><figcaption><b>Kirjasto</b> Kirjat, kynät ja vihot kolmella tasolla.</figcaption></figure>
       <figure><img src="art/site/kauppa.png" width="280" height="190" alt="" loading="lazy"><figcaption><b>Kauppa</b> Kori, ostoslista, kassa ja ovi kahdella tasolla: 40 ruokaa.</figcaption></figure>
@@ -95,13 +95,14 @@
   </section>
 
   <section>
-    <h2>Uutta versiossa 0.1.5</h2>
+    <h2>Uutta versioissa 0.1.5 ja 0.1.6</h2>
     <ul class="points">
+      <li><strong>Paikat liikkeessä.</strong> Tällä sivulla paikan kuva näyttää lyhyen pätkän pelistä, kun hiiri on sen päällä. Pelin valikossa kartta näkyy himmeästi painikkeen takana. Eläimet-paikan nimi on nyt Metsä.</li>
       <li><strong>Kauppareissu.</strong> Ota kori, hae tavarat käsin kirjoitetun listan mukaan missä järjestyksessä tahansa, jonota kassalle, maksa, ota kassi ja lähde ovesta. Kaupassa on muita asiakkaita, kassa, lihatiski ja hyllyjä täyttävä työntekijä.</li>
-      <li><strong>Vaikeampi kauppataso.</strong> Samaa tavaraa haetaan useita, ja hinta näppäillään itse. Ruokia on nyt paljon enemmän.</li>
+      <li><strong>Vaikeampi kauppataso.</strong> Samaa tavaraa haetaan useita kappaleita, ja hinta näppäillään itse. Ruokia on nyt paljon enemmän.</li>
       <li><strong>Tarkempi grafiikka.</strong> Kauppa ja metsä, niiden ihmiset ja eläimet sekä pelaajan hahmo on piirretty tarkemmin.</li>
       <li><strong>Eläimet reagoivat.</strong> Eläintä voi silittää, kissa kehrää, koira läähättää, perhonen laskeutuu kädelle ja linnut lentävät pois.</li>
-      <li><strong>Väärä valinta pysäyttää.</strong> Väärästä valinnasta hahmo seisoo kaksi sekuntia paikallaan, kun se kertoo, mikä se oli.</li>
+      <li><strong>Väärä valinta pysäyttää.</strong> Väärän valinnan jälkeen hahmo seisoo kaksi sekuntia paikallaan ja kertoo, mikä se oli.</li>
       <li><strong>Tähdet valikossa.</strong> Kultaiset tähdet kertovat, kuinka pitkällä kukin paikka on, asteikolla nollasta viiteen.</li>
     </ul>
   </section>
@@ -114,5 +115,6 @@
 
   <p class="again"><a class="play" href="peli.html">Pelaa selaimessa</a></p>
 </main>
+<script src="src/site.js"></script>
 </body>
 </html>
