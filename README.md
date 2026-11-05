@@ -1,6 +1,6 @@
 # Sátnemátki
 
-*Sátnemátki* means "word journey" in Northern Sámi. Version 0.2.2, a technology demo.
+*Sátnemátki* means "word journey" in Northern Sámi. Version 0.2.3, a technology demo.
 
 A Northern Sámi word game for children. The player creates a character, Máhtte or Biret, chooses a place, and
 walks around it in an isometric view with a camera that follows: furniture and family at home, animals in the forest, coloured books on the shelves and
@@ -28,7 +28,7 @@ A clock starts at the first move of a round and stops at the last word; in the s
 time, the ten best times for that place (kept in the browser, with the name the player gave), and the choice to
 play again or go to the main menu. The main menu fills the page: pick a place, then what to do there if it has several things, such as Opettele numerot in the classroom, then its level if it has several, or replay the last one. It also changes the player, which asks for the character and name again.
 
-Luokka has three things to do. Opettele numerot is the one above. In Kirjoita numerot, with levels for 0–9, 0–20 and 0–100, the character sits at one of four desks in a small sunny classroom and can't get up. The teacher, in a shirt of one of three colours chosen at random, writes a number in Sámi on the white board and asks what it is, in a voice of her own. E raises a hand and opens a keypad, like the shop's, for the number in digits. Then the character says it and the teacher answers. If nobody answers for 20 seconds, a classmate does, in a character's voice played higher. Kirjoita sanalla, the hard one, has levels for 0–9, 0–20 and 0–100 and goes the other way: the board shows digits and the keypad becomes a Sámi keyboard for writing the word, with the classmates waiting all the while. All of it is in `src/lesson.js`.
+Luokka has three things to do. Opettele numerot is the one above. In Kirjoita numerot, with levels for 0–9, 0–20 and 0–100, the character sits at one of four desks in a small sunny classroom and can't get up. The teacher, in a shirt of one of three colours chosen at random, writes a number in Sámi on the white board and asks what it is, in a voice of her own. E raises a hand and opens a keypad, like the shop's, for the number in digits. Then the character says it and the teacher answers. If nobody answers for 20 seconds, a classmate does, in a character's voice played higher. Kirjoita sanalla, the hard one, has levels for 0–9, 0–20 and 0–100 and goes the other way: the board shows digits and the keypad becomes a Sámi keyboard for writing the word, with the classmates waiting all the while. In both, what's said shows in a speech bubble in Sámi and Finnish, and each language has a switch where the level is chosen. All of it is in `src/lesson.js`.
 
 The general store, Rautakauppa, is played the same way, without the butcher. It's L-shaped: tools and fishing gear hang on pegboards and clothes on rails in the hall, and a wide opening leads to a showroom where big things stand on low platforms. Its prices are play prices. It has one till and a background sound of its own, from a large hardware store.
 

@@ -183,6 +183,9 @@ body.menu #view, body.menu #pad, body.menu #in-game { display: none; }
 .demo-notice { margin: 0 0 10px; padding: 6px 10px; font-size: 14px; line-height: 1.3; color: #14213d; background: #f4f1e8; border-left: 5px solid var(--sami-red); border-radius: 4px; }
 #card.places .help-switch { display: block; width: 100%; min-height: 36px; margin-bottom: 10px; font-weight: 400; }
 #card.places .help-switch[aria-pressed=true] { color: #14213d; background: var(--sami-yellow); border-color: var(--sami-yellow); }
+.speech-switches { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 8px; margin-bottom: 10px; }
+#card.places .speech-switch { min-height: 36px; font-weight: 400; }
+#card.places .speech-switch[aria-pressed=true] { color: #14213d; background: var(--sami-yellow); border-color: var(--sami-yellow); }
 .modes { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 10px; }
 #card.places .modes button { flex-direction: row; justify-content: center; min-height: 40px; font-weight: 400; }
 #card.places .modes button[aria-pressed=true] { color: #14213d; background: var(--sami-yellow); border-color: var(--sami-yellow); font-weight: 700; }

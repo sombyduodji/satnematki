@@ -906,6 +906,7 @@ async function playNextLine() {
   }
   voiceBusy = true;
   duckAmbience(true);
+  line.onStart?.();
   const mine = ++lineNumber;
   const next = () => {
     if (mine !== lineNumber) return;
@@ -1381,7 +1382,7 @@ function menuLevels(title, levels, goBack = menuPlaces) {
       onClick: () => enterTheme(option),
     }));
   });
-  cardEl.append(back, grid);
+  cardEl.append(back, ...(levels[0].lesson ? [lessonSpeechSwitches()] : []), grid);
   grid.querySelector("button").focus();
 }
 

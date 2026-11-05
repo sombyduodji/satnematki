@@ -1,6 +1,6 @@
 // A lesson in the small classroom. The character sits at a desk and can't get up. The teacher writes a number in Sámi on the board, and
 // whoever knows it raises a hand: E, and then the number goes into a keypad like the shop's. Left too long, a classmate answers instead.
-const LESSON = { rounds: 8, teacherAt: [10.3, 3.3], myChair: 1, firstMs: 2200, writeMsPerLetter: 120, writeLeastMs: 900, nextMs: 800, wipeMs: 450, handMs: 1100, longestWord: 30, speakUpAfterMs: 20000, speakUpSaysMs: 3600, swingLeastMs: 10000, swingMoreMs: 20000, swingForMs: 1600, walk: 0.0035, boardFrom: 3.4, boardTo: 9, sunPanes: [[3, 4], [4, 5], [7, 8], [8, 9]] };
+const LESSON = { rounds: 8, teacherAt: [10.3, 3.3], myChair: 1, firstMs: 2200, writeMsPerLetter: 120, writeLeastMs: 900, nextMs: 800, wipeMs: 450, handMs: 1100, longestWord: 30, speakUpAfterMs: 20000, speakUpSaysMs: 3600, swingLeastMs: 10000, swingMoreMs: 20000, swingForMs: 1600, bubbleLingerMs: 1500, bubbleReadMsPerLetter: 55, bubbleWide: 130, walk: 0.0035, boardFrom: 3.4, boardTo: 9, sunPanes: [[3, 4], [4, 5], [7, 8], [8, 9]] };
 const LESSON_TEACHERS = ["teacher", "teacher_blue", "teacher_red"];
 // Each classmate's voice: one of the two characters' lines, played higher.
 const LESSON_VOICES = { classmate_gakti: ["biret", 1.14], classmate_anorak: ["mahtte", 1.14], classmate_wool: ["biret", 1.25], classmate_parka: ["mahtte", 1.28] };
@@ -27,8 +27,19 @@ const LESSON_TEXT = {
   beaten: (name, word, number) => `${escapeText(name)} ehti ensin: <span lang="se">${escapeText(word)}</span> = ${number}.`,
   right: (word, number) => `<span class="word" lang="se">${escapeText(word)}</span> <span class="translation">= ${number}</span>`,
   close: "Sulje",
-  says: (name, shown) => `${name}: Dát lea ${shown}.`,
   wrongWord: "Ei ihan. Korjaa ja yritä uudelleen.",
+  speechSe: (on) => `Saamenkielinen teksti: ${on ? "päällä" : "pois"}`,
+  speechFi: (on) => `Suomenkielinen teksti: ${on ? "päällä" : "pois"}`,
+};
+// What's said aloud, in writing: Sámi and Finnish. The same as the lines in tools/fetch_voices.py.
+const LESSON_SPEECH = {
+  hello: ["Bures, mánát!", "Hei, lapset!"],
+  wrong: ["Ii dat lean.", "Ei se ollut."],
+  end: ["Giitu, mánát!", "Kiitos, lapset!"],
+  whichDigit: ["Mii nummir dát lea?", "Mikä numero tämä on?"],
+  whichNumber: ["Mii lohku dát lea?", "Mikä luku tämä on?"],
+  answer: (number) => [`Dát lea ${window.MAHTTE_NUMBERS[number]}. Leago nu?`, `Tämä on ${number}. Onko niin?`],
+  praise: ([say, sayFi], number, name) => [`${say} Dát lea ${window.MAHTTE_NUMBERS[number]}. Buorre, ${name}!`, `${sayFi} Tämä on ${number}. Hyvä, ${name}!`],
 };
 // Things in the room, by x and y; the last is how high they stand, for one on a desk.
 const LESSON_PLANTS = [["lesson_plant", 2.7, 2.7], ["lesson_plant", 2.7, 11.1], ["flower", 11.2, 2.8], ["flower", 6.5, 4.5, 13]];
@@ -41,7 +52,7 @@ function setupLesson() {
   const looks = ["classmate_gakti", ...shuffled(LESSON_CLASSMATES).slice(0, 2)];
   lesson = {
     people: [], teacher: LESSON_TEACHERS[Math.floor(Math.random() * LESSON_TEACHERS.length)], teacherX: LESSON.teacherAt[0], teacherY: LESSON.teacherAt[1],
-    numbers: shuffled(Array.from({ length: theme.most + 1 }, (_, number) => number)), current: null, wipeAt: null, wiped: null, nextAt: Infinity, typed: "", typing: false, handUntil: 0, handAt: 0, started: false, ended: false,
+    numbers: shuffled(Array.from({ length: theme.most + 1 }, (_, number) => number)), current: null, wipeAt: null, wiped: null, nextAt: Infinity, typed: "", typing: false, handUntil: 0, handAt: 0, started: false, ended: false, bubbles: [],
   };
   objects = [];
   const names = { biret: shuffled(LESSON_NAMES.biret), mahtte: shuffled(LESSON_NAMES.mahtte) };
@@ -67,11 +78,24 @@ function buildLessonAhead() {
 }
 
 const lessonSay = (...lines) => playVoice(...lines);
+// One person's turn to speak: who, what it says in writing, and the lines that say it.
+const lessonTurn = (who, [se, fi], ...lines) => ({ who, se, fi, lines });
+// Says the turns one after another. Each one's bubble comes up with its first line and lasts until that person has finished.
+function lessonSpeak(...turns) {
+  const shown = [];
+  const speech = playVoice(...turns.flatMap((turn) => turn.lines.map((line, i) => (i ? line : { src: line.src ?? line, rate: line.rate, onStart: () => shown.push(lessonShowBubble(turn)) }))));
+  speech.then(() => shown.forEach(lessonReleaseBubble));
+  return speech;
+}
 const lessonMyLine = (name) => `audio/${name}-${VOICES[look.gender]}.wav`;
 // One of the teacher's praises, then "Dát lea" and the number by itself, and "Buorre" with the name of whoever answered.
 // Two of the praises are left out here, as they would say "buorre" twice.
 const LESSON_PRAISES = [0, 1, 4, 5, 6, 7, 8, 9, 10, 11];
-const lessonPraise = (number, name) => [`audio/teacher-praise-${LESSON_PRAISES[Math.floor(Math.random() * LESSON_PRAISES.length)]}.wav`, "audio/teacher-it-is.wav", `audio/teacher-number-${number}.wav`, `audio/teacher-good-${lessonNameFile(name)}.wav`];
+function lessonPraise(number, name) {
+  const praise = LESSON_PRAISES[Math.floor(Math.random() * LESSON_PRAISES.length)];
+  // Her lines leave out "Gávdnet dan!", so they count without it.
+  return lessonTurn("teacher", LESSON_SPEECH.praise(TEXT.right.filter(([say]) => say !== "Gávdnet dan!")[praise], number, name), `audio/teacher-praise-${praise}.wav`, "audio/teacher-it-is.wav", `audio/teacher-number-${number}.wav`, `audio/teacher-good-${lessonNameFile(name)}.wav`);
+}
 
 // After the rules have been read.
 function lessonBegin() {
@@ -79,7 +103,7 @@ function lessonBegin() {
   lesson.started = true;
   lesson.nextAt = now + LESSON.firstMs;
   timer.running = true;
-  lessonSay("audio/teacher-hello.wav");
+  lessonSpeak(lessonTurn("teacher", LESSON_SPEECH.hello, "audio/teacher-hello.wav"));
   showPrompt();
 }
 
@@ -110,7 +134,8 @@ function updateLesson(dt, now) {
     current.asked = true;
     current.waitFrom = now;
     const question = `audio/teacher-which-${current.number < 10 ? "digit" : "number"}.wav`;
-    if (!lesson.typing && !current.answered) lessonSay(...(audioOnly ? [`audio/teacher-number-${current.number}.wav`] : []), question);
+    // The question only, never the number: that would give the answer away.
+    if (!lesson.typing && !current.answered) lessonSpeak(lessonTurn("teacher", current.number < 10 ? LESSON_SPEECH.whichDigit : LESSON_SPEECH.whichNumber, ...(audioOnly ? [`audio/teacher-number-${current.number}.wav`] : []), question));
   }
   // Left too long, a classmate gets there first.
   if (current.asked && !current.answered && !lesson.typing && now - current.waitFrom >= LESSON.speakUpAfterMs) lessonSpeakUp(now);
@@ -169,12 +194,10 @@ function lessonSpeakUp(now) {
   helper.handAt = now;
   helper.handUntil = now + LESSON.speakUpSaysMs;
   helper.swingUntil = 0;
-  helper.says = LESSON_TEXT.says(helper.name, theme.inWords ? word : number);
   if (!audioOnly) lessonNote(LESSON_TEXT.beaten(helper.name, word, number));
-  lessonNext(lessonSay(
-    { src: `audio/number-${number}-${voiceName}.wav`, rate },
-    { src: `audio/is-it-so-${voiceName}.wav`, rate },
-    ...lessonPraise(number, helper.name),
+  lessonNext(lessonSpeak(
+    lessonTurn(helper, LESSON_SPEECH.answer(number), { src: `audio/number-${number}-${voiceName}.wav`, rate }, { src: `audio/is-it-so-${voiceName}.wav`, rate }),
+    lessonPraise(number, helper.name),
   ));
 }
 
@@ -244,7 +267,7 @@ function lessonConfirm() {
   // A misspelt word stays open to be put right, and the classmates still wait.
   if (!right && theme.inWords) {
     lessonKeypad(LESSON_TEXT.wrongWord);
-    lessonSay("audio/teacher-wrong.wav");
+    lessonSpeak(lessonTurn("teacher", LESSON_SPEECH.wrong, "audio/teacher-wrong.wav"));
     return;
   }
   lesson.typing = false;
@@ -253,7 +276,7 @@ function lessonConfirm() {
     me.heldUntil = now + WRONG_HOLD_MS;
     if (lesson.current.waitFrom) lesson.current.waitFrom = now;
     lessonNote(LESSON_TEXT.notYet);
-    lessonSay("audio/teacher-wrong.wav");
+    lessonSpeak(lessonTurn("teacher", LESSON_SPEECH.wrong, "audio/teacher-wrong.wav"));
     return;
   }
   stars++;
@@ -263,7 +286,11 @@ function lessonConfirm() {
   cardEl.innerHTML = `<div>${LESSON_TEXT.right(word, number)}</div>`;
   showPrompt();
   // The character says it and asks, and the teacher answers. All of it is joined from separate lines.
-  const speech = lessonSay(lessonMyLine(`number-${number}`), lessonMyLine("is-it-so"), ...lessonPraise(number, CHARACTER_NAMES[VOICES[look.gender]]), ...(stars >= LESSON.rounds ? ["audio/teacher-end.wav"] : []));
+  const speech = lessonSpeak(
+    lessonTurn(lesson.people.find((person) => person.me), LESSON_SPEECH.answer(number), lessonMyLine(`number-${number}`), lessonMyLine("is-it-so")),
+    lessonPraise(number, CHARACTER_NAMES[VOICES[look.gender]]),
+    ...(stars >= LESSON.rounds ? [lessonTurn("teacher", LESSON_SPEECH.end, "audio/teacher-end.wav")] : []),
+  );
   if (stars >= LESSON.rounds) {
     lesson.ended = true;
     lesson.current.answered = true;
@@ -374,6 +401,7 @@ function lessonPaintBoard() {
 
 function lessonScene(scene, now, seen) {
   if (!lesson) return;
+  scene.push({ d: 1000, paint: () => paintLessonBubbles(now) });
   // After the wall behind it, and before the teacher in front of it.
   scene.push({ d: LESSON_BOARD_DEPTH, paint: () => lessonPaintBoard() });
   const person = (sprite, x, y, facing, frame, inFront = 0) => {
@@ -397,7 +425,6 @@ function lessonScene(scene, now, seen) {
     const swinging = someone.swingUntil > now;
     const frame = up ? 6 : swinging ? 7 + (Math.floor(now / 210) % 2) : 5;
     person(`person_${someone.look}`, someone.chair.x, someone.chair.y - 0.1, 2, frame, 0.15); // over the chair's back, so that they can be seen
-    if (up && someone.says) scene.push({ d: 1000, paint: () => lessonBubble(someone.says, isoX(someone.chair.x, someone.chair.y), isoY(someone.chair.x, someone.chair.y) - 38) });
   }
   for (const [sprite, x, y, high = 0] of LESSON_PLANTS) {
     const cx = isoX(x, y), cy = isoY(x, y);
@@ -413,34 +440,132 @@ function lessonScene(scene, now, seen) {
   }
 }
 
-// What a classmate says, in a bubble over their head.
-function lessonBubble(text, x, y) {
-  ctx.save();
-  ctx.font = "bold 9px sans-serif";
-  const wide = Math.ceil(ctx.measureText(text).width) + 10, top = Math.round(Math.max(cam.y + 3, y - 14));
+// ------------------------------------------------------------- what's said, in writing
+// Bubbles over whoever speaks, in Sámi and in Finnish. Each language can be switched off where the level is chosen; on unless so.
+let lessonSpeechShown = { se: true, fi: true };
+try {
+  lessonSpeechShown = { se: localStorage.getItem("mahtte.speech.se") !== "off", fi: localStorage.getItem("mahtte.speech.fi") !== "off" };
+} catch {
+  // Private windows may refuse; the bubbles just stay on.
+}
+
+function lessonSpeechSwitches() {
+  const switches = document.createElement("div");
+  switches.className = "speech-switches";
+  for (const language of ["se", "fi"]) {
+    const button = document.createElement("button");
+    button.className = "speech-switch";
+    const show = () => {
+      const on = lessonSpeechShown[language];
+      button.textContent = language === "se" ? LESSON_TEXT.speechSe(on) : LESSON_TEXT.speechFi(on);
+      button.setAttribute("aria-pressed", String(on));
+    };
+    button.addEventListener("click", () => {
+      lessonSpeechShown[language] = !lessonSpeechShown[language];
+      try {
+        localStorage.setItem(`mahtte.speech.${language}`, lessonSpeechShown[language] ? "on" : "off");
+      } catch {
+        // The choice still holds for this visit.
+      }
+      show();
+    });
+    show();
+    switches.append(button);
+  }
+  return switches;
+}
+
+function lessonShowBubble({ who, se, fi }) {
+  const now = performance.now();
+  const bubble = { who, se, fi, at: now, until: Infinity };
+  if (!lesson) return bubble;
+  lesson.bubbles.forEach(lessonReleaseBubble);
+  lesson.bubbles = lesson.bubbles.filter((other) => other.who !== who && now < other.until);
+  lesson.bubbles.push(bubble);
+  return bubble;
+}
+
+// That person has finished: the bubble stays a little longer, and long enough for a slower reader.
+function lessonReleaseBubble(bubble) {
+  if (bubble.until !== Infinity) return;
+  bubble.until = Math.max(performance.now() + LESSON.bubbleLingerMs, bubble.at + Math.max(bubble.se.length, bubble.fi.length) * LESSON.bubbleReadMsPerLetter);
+}
+
+// The newest first, and one that would land on a newer one waits out of sight. Not when only listening.
+function paintLessonBubbles(now) {
+  if (audioOnly) return;
+  const painted = [];
+  for (const bubble of [...lesson.bubbles].reverse()) {
+    if (now >= bubble.until || (!lessonSpeechShown.se && !lessonSpeechShown.fi)) continue;
+    const name = bubble.who.name ? `${bubble.who.name}: ` : "";
+    const se = lessonSpeechShown.se ? name + bubble.se : "";
+    const fi = lessonSpeechShown.fi ? (se ? "" : name) + bubble.fi : "";
+    // The teacher's goes under her, as over her head it would hide the board.
+    const box = bubble.who === "teacher"
+      ? lessonBubbleBox(se, fi, isoX(lesson.teacherX, lesson.teacherY), isoY(lesson.teacherX, lesson.teacherY) + 8, true)
+      : lessonBubbleBox(se, fi, isoX(bubble.who.chair.x, bubble.who.chair.y), isoY(bubble.who.chair.x, bubble.who.chair.y) - 38);
+    if (painted.some((other) => box.left < other.left + other.wide + 2 && other.left < box.left + box.wide + 2 && box.top < other.top + other.high + 8 && other.top < box.top + box.high + 8)) continue;
+    painted.push(box);
+    lessonPaintBubble(box);
+  }
+}
+
+const LESSON_BUBBLE_SE = "bold 9px sans-serif", LESSON_BUBBLE_FI = "8px sans-serif";
+
+function lessonBubbleRows(text, font) {
+  if (!text) return [];
+  ctx.font = font;
+  const rows = [];
+  for (const word of text.split(" ")) {
+    const row = rows.length ? `${rows.at(-1)} ${word}` : word;
+    if (rows.length && ctx.measureText(row).width <= LESSON.bubbleWide) rows[rows.length - 1] = row;
+    else rows.push(word);
+  }
+  return rows.map((row) => ({ row, font, wide: ctx.measureText(row).width, high: font === LESSON_BUBBLE_SE ? 10 : 9, colour: font === LESSON_BUBBLE_SE ? "#1f2a38" : "#4c5c6b" }));
+}
+
+function lessonBubbleBox(text, finnish, x, y, below = false) {
+  const rows = [...lessonBubbleRows(text, LESSON_BUBBLE_SE), ...lessonBubbleRows(finnish, LESSON_BUBBLE_FI)];
+  const wide = Math.ceil(Math.max(...rows.map((row) => row.wide))) + 10;
+  const high = 4 + rows.reduce((sum, row) => sum + row.high, 0);
+  const top = Math.round(below ? Math.min(cam.y + VIEW_H - high - 3, y) : Math.max(cam.y + 3, y - high));
   // Whole on screen, even when who is speaking stands near the edge of the view.
   const left = Math.round(Math.max(cam.x + 3, Math.min(cam.x + VIEW_W - wide - 3, x - wide / 2)));
-  x = Math.max(left + 6, Math.min(left + wide - 6, x));
+  return { rows, wide, high, top, left, below, x: Math.max(left + 6, Math.min(left + wide - 6, x)) };
+}
+
+function lessonPaintBubble({ rows, wide, high, top, left, below, x }) {
+  // The tail points at who is speaking, from whichever side the bubble is on.
+  const edge = below ? top : top + high, way = below ? -1 : 1;
+  ctx.save();
   ctx.fillStyle = "#1f2a38";
   ctx.beginPath();
-  ctx.roundRect(left - 1, top - 1, wide + 2, 16, 5);
-  ctx.moveTo(x - 4, top + 14);
-  ctx.lineTo(x, top + 20);
-  ctx.lineTo(x + 4, top + 14);
+  ctx.roundRect(left - 1, top - 1, wide + 2, high + 2, 5);
+  ctx.moveTo(x - 4, edge);
+  ctx.lineTo(x, edge + 6 * way);
+  ctx.lineTo(x + 4, edge);
   ctx.fill();
   ctx.fillStyle = "#fffdf4";
   ctx.beginPath();
-  ctx.roundRect(left, top, wide, 14, 4);
-  ctx.moveTo(x - 3, top + 13);
-  ctx.lineTo(x, top + 18);
-  ctx.lineTo(x + 3, top + 13);
+  ctx.roundRect(left, top, wide, high, 4);
+  ctx.moveTo(x - 3, edge - way);
+  ctx.lineTo(x, edge + 4 * way);
+  ctx.lineTo(x + 3, edge - way);
   ctx.fill();
-  ctx.fillStyle = "#1f2a38";
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
-  ctx.fillText(text, left + wide / 2, top + 7.5);
+  let at = top + 2;
+  for (const { row, font, high: rowHigh, colour } of rows) {
+    ctx.font = font;
+    ctx.fillStyle = colour;
+    ctx.fillText(row, left + wide / 2, at + rowHigh / 2 + 0.5);
+    at += rowHigh;
+  }
   ctx.restore();
 }
+
+// One short line in a bubble, as the shop's cashier says.
+const lessonBubble = (text, x, y) => lessonPaintBubble(lessonBubbleBox(text, "", x, y));
 
 // A touch of warmth over everything.
 function paintLessonWarmth(camX, camY) {
