@@ -273,7 +273,7 @@ const THEMES = [
   { id: "numbers-10", title: "Luokka", section: "Numerot", activity: "Opettele numerot", level: "0–10", place: "classroom", number: 7, desks: true, words: () => numberWords(10, 7, 4) },
   { id: "numbers-20", title: "Luokka", section: "Numerot", activity: "Opettele numerot", level: "0–20", place: "classroom", number: 15, desks: true, words: () => numberWords(20, 10, 8) },
   { id: "numbers-100", title: "Luokka", section: "Numerot", activity: "Opettele numerot", level: "0–100", place: "classroom", number: 64, desks: true, words: () => numberWords(100, 10, 8) },
-  { id: "lesson-100", title: "Luokka", section: "Numerot", activity: "Kirjoita numerot", level: "0–100", place: "lesson", menuPlace: "classroom", number: 42, lesson: true, most: 100, words: () => ({ find: [], extra: [] }) },
+  ...[[9, 4], [20, 16], [100, 42]].map(([most, number]) => ({ id: `lesson-${most}`, title: "Luokka", section: "Numerot", activity: "Kirjoita numerot", level: `0–${most}`, place: "lesson", menuPlace: "classroom", number, lesson: true, most, words: () => ({ find: [], extra: [] }) })),
   ...[[9, 6], [20, 14], [100, 86]].map(([most, number]) => ({ id: `lesson-words-${most}`, title: "Luokka", section: "Numerot", activity: "Kirjoita sanalla", level: `0–${most}`, place: "lesson", menuPlace: "classroom", number, lesson: true, inWords: true, most, words: () => ({ find: [], extra: [] }) })),
 ];
 let theme = null;
@@ -1126,6 +1126,8 @@ function showPlaces() {
   timerEl.hidden = true;
   paused = true;
   theme = null;
+  lesson = null;
+  me.sittingOn = null; // a desk left behind must not go on looking for its number
   targets = [];
   objects = [];
   preview = null;

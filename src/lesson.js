@@ -1,12 +1,18 @@
 // A lesson in the small classroom. The character sits at a desk and can't get up. The teacher writes a number in Sámi on the board, and
 // whoever knows it raises a hand: E, and then the number goes into a keypad like the shop's. Left too long, a classmate answers instead.
-const LESSON = { rounds: 8, teacherAt: [10.3, 3.3], myChair: 1, firstMs: 2200, writeMsPerLetter: 120, writeLeastMs: 900, nextMs: 800, wipeMs: 450, handMs: 1100, longestWord: 30, speakUpAfterMs: 20000, speakUpSaysMs: 3200, swingLeastMs: 10000, swingMoreMs: 20000, swingForMs: 1600, walk: 0.0035, praises: 12, boardFrom: 3.4, boardTo: 9, sunPanes: [[3, 4], [4, 5], [7, 8], [8, 9]] };
+const LESSON = { rounds: 8, teacherAt: [10.3, 3.3], myChair: 1, firstMs: 2200, writeMsPerLetter: 120, writeLeastMs: 900, nextMs: 800, wipeMs: 450, handMs: 1100, longestWord: 30, speakUpAfterMs: 20000, speakUpSaysMs: 3600, swingLeastMs: 10000, swingMoreMs: 20000, swingForMs: 1600, walk: 0.0035, boardFrom: 3.4, boardTo: 9, sunPanes: [[3, 4], [4, 5], [7, 8], [8, 9]] };
 const LESSON_TEACHERS = ["teacher", "teacher_blue", "teacher_red"];
 // Each classmate's voice: one of the two characters' lines, played higher.
 const LESSON_VOICES = { classmate_gakti: ["biret", 1.14], classmate_anorak: ["mahtte", 1.14], classmate_wool: ["biret", 1.25], classmate_parka: ["mahtte", 1.28] };
 const LESSON_TOUCH = matchMedia("(hover: none) and (pointer: coarse)").matches;
 // The Sámi keyboard layout, after a picture from the user that they think is Divvun's. The keys for punctuation give way to ⌫ and OK.
 const LESSON_KEY_ROWS = ["ášertyuiopåŋ", "asdfghjkløæđ", "žzčcvbnm"].map((row) => [...row]);
+// Classmates' names, chosen anew each round to go with who they are: all listed as such in the dictionary, and for the user to check.
+const LESSON_NAMES = {
+  biret: ["Máret", "Elle", "Ánne", "Inga", "Márjá", "Sárá", "Rávdná", "Risten", "Áile", "Gáddjá"],
+  mahtte: ["Niillas", "Issát", "Heaika", "Ánte", "Jovnna", "Áilu", "Mihkkal", "Ásllat", "Nillá", "Juhán"],
+};
+const lessonNameFile = (name) => name.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
 const LESSON_CLASSMATES = ["classmate_anorak", "classmate_wool", "classmate_parka"];
 const LESSON_TEXT = {
   guide: "Istut omalla paikallasi, etkä voi nousta. Opettaja kirjoittaa taululle luvun saameksi. Kun tiedät sen, viittaa painamalla E tai Viittaa-painiketta ja näppäile luku numeroina. Jos odotat liian kauan, luokkatoveri vastaa ensin.",
@@ -18,10 +24,10 @@ const LESSON_TEXT = {
   promptAudio: "Mikä luku se on?",
   start: "Katso taulua. Kun tiedät luvun, viittaa.",
   notYet: "Ei vielä. Katso taulua ja yritä uudelleen.",
-  beaten: (word, number) => `Luokkatoveri ehti ensin: <span lang="se">${escapeText(word)}</span> = ${number}.`,
+  beaten: (name, word, number) => `${escapeText(name)} ehti ensin: <span lang="se">${escapeText(word)}</span> = ${number}.`,
   right: (word, number) => `<span class="word" lang="se">${escapeText(word)}</span> <span class="translation">= ${number}</span>`,
   close: "Sulje",
-  says: (shown) => `Dát lea ${shown}.`,
+  says: (name, shown) => `${name}: Dát lea ${shown}.`,
   wrongWord: "Ei ihan. Korjaa ja yritä uudelleen.",
 };
 // Things in the room, by x and y; the last is how high they stand, for one on a desk.
@@ -38,8 +44,10 @@ function setupLesson() {
     numbers: shuffled(Array.from({ length: theme.most + 1 }, (_, number) => number)), current: null, wipeAt: null, wiped: null, nextAt: Infinity, typed: "", typing: false, handUntil: 0, handAt: 0, started: false, ended: false,
   };
   objects = [];
+  const names = { biret: shuffled(LESSON_NAMES.biret), mahtte: shuffled(LESSON_NAMES.mahtte) };
   chairs.forEach((chair, index) => {
-    lesson.people.push({ chair, me: index === LESSON.myChair, handUntil: 0, handAt: 0, look: index === LESSON.myChair ? null : looks.pop() });
+    const look = index === LESSON.myChair ? null : looks.pop();
+    lesson.people.push({ chair, me: !look, handUntil: 0, handAt: 0, look, name: look ? names[LESSON_VOICES[look][0]].pop() : null });
   });
   sitOn(chairs[LESSON.myChair], now);
   placeCamera();
@@ -60,8 +68,10 @@ function buildLessonAhead() {
 
 const lessonSay = (...lines) => playVoice(...lines);
 const lessonMyLine = (name) => `audio/${name}-${VOICES[look.gender]}.wav`;
-// One of the teacher's praises, then "Dát lea" and the number by itself.
-const lessonPraise = (number) => [`audio/teacher-praise-${Math.floor(Math.random() * LESSON.praises)}.wav`, "audio/teacher-it-is.wav", `audio/teacher-number-${number}.wav`];
+// One of the teacher's praises, then "Dát lea" and the number by itself, and "Buorre" with the name of whoever answered.
+// Two of the praises are left out here, as they would say "buorre" twice.
+const LESSON_PRAISES = [0, 1, 4, 5, 6, 7, 8, 9, 10, 11];
+const lessonPraise = (number, name) => [`audio/teacher-praise-${LESSON_PRAISES[Math.floor(Math.random() * LESSON_PRAISES.length)]}.wav`, "audio/teacher-it-is.wav", `audio/teacher-number-${number}.wav`, `audio/teacher-good-${lessonNameFile(name)}.wav`];
 
 // After the rules have been read.
 function lessonBegin() {
@@ -159,12 +169,12 @@ function lessonSpeakUp(now) {
   helper.handAt = now;
   helper.handUntil = now + LESSON.speakUpSaysMs;
   helper.swingUntil = 0;
-  helper.says = LESSON_TEXT.says(theme.inWords ? word : number);
-  if (!audioOnly) lessonNote(LESSON_TEXT.beaten(word, number));
+  helper.says = LESSON_TEXT.says(helper.name, theme.inWords ? word : number);
+  if (!audioOnly) lessonNote(LESSON_TEXT.beaten(helper.name, word, number));
   lessonNext(lessonSay(
     { src: `audio/number-${number}-${voiceName}.wav`, rate },
     { src: `audio/is-it-so-${voiceName}.wav`, rate },
-    ...lessonPraise(number),
+    ...lessonPraise(number, helper.name),
   ));
 }
 
@@ -253,7 +263,7 @@ function lessonConfirm() {
   cardEl.innerHTML = `<div>${LESSON_TEXT.right(word, number)}</div>`;
   showPrompt();
   // The character says it and asks, and the teacher answers. All of it is joined from separate lines.
-  const speech = lessonSay(lessonMyLine(`number-${number}`), lessonMyLine("is-it-so"), ...lessonPraise(number), ...(stars >= LESSON.rounds ? ["audio/teacher-end.wav"] : []));
+  const speech = lessonSay(lessonMyLine(`number-${number}`), lessonMyLine("is-it-so"), ...lessonPraise(number, CHARACTER_NAMES[VOICES[look.gender]]), ...(stars >= LESSON.rounds ? ["audio/teacher-end.wav"] : []));
   if (stars >= LESSON.rounds) {
     lesson.ended = true;
     lesson.current.answered = true;

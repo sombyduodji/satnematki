@@ -142,7 +142,7 @@ function bathroomFloorPixel(wx, wy, lx, ly) {
 }
 
 const SITTING_ON_SOFA = new Set(["eadni", "viellja"]);
-const FLOORS = { c: carpetPixel, j: bathroomFloorPixel, a: asphaltPixel, q: bayPixel, s: pavementPixel, F: woodFloorPixel, f: tiledFloorPixel, L: classroomFloorPixel, Q: (wx, wy) => campFloorPixel(wx, wy) };
+const FLOORS = { c: carpetPixel, j: bathroomFloorPixel, a: asphaltPixel, q: bayPixel, s: pavementPixel, F: woodFloorPixel, f: tiledFloorPixel, L: classroomFloorPixel };
 
 function pathPixel(tx, ty, wx, wy, lx, ly) {
   const grain = noise(wx, wy);
@@ -1245,7 +1245,7 @@ function draw(now) {
     scene.push({ d: chair.x + chair.y + (chair === me.sittingOn ? -0.005 : 0.01), paint: () => drawChairBack(chair) });
   }
   for (const t of treeMap) {
-    if (!seen(t.x, t.y, 70) || (camp?.inside && !t.block)) continue;
+    if (!seen(t.x, t.y, 70)) continue;
     // In front of the character and covering them, a tree turns see-through.
     const left = t.x - t.image.width / 2, top = t.y + 2 - t.image.height;
     const covers = !"CM".includes(MAP[t.ty]?.[t.tx]) && t.mx + t.my > me.x + me.y && footX + 8 > left && footX - 8 < left + t.image.width && footY > top && footY - 30 < t.y;

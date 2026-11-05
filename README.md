@@ -1,6 +1,6 @@
 # Sátnemátki
 
-*Sátnemátki* means "word journey" in Northern Sámi. Version 0.2.1, a technology demo.
+*Sátnemátki* means "word journey" in Northern Sámi. Version 0.2.2, a technology demo.
 
 A Northern Sámi word game for children. The player creates a character, Máhtte or Biret, chooses a place, and
 walks around it in an isometric view with a camera that follows: furniture and family at home, animals in the forest, coloured books on the shelves and
@@ -28,11 +28,11 @@ A clock starts at the first move of a round and stops at the last word; in the s
 time, the ten best times for that place (kept in the browser, with the name the player gave), and the choice to
 play again or go to the main menu. The main menu fills the page: pick a place, then what to do there if it has several things, such as Opettele numerot in the classroom, then its level if it has several, or replay the last one. It also changes the player, which asks for the character and name again.
 
-Luokka has three things to do. Opettele numerot is the one above. In Kirjoita numerot the character sits at one of four desks in a small sunny classroom and can't get up. The teacher, in a shirt of one of three colours chosen at random, writes a number from 0 to 100 in Sámi on the white board and asks what it is, in a voice of her own. E raises a hand and opens a keypad, like the shop's, for the number in digits. Then the character says it and the teacher answers. If nobody answers for 20 seconds, a classmate does, in a character's voice played higher. Kirjoita sanalla, the hard one, has levels for 0–9, 0–20 and 0–100 and goes the other way: the board shows digits and the keypad becomes a Sámi keyboard for writing the word, with the classmates waiting all the while. All of it is in `src/lesson.js`.
+Luokka has three things to do. Opettele numerot is the one above. In Kirjoita numerot, with levels for 0–9, 0–20 and 0–100, the character sits at one of four desks in a small sunny classroom and can't get up. The teacher, in a shirt of one of three colours chosen at random, writes a number in Sámi on the white board and asks what it is, in a voice of her own. E raises a hand and opens a keypad, like the shop's, for the number in digits. Then the character says it and the teacher answers. If nobody answers for 20 seconds, a classmate does, in a character's voice played higher. Kirjoita sanalla, the hard one, has levels for 0–9, 0–20 and 0–100 and goes the other way: the board shows digits and the keypad becomes a Sámi keyboard for writing the word, with the classmates waiting all the while. All of it is in `src/lesson.js`.
 
 The general store, Rautakauppa, is played the same way, without the butcher. It's L-shaped: tools and fishing gear hang on pegboards and clothes on rails in the hall, and a wide opening leads to a showroom where big things stand on low platforms. Its prices are play prices. It has one till and a background sound of its own, from a large hardware store.
 
-Laavu is a slow evening with no clock or list to race. The chores come one after another: take the axe, fell the birch, saw it, carry the short logs to the block, split them with the axe, carry the billets to the ring of stones, gather branches and light the fire. Then the backpack (B, or E beside it) holds what's needed for cooking and for making a drink, and when the chores are done, or it's late, the player goes into the lávvu and to bed. E uses things and Q puts down what's in the hands. The dog has a name of its own, kept in the browser, which can be changed from the backpack. All of it is in `src/camp.js`.
+Laavu is a slow evening with no clock or list to race. The chores come one after another: take the axe, fell the birch, saw it, carry the short logs to the block, split them with the axe, carry the billets to the ring of stones, gather branches and light the fire. Then the backpack (B, or E beside it) holds what's needed for cooking and for making a drink. When the sausage and bread are eaten, a drink is made and the dog is fed, the fire goes out, and E beside the sleeping bag by the lávvu's door goes to bed. E uses things and Q puts down what's in the hands. The dog has a name of its own, kept in the browser, which can be changed from the backpack. All of it is in `src/camp.js`.
 
 ## Art
 

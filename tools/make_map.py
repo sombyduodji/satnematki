@@ -4,7 +4,7 @@
 Test maps for now. The forest has a river with two bridges, two paths each way and forest at the edges.
 Tiles: g grass, t tree, w water, b bridge, p path; a asphalt, q parking bay, s pavement; F wooden floor, f tiled floor;
 and the solid B building, W wall, X low wall, K bookshelf, S store shelf, R fridge, Z freezer, P produce crate,
-C till, M meat counter, D desk, O pegboard, U clothes rail, N low platform; A ground with something big on it, Q floor inside the lávvu; and in the classroom L floor, E pupil's desk, T teacher's desk, V blackboard wall, G window wall.
+C till, M meat counter, D desk, O pegboard, U clothes rail, N low platform; A ground with something big on it; and in the classroom L floor, E pupil's desk, T teacher's desk, V blackboard wall, G window wall.
 Spots are where things can be placed. The game drops any that something would hide; see openSpot in src/game.js.
 
 Usage: python3 tools/make_map.py
@@ -280,11 +280,11 @@ home_place["spots"]["home"] = {
     "eadni": (8.4, 3.25, 0), "viellja": (9.6, 3.25, 0), "oabbá": (9, 19, 0), "áhčči": (20.4, 3.6, 3),
 }
 
-# Lávvu camp: a clearing with a small river behind the lávvu, the forest around it, and at the far corner, out of sight, the
-# lávvu's inside. A marks ground that can't be walked on, where something big stands that the game draws itself; Q is the floor inside.
+# Lávvu camp: a clearing with a small river behind the lávvu and the forest around it. A marks ground that can't be walked on,
+# where something big stands that the game draws itself.
 camp_rng = random.Random(11)
-camp = blank(46, 32, "g")
-CAMP_X = 30  # the outdoors ends here
+camp = blank(30, 32, "g")
+CAMP_X = 30
 LAVVU_AT, FIRE_AT, TREE_AT, BLOCK_AT = (10.5, 11.5), (15, 16.5), (22, 13), (15, 12)
 for y in range(len(camp)):
     for x in range(CAMP_X):
@@ -305,10 +305,6 @@ for y in range(8, 16):
             camp[y][x] = "A"
 for x, y in ((14, 16), (15, 16), (14, 17), (15, 17), (TREE_AT[0], TREE_AT[1]), (BLOCK_AT[0], BLOCK_AT[1])):
     camp[y][x] = "A"
-for y in range(20, 28):  # the inside: 31 to 38 across, 20 to 27 deep
-    for x in range(31, 39):
-        camp[y][x] = "W" if x == 31 or y == 20 else "X" if x == 38 or y == 27 else "Q"
-camp[23][35] = "A"  # the hearth in the middle
 camp_place = rooms(camp, (14, 15), [])
 
 data = {

@@ -1637,11 +1637,6 @@ Object.assign(MODELS, {
   roastbread: (frame = 0) => [tube([-9, 0, 2], [5, 0, 6], 0.3, 0.25, "#6e4f30"), ...[3.6, 5.2, 6.8, 8.4].map((x, i) => ball(x, i % 2 ? 0.5 : -0.5, 5.6 + (x - 3.6) * 0.3, 1.2, 1.2, 1.2, frame ? "#b5763a" : "#ecd8a8"))],
   // A pad of reindeer skin to sleep on, for the user to check.
   sleepingpad: () => [{ ...rounded(-19, 19, -8, 8, 0, 1, 0.5, "#c9b896"), paint: mottled(["#c9b896", "#b5a07a", "#ddd0b0", "#a8926c"], 1) }],
-  hearth: () => [
-    ...Array.from({ length: 9 }, (_, i) => ball(Math.cos(i * 0.7) * 7, Math.sin(i * 0.7) * 7, 1.2, 1.9, 1.7, 1.3, i % 2 ? "#8f9498" : "#6f7478")),
-    ball(0, 0, 0.5, 5.4, 5.4, 0.5, "#2a2320"), ball(1, -1, 0.9, 2.2, 2.2, 0.6, "#c8501e"), ball(-1, 1, 1, 1.4, 1.4, 0.5, "#ffb04a"),
-    ...logAlong(-3, 3, 0, 1.4, 0.8, CHAR),
-  ],
   // The big lávvu: built at half size and drawn at twice that, as it's far too large for the usual picture. The door faces the viewer.
   camp_lavvu: () => [
     {

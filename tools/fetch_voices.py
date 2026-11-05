@@ -12,6 +12,7 @@ import json
 import re
 import sys
 import time
+import unicodedata
 import urllib.error
 import urllib.request
 from pathlib import Path
@@ -41,7 +42,6 @@ LINES = {
     "camp-cut": "Sahá muora.",
     "camp-branches": "Čohkke ovssiid.",
     "camp-light": "Cahkket dola.",
-    "camp-wood": "Bija muora dollii.",
     "camp-roast": "Base márffi.",
     "camp-water": "Viečča čázi.",
     "camp-boil": "Vuošša čázi.",
@@ -116,10 +116,21 @@ TEACHER_LINES = {
 }
 
 
+# Everyone the teacher can praise by name: the two characters and the classmates' names in src/lesson.js.
+TEACHER_PRAISES_NAMES = ["Máhtte", "Biret",
+    "Máret", "Elle", "Ánne", "Inga", "Márjá", "Sárá", "Rávdná", "Risten", "Áile", "Gáddjá",
+    "Niillas", "Issát", "Heaika", "Ánte", "Jovnna", "Áilu", "Mihkkal", "Ásllat", "Nillá", "Juhán"]
+
+
+def name_file(name):
+    """The name in a file name, as lessonNameFile in src/lesson.js makes it: no accents, lower case."""
+    return "".join(c for c in unicodedata.normalize("NFD", name) if not unicodedata.combining(c)).lower()
+
+
 def teacher_lines():
     """The teacher's lines, as (file name, text): what she says, and every number on its own."""
     numbers = json.loads(re.search(r"=\s*(\[.*\])", (OUT.parent / "data/numbers.js").read_text(encoding="utf-8"), re.S).group(1))
-    return [*TEACHER_LINES.items(), *((f"teacher-praise-{i}", text) for i, text in enumerate(line for line in PRAISE if line != "Gávdnet dan!")), *((f"teacher-number-{n}", f"{word[0].upper()}{word[1:]}.") for n, word in enumerate(numbers))]
+    return [*TEACHER_LINES.items(), *((f"teacher-good-{name_file(name)}", f"Buorre, {name}!") for name in TEACHER_PRAISES_NAMES), *((f"teacher-praise-{i}", text) for i, text in enumerate(line for line in PRAISE if line != "Gávdnet dan!")), *((f"teacher-number-{n}", f"{word[0].upper()}{word[1:]}.") for n, word in enumerate(numbers))]
 
 
 def wanted_lines():
