@@ -1,4 +1,4 @@
-// The lávvu camp: a slow evening instead of a race. Fell a birch, saw it, gather branches and build a long-log fire, then cook, make
+// The lávvu camp: a slow evening instead of a race. Fell a birch, saw it, split the logs at the block, gather branches and build a fire, then cook, make
 // a drink, look after the dog and go to bed. Things are named as they are met, and nothing is asked for or timed.
 // The fire is an open one in a ring of stones, after a photograph the user gave as a reference, and the kettle stands on the ground beside it: for the user to check.
 const CAMP_PLACES = {
@@ -8,7 +8,7 @@ const CAMP_PLACES = {
 };
 const CAMP_BRANCHES = [[18.5, 20.5], [12.5, 20.5], [20.5, 16.5], [8.5, 17.5], [18.5, 10.5]];
 const CAMP_ROOM = [31, 20, 39, 28]; // the inside, kept out of sight from outdoors and the other way round
-const CAMP_TIME = { chops: 5, saws: 4, logs: 2, roastMs: 7000, boilMs: 9000, burnMs: 260000, billetFuel: 0.45, darkenMs: 70000, lateMs: 540000, sleepMs: 3200, firstStickMs: 22000, fallMs: 1100 };
+const CAMP_TIME = { chops: 5, saws: 4, logs: 2, splitsPerLog: 2, roastMs: 7000, boilMs: 9000, burnMs: 260000, billetFuel: 0.45, darkenMs: 70000, lateMs: 540000, sleepMs: 3200, firstStickMs: 22000, fallMs: 1100 };
 const CAMP_REACH = { thing: 1.5, door: 1.15, fire: 2.7, dog: 1.5 };
 const CAMP_WORK = { chop: { row: 101, ms: 560, hitAt: 330 }, saw: { row: 102, ms: 500, hitAt: 250 }, throw: { row: 103, ms: 420, hitAt: 210 } };
 // Where the tool is in each of the six frames of those rows, from the feet: across, up, and its turn.
@@ -24,9 +24,9 @@ const CAMP_HELD = {
 const CAMP_PACK = [["sausage", "sausage", "sausage"], ["bread", "bread", "bread"], ["kettle", "kettle", "kettle"], ["dogfood", "dogfood", "dogfood"]];
 const CAMP_DRINKS = ["coffee", "tea", "cocoa"];
 const CAMP_DOG_MAX = 12;
-const CAMP_DOG = { walk: 0.0017, run: 0.0058, stepMs: 170, runStepMs: 90, nearFire: 3, sitWithin: 1.5, lookWithin: 5, roamFrom: 6, keepFromHeld: 2.6, drinkLeast: 120000, drinkMore: 180000, drinkMs: 3600, eatMs: 5000 };
+const CAMP_DOG = { walk: 0.0017, run: 0.0058, stepMs: 170, runStepMs: 90, nearFire: 3, sitWithin: 1.5, lookWithin: 5, roamFrom: 6, keepFromHeld: 2.6, stickFrom: 2.5, stickFar: 5.5, routeEveryMs: 400, drinkLeast: 120000, drinkMore: 180000, drinkMs: 3600, eatMs: 5000 };
 const CAMP_TEXT = {
-  guide: "Täällä ei ole kiirettä. Kaada koivu, sahaa se, kerää oksat ja tee nuotio. Sitten paista ruokaa, keitä juotavaa ja pidä huolta koirastasi. Kun työt on tehty, mene laavuun nukkumaan.",
+  guide: "Täällä ei ole kiirettä. Kaada koivu, sahaa se, halkaise puut kirveellä, kerää oksat ja tee nuotio. Sitten paista ruokaa, keitä juotavaa ja pidä huolta koirastasi. Kun työt on tehty, mene laavuun nukkumaan.",
   keys: "E: ota, käytä tai mene laavuun. B: avaa reppu. Q: laske kädestä.",
   dogTitle: "Mikä koirasi nimi on?", dogNote: "Se on suomenlapinkoira. Nimen voi vaihtaa myöhemmin.", dogHint: "Koiran nimi", dogDefault: "Čáppa",
   pack: "Niestelávka eli eväsreppu", putAway: "Sulje", changeDog: "Vaihda koiran nimi", drinks: "Mitä keität?",
@@ -38,7 +38,8 @@ const CAMP_CHORES = [["fire", "dolla", "Tee nuotio"], ["food", "biebmu", "Syö j
 const CAMP_STAGES = {
   axe: { sme: "Váldde ákšu", fi: "Ota kirves pölkyltä", line: "camp-axe", at: "block" }, fell: { sme: "Čuohpa muora", fi: "Kaada koivu", line: "camp-fell", at: "tree" },
   saw: { sme: "Váldde sahá", fi: "Ota saha pölkyn luota", line: "camp-saw", at: "block" }, cut: { sme: "Sahá muora", fi: "Sahaa puu", line: "camp-cut", at: "logs" },
-  carry: { sme: "dimbbar", fi: "Kanna puut kiviringin luo", at: "logs" }, branches: { sme: "Čohkke ovssiid", fi: "Kerää oksia", line: "camp-branches" },
+  carry: { sme: "dimbbar", fi: "Kanna puut pölkyn luo", at: "logs" }, split: { sme: "hálgu", fi: "Halkaise puut kirveellä", at: "block" },
+  stack: { sme: "hálgu", fi: "Vie halot kiviringin luo" }, branches: { sme: "Čohkke ovssiid", fi: "Kerää oksia", line: "camp-branches" },
   kindle: { sme: "oaksi", fi: "Laita oksat puiden päälle", at: "fire" }, light: { sme: "Cahkket dola", fi: "Sytytä nuotio", line: "camp-light", at: "fire" },
 };
 
@@ -54,7 +55,7 @@ function campDogName() {
 
 function setupCamp() {
   camp = {
-    stage: "axe", hand: null, chops: 0, saws: 0, logsMoved: 0, branches: CAMP_BRANCHES.map(([x, y]) => ({ x, y })), billets: [], fuel: 0, lit: false, dark: 0, clock: 0, lastChore: null,
+    stage: "axe", hand: null, chops: 0, saws: 0, logsMoved: 0, splits: 0, stacked: 0, branches: CAMP_BRANCHES.map(([x, y]) => ({ x, y })), billets: [], fuel: 0, lit: false, dark: 0, clock: 0, lastChore: null,
     done: {}, kettle: null, roast: null, inside: false, fallAt: null, sleeping: null, met: new Set(), smoke: [], embers: [], chips: [], steam: 0, bowlFull: false, stick: null, flight: null, brought: false, pending: null, flicker: 1, nextCrackle: 0,
     dog: { x: 18.5, y: 15.5, facing: 3, frame: 0, clock: 0, mode: "roam", target: null, next: 1500, stuck: 0, has: false, wagUntil: 0, drinkIn: 90000 + Math.random() * 60000, wait: 0, hop: 0, nextBark: 0, moving: false },
   };
@@ -68,6 +69,18 @@ function buildCampAhead() {
   const ahead = (facing, frame, carrying) => queueFinePicture(`laphund/${facing}/${frame}/${facing}/${carrying}/${viewDetail}`, "laphund", facing, frame, facing, carrying);
   for (let facing = 0; facing < 4; facing++) for (let frame = 0; frame <= 10; frame++) ahead(facing, frame);
   for (let facing = 0; facing < 4; facing++) for (let frame = 0; frame <= 4; frame++) ahead(facing, frame, "stick");
+  // Last in the queue, so first to be made, with the lit fire and its picture first of all.
+  for (const frame of [1, 2, 3, 0, 4]) campFireImage(frame);
+}
+
+// Drawn in one go when it's needed, the fire would hold up a phone for a long time. Until a stage of it is ready, the last one shows.
+let campFireShown = null;
+function campFireImage(frame) {
+  const key = `campfire/0/${frame}/0/undefined/${viewDetail}`;
+  if (modelImages.has(key)) return (campFireShown = modelImages.get(key));
+  if (!campFireShown && frame === 5) return (campFireShown = modelImage("campfire", 0, 5)); // the bare ring, as the place opens
+  queueFinePicture(key, "campfire", 0, frame, 0);
+  return campFireShown ?? modelImage("campfire", 0, 5);
 }
 
 let campLavvu = null;
@@ -96,7 +109,7 @@ function campMeet(sprite, picture = sprite) {
   preview = null;
   cardEl.innerHTML = audioOnly ? `<div class="note">${TEXT.listen}</div>` : `<div><div class="note">${TEXT.thisIs}</div>
     <div><span class="word" lang="se">${escapeText(word.lemma)}</span> <span class="translation">= ${escapeText(translation(word))}</span></div></div>`;
-  const image = pictureOf({ sprite: picture });
+  const image = picture.getContext ? picture : pictureOf({ sprite: picture });
   const canvasEl = document.createElement("canvas");
   canvasEl.width = image.width;
   canvasEl.height = image.height;
@@ -177,16 +190,40 @@ function campSplitBillets(now) {
   });
 }
 
+// One split of a log at the block: a billet falls beside it. The stage moves on when all the logs are split.
+function campSplitLog(now) {
+  campWork("chop", campAt("block"), now, () => {
+    camp.splits++;
+    campThunk(190);
+    campChips(campAt("block"), "#e8d4ae", 6);
+    const [x, y] = campAt("block");
+    camp.billets.push({ x: x + 0.9 + Math.random() * 0.8, y: y + 0.6 + Math.random() * 1 });
+    campMeet("billet");
+    if (camp.splits >= CAMP_TIME.logs * CAMP_TIME.splitsPerLog) {
+      camp.hand = null;
+      campStage("stack");
+    }
+  });
+}
+
+// Where a thrown stick comes down: as far as it goes the way the character faces, where the dog can get to it. Near the
+// fire, in the trees or too close to the thrower won't do, so it goes a little to the side, and in the end to the dog's feet.
+function campStickLanding(dx, dy) {
+  const reach = campDogReach(camp.dog.x, camp.dog.y);
+  const heading = Math.atan2(dy, dx);
+  for (const turn of [0, 0.4, -0.4, 0.8, -0.8, 1.2, -1.2, 1.6, -1.6, 2.2, -2.2, 3.14]) {
+    for (let far = CAMP_DOG.stickFar; far >= CAMP_DOG.stickFrom; far -= 0.5) {
+      const x = me.x + Math.cos(heading + turn) * far, y = me.y + Math.sin(heading + turn) * far;
+      if (campCellFree(x, y) && reach.cameFrom.has(campCell(x, y))) return [x, y];
+    }
+  }
+  return [camp.dog.x, camp.dog.y];
+}
+
 function campThrow(now) {
   const dirs = { S: [1, 1], N: [-1, -1], E: [1, -1], W: [-1, 1], SE: [1, 0], SW: [0, 1], NE: [0, -1], NW: [-1, 0] };
   const [dx, dy] = dirs[me.facing] ?? [1, 1];
-  const size = Math.hypot(dx, dy);
-  let far = 5.5, x = me.x, y = me.y;
-  for (; far > 0.8; far -= 0.5) {
-    x = me.x + (dx / size) * far;
-    y = me.y + (dy / size) * far;
-    if (!campBlocked(x, y) && Math.hypot(x - campAt("fire")[0], y - campAt("fire")[1]) > 2.4) break;
-  }
+  const [x, y] = campStickLanding(dx, dy);
   campWork("throw", [me.x + dx, me.y + dy], now, () => {
     camp.hand = null;
     camp.flight = { fromX: me.x, fromY: me.y, x, y, born: performance.now(), ms: 520 };
@@ -246,7 +283,7 @@ function campLight(now) {
     camp.lit = true;
     camp.fuel = 1;
     campStage("free");
-    campMeet("campfire");
+    campMeet("campfire", modelImages.has(`campfire/0/0/0/undefined/${viewDetail}`) ? "campfire" : croppedImage(campFireImage(4)));
     campChoreDone("fire");
     campNoise(700, 1200, 0.1);
   });
@@ -312,13 +349,31 @@ function campHint() {
       break;
     case "carry":
       if (!hand && campNear(campAt("logs"), 2)) return { ...stage, act: () => campHand("longlog") };
-      if (hand === "longlog" && atFire) return { sme: "dimbbar", fi: "Pinoa puut kivirinkiin", act: () => {
+      if (hand === "longlog" && atBlock) return { sme: "dimbbar", fi: "Laske puu pölkyn viereen", act: () => {
         camp.hand = null;
         camp.logsMoved++;
         campThunk(110);
-        if (camp.logsMoved >= CAMP_TIME.logs) campStage("branches");
+        if (camp.logsMoved >= CAMP_TIME.logs) campStage("split");
       } };
       break;
+    case "split":
+      if (atBlock && hand === "axe") return { ...stage, act: campSplitLog };
+      if (atBlock && !hand) return { sme: "ákšu", fi: "Ota kirves", act: () => campHand("axe") };
+      break;
+    case "stack": {
+      if (hand === "billet" && atFire) return { sme: "hálgu", fi: "Pinoa halko kivirinkiin", act: () => {
+        camp.hand = null;
+        camp.stacked++;
+        campThunk(110);
+        if (camp.stacked >= CAMP_TIME.logs * CAMP_TIME.splitsPerLog) campStage("branches");
+      } };
+      const lying = camp.billets.find((b) => campNear([b.x, b.y], 1.2));
+      if (!hand && lying) return { sme: "hálgu", fi: "Ota halko", act: () => {
+        camp.billets = camp.billets.filter((b) => b !== lying);
+        campHand("billet");
+      } };
+      break;
+    }
     case "branches": {
       const branch = camp.branches.find((b) => campNear([b.x, b.y], CAMP_REACH.thing));
       if (branch) return { ...stage, act: (now) => {
@@ -394,7 +449,8 @@ const atBlockOrAxe = (atBlock, hand) => atBlock && (!hand || hand === "axe");
 // Q: out of the hands, the tools back where they were and a stick at the feet.
 function campPutDown() {
   if (!camp || !camp.hand || me.heldUntil > performance.now()) return;
-  if (camp.hand === "stick") camp.stick = { x: me.x + 0.4, y: me.y + 0.4 };
+  if (camp.hand === "stick") camp.stick = campOutOfFire(me.x + 0.4, me.y + 0.4);
+  if (camp.hand === "billet") camp.billets.push(campOutOfFire(me.x + 0.4, me.y + 0.4));
   if (camp.stage === "fell" && camp.hand === "axe") camp.stage = "axe";
   if (camp.stage === "cut" && camp.hand === "saw") camp.stage = "saw";
   camp.hand = null;
@@ -646,6 +702,79 @@ const campBlocked = (x, y) => {
   const tile = tileOr(Math.floor(x), Math.floor(y), "X");
   return SOLID_TILES.has(tile) || tile === "t" || x > 27;
 };
+const campFromFire = (x, y) => Math.hypot(x - campAt("fire")[0], y - campAt("fire")[1]);
+const campCellFree = (x, y) => !campBlocked(x, y) && campFromFire(x, y) > CAMP_DOG.nearFire + 0.1;
+
+// What's put down beside the fire stays clear of the stones.
+function campOutOfFire(x, y) {
+  const away = campFromFire(x, y), [fx, fy] = campAt("fire");
+  if (away >= 1.8) return { x, y };
+  const size = away || 1;
+  return { x: fx + ((x - fx) / size) * 1.8, y: fy + ((y - fy) / size) * 1.8 };
+}
+
+// Everywhere the dog can run from where it is, on a grid of half tiles, so that it can go round what stands in the way.
+const campCell = (x, y) => `${Math.floor(x * 2)},${Math.floor(y * 2)}`;
+function campDogReach(fromX, fromY) {
+  let startX = fromX, startY = fromY;
+  if (!campCellFree(startX, startY)) {
+    // Beside the fire or something solid: from the nearest free place.
+    let best = Infinity;
+    for (let a = -3; a <= 3; a += 0.5) for (let b = -3; b <= 3; b += 0.5) {
+      const x = fromX + a, y = fromY + b;
+      if (campCellFree(x, y) && Math.hypot(a, b) < best) [best, startX, startY] = [Math.hypot(a, b), x, y];
+    }
+  }
+  const start = [Math.floor(startX * 2), Math.floor(startY * 2)];
+  const cameFrom = new Map([[`${start}`, null]]);
+  const open = [start];
+  for (let at = 0; at < open.length; at++) {
+    const [cx, cy] = open[at];
+    for (const [a, b] of [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]]) {
+      const next = [cx + a, cy + b], key = `${next}`;
+      if (cameFrom.has(key) || !campCellFree((next[0] + 0.5) / 2, (next[1] + 0.5) / 2)) continue;
+      if (a && b && (!campCellFree((cx + a + 0.5) / 2, (cy + 0.5) / 2) || !campCellFree((cx + 0.5) / 2, (cy + b + 0.5) / 2))) continue; // no cutting corners
+      cameFrom.set(key, `${cx},${cy}`);
+      open.push(next);
+    }
+  }
+  return { cameFrom, open };
+}
+
+// The way to a place, or as near to it as the dog can get. The last step is the place itself when it can be stood on.
+function campDogRoute(dog, toX, toY) {
+  const { cameFrom, open } = campDogReach(dog.x, dog.y);
+  let end = campCell(toX, toY);
+  const exact = cameFrom.has(end);
+  if (!exact) {
+    let best = Infinity;
+    for (const [cx, cy] of open) {
+      const away = Math.hypot((cx + 0.5) / 2 - toX, (cy + 0.5) / 2 - toY);
+      if (away < best) [best, end] = [away, `${cx},${cy}`];
+    }
+  }
+  const route = [];
+  for (let at = end; at; at = cameFrom.get(at)) {
+    const [cx, cy] = at.split(",").map(Number);
+    route.unshift([(cx + 0.5) / 2, (cy + 0.5) / 2]);
+  }
+  route.shift(); // where it already is
+  if (exact) route.push([toX, toY]);
+  return route;
+}
+
+// Along a route, worked out again now and then as things and people move. True on arriving.
+function campDogRun(dog, toX, toY, speed, dt) {
+  dog.routeIn = (dog.routeIn ?? 0) - dt;
+  if (!dog.route || dog.routeIn <= 0) {
+    dog.route = campDogRoute(dog, toX, toY);
+    dog.routeIn = CAMP_DOG.routeEveryMs;
+  }
+  if (!dog.route.length) return true;
+  const [x, y] = dog.route[0];
+  if (campDogMove(dog, x, y, speed, dt)) dog.route.shift();
+  return !dog.route.length;
+}
 
 function campDogMove(dog, toX, toY, speed, dt) {
   const dx = toX - dog.x, dy = toY - dog.y, away = Math.hypot(dx, dy);
@@ -717,7 +846,8 @@ function updateCampDog(dt, now) {
   }
   if (dog.mode === "fetch") {
     if (!camp.stick) dog.mode = "roam";
-    else if (campDogMove(dog, camp.stick.x, camp.stick.y, CAMP_DOG.run, dt) || Math.hypot(camp.stick.x - dog.x, camp.stick.y - dog.y) < 0.35) {
+    else if (campDogRun(dog, camp.stick.x, camp.stick.y, CAMP_DOG.run, dt) || Math.hypot(camp.stick.x - dog.x, camp.stick.y - dog.y) < 0.35) {
+      dog.route = null;
       camp.stick = null;
       dog.has = true;
       dog.mode = "bring";
@@ -733,9 +863,12 @@ function updateCampDog(dt, now) {
       return;
     }
     const toX = me.x + (dog.x > me.x ? 0.9 : -0.9), toY = me.y + (dog.y > me.y ? 0.5 : -0.5);
-    if (away < 1.2) {
+    // If the character stands by the fire, as near as it may go will have to do.
+    const arrived = campDogRun(dog, toX, toY, CAMP_DOG.run, dt);
+    if (away < 1.2 || arrived) {
+      dog.route = null;
       dog.has = false;
-      camp.stick = { x: dog.x + (me.x - dog.x) * 0.4, y: dog.y + (me.y - dog.y) * 0.4 };
+      camp.stick = campOutOfFire(dog.x + (me.x - dog.x) * 0.4, dog.y + (me.y - dog.y) * 0.4);
       dog.mode = "roam";
       dog.wagUntil = now + 4000;
       dog.next = 1500;
@@ -745,7 +878,6 @@ function updateCampDog(dt, now) {
         campSay(CAMP_TEXT.play, CAMP_TEXT.playFi, "camp-play");
       }
     } else {
-      campDogMove(dog, toX, toY, CAMP_DOG.run, dt);
       dog.frame = 1 + stepMs(true);
     }
     return;
@@ -841,8 +973,13 @@ const campLightNow = () => {
 };
 
 // Lights what's near the fire on the side that faces it and darkens the other, through its own shape.
+// Going through a canvas of its own for each of up to a hundred things, every frame, is too much for a phone. So what stands still
+// keeps a few ready-lit pictures, by the fire's direction and strength, and only the character and the dog are lit anew each frame.
 const campRimCanvas = document.createElement("canvas");
-function campRim(image, sx, sy, sw, sh, dx, dy, dw, dh, worldX, worldY, flip = false) {
+const CAMP_RIM = { turns: 8, levels: 5, buildsPerFrame: 3, mostPixels: 6000000 };
+let campRimPictures = new Map(), campRimPixels = 0, campRimBuilds = 0;
+
+function campRim(image, sx, sy, sw, sh, dx, dy, dw, dh, worldX, worldY, flip = false, live = false) {
   const light = campLightNow();
   if (!light) return;
   const away = Math.hypot(worldX - light.x, worldY - light.y);
@@ -852,9 +989,39 @@ function campRim(image, sx, sy, sw, sh, dx, dy, dw, dh, worldX, worldY, flip = f
   const screenX = isoX(light.x, light.y) - isoX(worldX, worldY), screenY = isoY(light.x, light.y) - isoY(worldX, worldY) + dh * 0.35;
   const size = Math.hypot(screenX, screenY) || 1;
   const w = Math.ceil(dw * viewDetail), h = Math.ceil(dh * viewDetail);
-  if (campRimCanvas.width < w) campRimCanvas.width = w;
-  if (campRimCanvas.height < h) campRimCanvas.height = h;
-  const g = campRimCanvas.getContext("2d");
+  if (live || sx || sy || flip) {
+    if (campRimCanvas.width < w) campRimCanvas.width = w;
+    if (campRimCanvas.height < h) campRimCanvas.height = h;
+    campRimPaint(campRimCanvas.getContext("2d"), image, sx, sy, sw, sh, w, h, screenX / size, screenY / size, strength, flip);
+    ctx.drawImage(campRimCanvas, 0, 0, w, h, dx, dy, dw, dh);
+    return;
+  }
+  const turn = Math.round((Math.atan2(screenY, screenX) / (Math.PI * 2)) * CAMP_RIM.turns);
+  const level = Math.round((strength / camp.flicker) * CAMP_RIM.levels);
+  if (!level) return;
+  let pictures = campRimPictures.get(image);
+  if (!pictures) campRimPictures.set(image, pictures = new Map());
+  const key = turn * 100 + level;
+  let lit = pictures.get(key);
+  if (!lit) {
+    if (campRimBuilds <= 0) return; // next frame, so that lighting the fire doesn't make them all at once
+    campRimBuilds--;
+    campRimPixels += w * h;
+    if (campRimPixels > CAMP_RIM.mostPixels) { // enough to keep in memory: start again with what's in view
+      campRimPictures = new Map([[image, pictures = new Map()]]);
+      campRimPixels = w * h;
+    }
+    lit = document.createElement("canvas");
+    lit.width = w;
+    lit.height = h;
+    const angle = (turn / CAMP_RIM.turns) * Math.PI * 2;
+    campRimPaint(lit.getContext("2d"), image, sx, sy, sw, sh, w, h, Math.cos(angle), Math.sin(angle), level / CAMP_RIM.levels, false);
+    pictures.set(key, lit);
+  }
+  ctx.drawImage(lit, 0, 0, w, h, dx, dy, dw, dh);
+}
+
+function campRimPaint(g, image, sx, sy, sw, sh, w, h, ux, uy, strength, flip) {
   g.globalCompositeOperation = "source-over";
   g.clearRect(0, 0, w, h);
   g.imageSmoothingEnabled = false;
@@ -866,7 +1033,7 @@ function campRim(image, sx, sy, sw, sh, dx, dy, dw, dh, worldX, worldY, flip = f
     g.restore();
   } else g.drawImage(image, sx, sy, sw, sh, 0, 0, w, h);
   g.globalCompositeOperation = "source-atop";
-  const cx = w / 2, cy = h / 2, ux = screenX / size, uy = screenY / size, span = Math.max(w, h) * 0.5;
+  const cx = w / 2, cy = h / 2, span = Math.max(w, h) * 0.5;
   const shade = g.createLinearGradient(cx + ux * span, cy + uy * span, cx - ux * span, cy - uy * span);
   shade.addColorStop(0, `rgba(255, 176, 84, ${Math.min(0.8, strength * 0.95)})`);
   shade.addColorStop(0.42, `rgba(255, 140, 60, ${Math.min(0.28, strength * 0.3)})`);
@@ -874,13 +1041,12 @@ function campRim(image, sx, sy, sw, sh, dx, dy, dw, dh, worldX, worldY, flip = f
   shade.addColorStop(1, `rgba(12, 12, 34, ${Math.min(0.55, strength * 0.65)})`);
   g.fillStyle = shade;
   g.fillRect(0, 0, w, h);
-  ctx.drawImage(campRimCanvas, 0, 0, w, h, dx, dy, dw, dh);
 }
 
-const campPaintModel = (image, cx, cy, worldX, worldY, lift = 0) => {
+const campPaintModel = (image, cx, cy, worldX, worldY, lift = 0, live = false) => {
   paintImage(image, Math.round(cx) - MODEL_ANCHOR.x, Math.round(cy) - MODEL_ANCHOR.y - lift);
   const detail = image.detail ?? 1;
-  campRim(image, 0, 0, image.width, image.height, Math.round(cx) - MODEL_ANCHOR.x, Math.round(cy) - MODEL_ANCHOR.y - lift, image.width / detail, image.height / detail, worldX, worldY);
+  campRim(image, 0, 0, image.width, image.height, Math.round(cx) - MODEL_ANCHOR.x, Math.round(cy) - MODEL_ANCHOR.y - lift, image.width / detail, image.height / detail, worldX, worldY, false, live);
 };
 
 // A long shadow thrown away from the fire.
@@ -933,6 +1099,7 @@ function campPaintKettleFire(now) {
 // Everything the camp adds to the scene, each put in its place by depth.
 function campScene(scene, now, seen) {
   if (!camp) return;
+  campRimBuilds = CAMP_RIM.buildsPerFrame;
   const push = (x, y, paint, extra = 0) => {
     if (seen(isoX(x, y), isoY(x, y), 150)) scene.push({ d: x + y + extra, paint });
   };
@@ -971,10 +1138,16 @@ function campScene(scene, now, seen) {
   // The logs where they were sawn, until they've been carried off.
   const [gx, gy] = campAt("logs");
   if (camp.saws >= CAMP_TIME.saws) for (let i = camp.logsMoved + (camp.hand === "longlog" ? 1 : 0); i < CAMP_TIME.logs; i++) model("longlog", gx, gy + i * 0.5);
+  // The logs by the block until they're split, with the one being split on top of it.
+  const logsLeft = camp.logsMoved - Math.floor(camp.splits / CAMP_TIME.splitsPerLog);
+  if (camp.stage === "carry" || camp.stage === "split") {
+    for (let i = 1; i < logsLeft; i++) model("longlog", bx + 1.2, by - 0.4 + i * 0.5);
+    if (logsLeft > 0) push(bx, by, () => campPaintModel(modelImage("longlog", 0, 0), isoX(bx, by), isoY(bx, by), bx, by, 10), 0.02);
+  }
   // The fire, as it's built.
   const [fx, fy] = campAt("fire");
-  const fireFrame = camp.lit ? 4 : camp.stage === "light" ? 3 : camp.logsMoved || 5;
-  push(fx, fy, () => paintImage(modelImage("campfire", 0, fireFrame), Math.round(isoX(fx, fy)) - MODEL_ANCHOR.x, Math.round(isoY(fx, fy)) - MODEL_ANCHOR.y)); // it lights itself
+  const fireFrame = camp.lit ? 4 : camp.stage === "light" ? 3 : camp.stacked ? (camp.stacked > CAMP_TIME.logs ? 2 : 1) : camp.stage === "branches" || camp.stage === "kindle" ? 2 : 5;
+  push(fx, fy, () => paintImage(campFireImage(fireFrame), Math.round(isoX(fx, fy)) - MODEL_ANCHOR.x, Math.round(isoY(fx, fy)) - MODEL_ANCHOR.y)); // it lights itself
   if (camp.lit) push(fx, fy, () => campPaintFlames(now), 0.02);
   if (camp.kettle) push(...campAt("kettle"), () => campPaintKettleFire(now));
   for (const branch of camp.branches) model("stick", branch.x, branch.y);
@@ -996,7 +1169,7 @@ function campScene(scene, now, seen) {
     castShadow(ctx, Math.round(cx) - 3, Math.round(cy) + 1, 16, 6);
     ctx.globalAlpha = 1;
     campFireShadow(dog.x, dog.y, 14);
-    campPaintModel(modelImage("laphund", dog.facing, dog.frame, dog.facing, dog.has ? "stick" : undefined), cx, cy, dog.x, dog.y, Math.round(dog.hop));
+    campPaintModel(modelImage("laphund", dog.facing, dog.frame, dog.facing, dog.has ? "stick" : undefined), cx, cy, dog.x, dog.y, Math.round(dog.hop), true);
   });
   // Inside: the hearth, the pad and the bag, and whoever is asleep in it.
   model("hearth", ...campAt("hearth"));
@@ -1060,8 +1233,12 @@ function campPaintCone() {
 
 function campStageAt() {
   const name = CAMP_STAGES[camp.stage].at;
-  if (name === "logs" && camp.hand === "longlog") return campAt("fire");
+  if (name === "logs" && camp.hand === "longlog") return campAt("block");
   if (name) return campAt(name);
+  if (camp.stage === "stack") {
+    if (camp.hand === "billet") return campAt("fire");
+    return camp.billets[0] ? [camp.billets[0].x, camp.billets[0].y] : null;
+  }
   return camp.stage === "branches" && camp.branches[0] ? [camp.branches[0].x, camp.branches[0].y] : null;
 }
 
@@ -1105,8 +1282,7 @@ function campPaintHeld(cx, cy, now, flip) {
   if (!hand) return;
   const [dx, dy] = CARRIED[me.facing] ?? [8, -8];
   const swing = Math.round(Math.sin(walkClock / 90) * (me.moving ? 1 : 0));
-  if (hand === "longlog") campPaintHeldAt(hand, cx, cy - 30, 0.1);
-  else campPaintHeldAt(hand, cx + dx, cy + dy + 2 + swing, dx < 0 ? -0.1 : 0.1, dx < 0);
+  campPaintHeldAt(hand, cx + dx, cy + dy + 2 + swing, dx < 0 ? -0.1 : 0.1, dx < 0);
 }
 
 // Over the finished scene: smoke and sparks, then the evening's dark with the fire's light taken out of it.

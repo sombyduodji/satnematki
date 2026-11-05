@@ -1526,7 +1526,7 @@ Object.assign(MODELS, {
     ...[[34, 0, 7, LEAF], [40, -3, 7, LEAF_DARK], [41, 4, 6, LEAF_LIGHT], [46, 0, 8, LEAF], [50, 2, 5, LEAF_DARK]].map(([x, y, r, c]) => ({ ...ball(x, y, r * 0.8, r, r, r * 0.8, c), paint: mottled([c, LEAF_LIGHT, LEAF_DARK], 1.6) })),
   ],
   // Two long sawn logs, ready to be carried.
-  longlog: () => logAlong(-12, 12, 0, 2.2, 2.2),
+  longlog: () => logAlong(-6, 6, 0, 2.8, 2.8), // sawn short, for splitting at the block
   billet: () => [{ ...tube([-4, 0, 1.8], [4, 0, 1.8], 2, 2, LOG), paint: ([, y]) => (y > 0.6 ? LOG_END : LOG) }, ball(-4, 0, 1.8, 0.3, 1.7, 1.7, LOG_END), ball(4, 0, 1.8, 0.3, 1.7, 1.7, LOG_END)],
   stick: () => [tube([-7, 0, 1], [7, 0, 1.8], 0.65, 0.45, "#6e4f30"), tube([2, 0, 1.4], [6, 2.4, 3], 0.4, 0.25, "#6e4f30"), tube([-3, 0, 1.2], [-6, -2, 2.4], 0.4, 0.25, "#6e4f30"), ball(6.3, 2.6, 3.2, 1, 0.8, 0.5, LEAF)],
   // An open fire in a ring of stones on bare ground, after a photograph the user gave as a reference: split logs side by side, long split

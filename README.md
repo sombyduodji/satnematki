@@ -1,6 +1,6 @@
 # Sátnemátki
 
-*Sátnemátki* means "word journey" in Northern Sámi. Version 0.1.8, a technology demo.
+*Sátnemátki* means "word journey" in Northern Sámi. Version 0.1.9, a technology demo.
 
 A Northern Sámi word game for children. The player creates a character, Máhtte or Biret, chooses a place, and
 walks around it in an isometric view with a camera that follows: furniture and family at home, animals in the forest, coloured books on the shelves and
@@ -30,7 +30,7 @@ play again or go to the main menu. The main menu fills the page: pick a place, t
 
 The general store, Rautakauppa, is played the same way, without the butcher. It's L-shaped: tools and fishing gear hang on pegboards and clothes on rails in the hall, and a wide opening leads to a showroom where big things stand on low platforms. Its prices are play prices. It has one till and a background sound of its own, from a large hardware store.
 
-Laavu is a slow evening with no clock or list to race. The chores come one after another: take the axe, fell the birch, saw it, carry the wood to the ring of stones, gather branches and light the fire. Then the backpack (B, or E beside it) holds what's needed for cooking and for making a drink, and when the chores are done, or it's late, the player goes into the lávvu and to bed. E uses things and Q puts down what's in the hands. The dog has a name of its own, kept in the browser, which can be changed from the backpack. All of it is in `src/camp.js`.
+Laavu is a slow evening with no clock or list to race. The chores come one after another: take the axe, fell the birch, saw it, carry the short logs to the block, split them with the axe, carry the billets to the ring of stones, gather branches and light the fire. Then the backpack (B, or E beside it) holds what's needed for cooking and for making a drink, and when the chores are done, or it's late, the player goes into the lávvu and to bed. E uses things and Q puts down what's in the hands. The dog has a name of its own, kept in the browser, which can be changed from the backpack. All of it is in `src/camp.js`.
 
 ## Art
 
