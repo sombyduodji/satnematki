@@ -1262,9 +1262,7 @@ function showPlaces() {
 
 // The menu fills the page, so nothing needs scrolling to, and asks one thing at a time: where, and then how hard.
 // Pictures carry it for a child who doesn't read yet.
-// The start page's picture of each place, showing faintly behind its button in the menu. With the mouse over the button, its clip
-// plays instead; it loads only then, and phones and anyone who has asked for less motion keep the picture.
-const CLIPS_ON_HOVER = matchMedia("(hover: hover) and (prefers-reduced-motion: no-preference)").matches;
+// The start page's picture of each place, showing faintly behind its button in the menu.
 const PLACE_MAPS = { home: "koti", forest: "elaimet", city: "parkkipaikka", library: "kirjasto", store: "kauppa", gearstore: "rautakauppa", camp: "laavu", classroom: "luokka", lesson: "oppitunti" };
 // The menu's sections, by how far along the places are. A new place has to be added to one of them to show.
 const MENU_SECTIONS = [
@@ -1297,26 +1295,10 @@ function menuButton({ look: picture, title, small, example, onClick, className, 
   if (map) {
     const mapEl = document.createElement("img");
     mapEl.className = "place-map";
-    const still = `art/site/${map}.png`, clip = `art/site/clips/${map}.webp`;
-    mapEl.src = still;
+    mapEl.src = `art/site/${map}.png`;
     mapEl.alt = "";
     button.classList.add("has-map");
     button.append(mapEl);
-    if (CLIPS_ON_HOVER) {
-      let over = false;
-      button.addEventListener("mouseenter", () => {
-        over = true;
-        const loading = new Image();
-        loading.onload = () => {
-          if (over) mapEl.src = clip;
-        };
-        loading.src = clip;
-      });
-      button.addEventListener("mouseleave", () => {
-        over = false;
-        mapEl.src = still;
-      });
-    }
   }
   if (picture) {
     const image = menuPicture(picture);
