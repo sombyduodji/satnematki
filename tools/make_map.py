@@ -4,7 +4,7 @@
 Test maps for now. The forest has a river with two bridges, two paths each way and forest at the edges.
 Tiles: g grass, t tree, w water, b bridge, p path; a asphalt, q parking bay, s pavement; F wooden floor, f tiled floor;
 and the solid B building, W wall, X low wall, K bookshelf, S store shelf, R fridge, Z freezer, P produce crate,
-C till, M meat counter, D desk; and in the classroom L floor, E pupil's desk, T teacher's desk, V blackboard wall, G window wall.
+C till, M meat counter, D desk, O pegboard, U clothes rail, N low platform; A ground with something big on it, Q floor inside the lávvu; and in the classroom L floor, E pupil's desk, T teacher's desk, V blackboard wall, G window wall.
 Spots are where things can be placed. The game drops any that something would hide; see openSpot in src/game.js.
 
 Usage: python3 tools/make_map.py
@@ -164,6 +164,35 @@ library_place["spots"].update(bookshelf=fixture_spots(library, "K"), table=fixtu
 store_place = rooms(store, (15, 18), [])
 store_place["spots"].update(meat=[spot for spot in fixture_spots(store, "M") if spot[0] == 3 and 6 <= spot[1] <= 8], shelf=fixture_spots(store, "S"), fridge=fixture_spots(store, "R"), freezer=fixture_spots(store, "Z"), produce=fixture_spots(store, "P"))
 
+# General store: an L, with one till, and the door and that till in the same spots as the grocery store's. The hall has tools and fishing gear on
+# pegboards and clothes on rails. A wide opening leads from its far side to a wood-floored showroom with windows, where the big
+# things stand well apart on low platforms. Beyond the L's walls is nothing (_).
+SHOWROOM_END = 46
+gearstore = blank(48, 22, "_")
+for y in range(22):
+    for x in range(30):
+        back = min(x, y) < 2
+        gearstore[y][x] = "W" if back and x < 28 and y < 20 or y < 2 else "X" if x >= 28 or y >= 20 else "f"
+for y in range(4, 10):
+    gearstore[y][28] = gearstore[y][29] = "f"
+for y in range(14):
+    for x in range(30, 48):
+        back = y < 2 and x < SHOWROOM_END
+        gearstore[y][x] = "W" if back else "X" if y >= 12 or x >= SHOWROOM_END else "F"
+for x in (32, 33, 37, 38, 42, 43):
+    gearstore[1][x] = "o"
+shelves(gearstore, "O", (4,), ((5, 13), (16, 24)))
+shelves(gearstore, "U", (9, 14), ((5, 13),))
+shelves(gearstore, "O", (9,), ((16, 24),))
+shelves(gearstore, "U", (14,), ((16, 24),))
+shelves(gearstore, "N", (5, 9), ((32, 34), (36, 38), (40, 42)))
+shelves(gearstore, "C", (18,), ((6, 9),))
+gearstore_place = rooms(gearstore, (15, 18), [])
+gearstore_place["spots"].update(
+    tools=[(x, 4) for x in range(5, 14)], fishing=[(x, y) for y in (4, 9) for x in range(16, 25)],
+    clothes=fixture_spots(gearstore, "U"), platform=[(x, y) for y in (5, 9) for x in (33, 37, 41)],
+)
+
 # Car park: rows of marked bays, with buildings around and a pavement along them.
 city = blank(36, 28, "a")
 walls(city, "B", 3)
@@ -237,11 +266,44 @@ home_place["spots"]["home"] = {
     "eadni": (8.4, 3.25, 0), "viellja": (9.6, 3.25, 0), "oabbá": (9, 19, 0), "áhčči": (20.4, 3.6, 3),
 }
 
+# Lávvu camp: a clearing with a small river behind the lávvu, the forest around it, and at the far corner, out of sight, the
+# lávvu's inside. A marks ground that can't be walked on, where something big stands that the game draws itself; Q is the floor inside.
+camp_rng = random.Random(11)
+camp = blank(46, 32, "g")
+CAMP_X = 30  # the outdoors ends here
+LAVVU_AT, FIRE_AT, TREE_AT, BLOCK_AT = (10.5, 11.5), (15, 16.5), (22, 13), (15, 12)
+for y in range(len(camp)):
+    for x in range(CAMP_X):
+        if min(x, y, 31 - y) < 3 or x >= CAMP_X - 3:
+            camp[y][x] = "t"
+        elif y < 7 and y >= int(4 + 1.2 * math.sin(x / 3.4)) and y < int(4 + 1.2 * math.sin(x / 3.4)) + 3:
+            camp[y][x] = "w"
+        elif y >= 3 and y < 4 and camp_rng.random() < 0.7:
+            camp[y][x] = "t"
+keep_clear = [(LAVVU_AT, 6), (FIRE_AT, 6), (TREE_AT, 4), (BLOCK_AT, 4), ((15, 21), 6)]
+for _ in range(34):
+    x, y = camp_rng.randrange(3, CAMP_X - 3), camp_rng.randrange(8, 29)
+    if all(math.hypot(x - a, y - b) > r for (a, b), r in keep_clear):
+        camp[y][x] = "t"
+for y in range(8, 16):
+    for x in range(6, 16):
+        if math.hypot(x + 0.5 - LAVVU_AT[0], y + 0.5 - LAVVU_AT[1]) < 2.75:
+            camp[y][x] = "A"
+for x, y in ((14, 16), (15, 16), (14, 17), (15, 17), (TREE_AT[0], TREE_AT[1]), (BLOCK_AT[0], BLOCK_AT[1])):
+    camp[y][x] = "A"
+for y in range(20, 28):  # the inside: 31 to 38 across, 20 to 27 deep
+    for x in range(31, 39):
+        camp[y][x] = "W" if x == 31 or y == 20 else "X" if x == 38 or y == 27 else "Q"
+camp[23][35] = "A"  # the hearth in the middle
+camp_place = rooms(camp, (14, 15), [])
+
 data = {
     "home": home_place,
     "forest": forest,
     "library": library_place,
     "store": store_place,
+    "gearstore": gearstore_place,
+    "camp": camp_place,
     "classroom": classroom_place,
     "city": city_place,
 }

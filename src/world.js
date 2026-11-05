@@ -2,10 +2,13 @@
 // the rules and the movement are in game.js. The places come from tools/make_map.py.
 const TILE = 16;
 let placeName, MAP, START, SPOTS, WIDTH, HEIGHT, WORLD_W, WORLD_H, OX, forestAt, trees, treeMap;
-const SOLID_TILES = new Set("wBWXKSCMDRZPETVGHYJI");
-const BLOCK_TILES = new Set("BWXKSCMDRZPETVGHYJI");
+const SOLID_TILES = new Set("wBWXKSCMDRZPETVGHYJIOUNAo_"); // _ is nothing at all, beyond the walls of a room that isn't square
+const BLOCK_TILES = new Set("BWXKSCMDRZPETVGHYJIOUNo")
+// The places played as a trip to the shops: basket, list, till, bag and door.
+const SHOPS = new Set(["store", "gearstore"]);
+const isShop = (place) => SHOPS.has(place);;
 // Food stands in its fixture, this far above the floor.
-const RAISED = { meat: 11, shelf: 11, fridge: 8, freezer: 10, produce: 8, desk: 9, bookshelf: 13, table: 10 };
+const RAISED = { meat: 11, shelf: 11, fridge: 8, freezer: 10, produce: 8, desk: 9, bookshelf: 13, table: 10, tools: 3, fishing: 3, clothes: 4, platform: 3 };
 const canvas = document.getElementById("world");
 const ctx = canvas.getContext("2d");
 const ANIMALS = new Set(["boazu", "beana", "njoammil", "loddi", "guovza", "rieban", "oarri", "sahpan", "gahttu", "savza", "gussa", "spiidni", "vuonccis", "cuoppu", "skuolfi", "beaiveloddi", "rievssat", "goahppil", "garanas", "njukca", "goaskin", "jievjaskuolfi", "beahceloddi"]);
@@ -139,7 +142,7 @@ function bathroomFloorPixel(wx, wy, lx, ly) {
 }
 
 const SITTING_ON_SOFA = new Set(["eadni", "viellja"]);
-const FLOORS = { c: carpetPixel, j: bathroomFloorPixel, a: asphaltPixel, q: bayPixel, s: pavementPixel, F: woodFloorPixel, f: tiledFloorPixel, L: classroomFloorPixel };
+const FLOORS = { c: carpetPixel, j: bathroomFloorPixel, a: asphaltPixel, q: bayPixel, s: pavementPixel, F: woodFloorPixel, f: tiledFloorPixel, L: classroomFloorPixel, Q: (wx, wy) => campFloorPixel(wx, wy) };
 
 function pathPixel(tx, ty, wx, wy, lx, ly) {
   const grain = noise(wx, wy);
@@ -276,9 +279,11 @@ const BIRCHES = [makeBirch(1), makeBirch(2)];
 // Solid tiles are boxes standing on the map, drawn in with the trees so things can pass behind.
 const FOOD_COLOURS = ["#d13a30", "#f2c630", "#3a9a48", "#2f6fc2", "#e08a2e", "#eeeee6"];
 const SPINE_COLOURS = ["#b53a30", "#2f6fc2", "#d8a82a", "#3a8a48", "#6a3a8a", "#d8d2c0", "#2a4a6a"];
+const GARMENT_COLOURS = ["#2f5fa8", "#b53a30", "#d8a82a", "#3a8a48", "#6b7a4a", "#d8d2c0", "#2a4a6a"];
 const BLOCK_STYLE = {
   B: { height: 46, top: "#3c4048", left: "#a4806a", right: "#7a5c4c" },
   W: { height: 30, top: "#54483f", left: "#d8cdb6", right: "#ac9f88" },
+  o: { height: 30, top: "#54483f", left: "#d8cdb6", right: "#ac9f88" }, // the same wall with a window, in the showroom
   X: { height: 7, top: "#6e665a", left: "#a89c88", right: "#857a68" },
   K: { height: 22, top: "#7a4c28", left: "#5c3a1e", right: "#46291a" },
   S: { height: 16, top: "#e0dcd0", left: "#b0aca0", right: "#8c887c" },
@@ -292,6 +297,9 @@ const BLOCK_STYLE = {
   C: { height: 11, top: "#7c8a94", left: "#5a6670", right: "#46525c" },
   M: { height: 11, top: "#dfe6e8", left: "#a8c4cc", right: "#7f98a0" },
   D: { height: 10, top: "#b98249", left: "#7a4c28", right: "#5c3a1e" },
+  O: { height: 26, top: "#6a4426", left: "#b98a56", right: "#7a4c28" },
+  U: { height: 18, top: "#8c9198", left: "#3f4650", right: "#5a616a" },
+  N: { height: 3, top: "#5b6672", left: "#7b8794", right: "#4c5661" },
   // Home: warm walls with a faint stripe, windows in two of the three, and low walls between the rooms.
   H: { height: 9, top: "#8a5a3a", left: "#e8d3ac", right: "#c9ae84" },
   Y: { height: 30, top: "#6b4a32", left: "#ecd3a4", right: "#d6b98a" },
@@ -339,6 +347,19 @@ function makeBlock(tile, seed) {
         else colour = onLeft ? (n > 0.85 ? "#e4f6ff" : "#b8e0f0") : "#7fb0c4";
       } else if (tile === "Z") {
         if (row > 1 && row < 5) colour = onLeft ? "#3a8fd0" : "#2a6a9c";
+      } else if (tile === "O") {
+        // A board full of peg holes, on a darker frame.
+        if (row < 2 || row > height - 3) colour = onLeft ? "#6a4426" : "#553419";
+        else if (onLeft && across % 3 === 1 && row % 3 === 1) colour = "#6a4426";
+      } else if (tile === "U") {
+        // A bar with clothes hanging from it close together, over a dark back and a low foot.
+        const hanging = pick(GARMENT_COLOURS, noise(Math.floor(across / 5) + seed * 5, seed));
+        const hem = height - 6 - Math.floor(noise(Math.floor(across / 5) + seed * 3, seed + 1) * 4);
+        if (row < 2) colour = onLeft ? "#c9ced4" : "#8c9198";
+        else if (row > height - 3) colour = onLeft ? "#5a616a" : "#3f4650";
+        else if (onLeft && row < hem && across % 5 !== 4) colour = hanging;
+      } else if (tile === "N") {
+        if (row === 0) colour = onLeft ? "#a3aeb9" : "#6d7883";
       } else if (tile === "P") {
         if (row % 3 === 2) colour = onLeft ? "#6f4726" : "#553419"; // gaps between the slats
       } else if (tile === "E") {
@@ -355,7 +376,7 @@ function makeBlock(tile, seed) {
         } else if (row >= 25 && row < 27) {
           colour = "#7a4c28";
         }
-      } else if ((tile === "G" || tile === "J") && !onLeft || tile === "I" && onLeft) {
+      } else if ((tile === "G" || tile === "J") && !onLeft || (tile === "I" || tile === "o") && onLeft) {
         // Windows looking out at the sky.
         if (row >= 5 && row < 24 && across > 2 && across < 13) colour = row % 9 === 3 || across === 8 ? "#eeeadf" : row > 16 ? "#a8d8c0" : "#a8d4f0";
       }
@@ -369,7 +390,7 @@ function makeBlock(tile, seed) {
     for (let y = 8 - (onLeft ? Math.floor(x / 2) : 8 - Math.floor((x - 15) / 2)); y < start; y++) {
       const n = noise(x + seed, y * 3);
       // A freezer's glass lid catches the light; a crate is full of something leafy underneath.
-      dot(x, y, tile === "Z" ? ((x + y) % 7 < 2 ? "#e0f4fc" : top) : tile === "P" ? (n > 0.5 ? "#5f9a40" : "#4a8036") : top);
+      dot(x, y, tile === "N" ? (y % 3 === 0 ? "#525d68" : top) : tile === "Z" ? ((x + y) % 7 < 2 ? "#e0f4fc" : top) : tile === "P" ? (n > 0.5 ? "#5f9a40" : "#4a8036") : top);
     }
   }
   return c;
@@ -465,9 +486,9 @@ function buildWorld() {
   image.width = WORLD_W; image.height = WORLD_H;
   const g = image.getContext("2d");
   // Beyond the map: a dark forest or dark town, so the edge of the world never shows.
-  g.fillStyle = placeName === "forest" ? "#14302a" : placeName === "city" ? "#23262c" : "#191614";
+  g.fillStyle = placeName === "forest" || placeName === "camp" ? "#14302a" : placeName === "city" ? "#23262c" : "#191614";
   g.fillRect(0, 0, WORLD_W, WORLD_H);
-  if (placeName === "forest") {
+  if (placeName === "forest" || placeName === "camp") {
     const dark = outlined(30, 40, (d) => d.drawImage(PINES[1], 1, 0));
     const shade = dark.getContext("2d");
     shade.globalCompositeOperation = "source-atop";
@@ -481,7 +502,8 @@ function buildWorld() {
       const tx = sum - ty;
       if (tx < 0 || tx >= WIDTH) continue;
       const tile = MAP[ty][tx];
-      const eastEdge = tx === WIDTH - 1, southEdge = ty === HEIGHT - 1;
+      if (tile === "_") continue;
+      const eastEdge = tileOr(tx + 1, ty, "_") === "_", southEdge = tileOr(tx, ty + 1, "_") === "_";
       if (isWater(tile)) {
         diamond(g, tx, ty, WATER_DROP, (wx, wy, lx, ly) => waterPixel(tx, ty, wx, wy, lx, ly));
       } else {
@@ -949,7 +971,7 @@ function drawModel(g, sprite, facing, frame, headFacing, colour, detail = 1) {
 
 const modelImages = new Map();
 // These places are drawn at double detail, so that things are easier to recognize.
-const DETAIL_PLACES = { home: 2, forest: 2, city: 2, library: 2, store: 2, classroom: 2 };
+const DETAIL_PLACES = { home: 2, forest: 2, city: 2, library: 2, store: 2, gearstore: 2, camp: 2, classroom: 2 };
 let viewDetail = 1;
 
 function setViewDetail(place) {
@@ -1029,7 +1051,7 @@ function modelImage(sprite, facing, frame, headFacing = facing, colour) {
   const key = `${sprite}/${facing}/${frame}/${headFacing}/${colour}/${viewDetail}`;
   if (!modelImages.has(key)) {
     // Home is full of round furniture, too much to make in one go as the place opens.
-    if (sprite.startsWith("person_") || ANIMALS.has(sprite) || placeName === "home") {
+    if (sprite.startsWith("person_") || ANIMALS.has(sprite) || sprite === "laphund" || placeName === "home") {
       queueFinePicture(key, sprite, facing, frame, headFacing, colour);
       return modelImages.get(key) ?? plainModelImage(sprite, facing, frame, headFacing, colour);
     }
@@ -1222,7 +1244,7 @@ function draw(now) {
     scene.push({ d: chair.x + chair.y + (chair === me.sittingOn ? -0.005 : 0.01), paint: () => drawChairBack(chair) });
   }
   for (const t of treeMap) {
-    if (!seen(t.x, t.y, 70)) continue;
+    if (!seen(t.x, t.y, 70) || (camp?.inside && !t.block)) continue;
     // In front of the character and covering them, a tree turns see-through.
     const left = t.x - t.image.width / 2, top = t.y + 2 - t.image.height;
     const covers = !"CM".includes(MAP[t.ty]?.[t.tx]) && t.mx + t.my > me.x + me.y && footX + 8 > left && footX - 8 < left + t.image.width && footY > top && footY - 30 < t.y;
@@ -1234,6 +1256,7 @@ function draw(now) {
       } else {
         const wind = Math.sin(now / 1300 + t.tx * 2 + t.ty) + Math.sin(now / 470 + t.tx) * 0.4;
         drawLiving(t.image, t.x - Math.floor(t.image.width / 2), t.y + 2 - t.image.height, { lean: wind * 1.4 });
+        if (placeName === "camp") campRim(t.image, 0, 0, t.image.width, t.image.height, t.x - Math.floor(t.image.width / 2), t.y + 2 - t.image.height, t.image.width, t.image.height, t.mx, t.my);
       }
       ctx.globalAlpha = 1;
     }});
@@ -1340,6 +1363,7 @@ function draw(now) {
       ctx.globalAlpha = 1;
     }});
   }
+  if (placeName === "camp") campScene(scene, now, seen);
   // Eight directions: the game's own sheet for straight ones, the diagonal sheet for the rest.
   const facingName = me.facing;
   const mirrored = facingName === "W" || facingName === "SW" || facingName === "NW";
@@ -1407,7 +1431,7 @@ function draw(now) {
     sheet = sheetFor(look, viewDetail > 1);
     row = DIAGONAL_ROWS + ((me.moving ? 2 : 0) + (facingName.startsWith("N") ? 1 : 0)) * 5 + sway + 2;
   }
-  scene.push({ d: me.x + me.y, paint: () => {
+  if (!me.hidden) scene.push({ d: me.x + me.y, paint: () => {
     // Sitting, the drawing already has them at seat height; it moves forward off the chair's back.
     const cx = footX + (me.sittingOn ? SIT.forward : 0), ground = footY, cy = footY - Math.round(me.height);
     ctx.fillStyle = SHADOW;
@@ -1428,6 +1452,11 @@ function draw(now) {
       ctx.drawImage(sheet, frameCol * FRAME_W * viewDetail, row * FRAME_H * viewDetail, FRAME_W * viewDetail, FRAME_H * viewDetail, cx - 12, cy + 4 - FRAME_H, FRAME_W, FRAME_H);
     }
     if (carried && carried[2]) paintCarried(cx, cy, carried);
+    if (placeName === "camp") {
+      campFireShadow(me.x, me.y, 22);
+      campRim(sheet, frameCol * FRAME_W * viewDetail, row * FRAME_H * viewDetail, FRAME_W * viewDetail, FRAME_H * viewDetail, cx - 12, cy + 4 - FRAME_H, FRAME_W, FRAME_H, me.x, me.y, flip);
+      campPaintHeld(cx, cy, now, flip);
+    }
   }});
   // Foot dust lies on the ground where the foot landed, so someone walking towards the viewer leaves it behind them.
   for (const puff of puffs) {
@@ -1478,6 +1507,7 @@ function draw(now) {
     ctx.fillStyle = i % 3 ? "rgba(255, 250, 215, 0.55)" : "rgba(255, 255, 255, 0.8)";
     ctx.fillRect(camX + Math.round(x) - 10, camY + Math.round(y), 1, 1);
   }
+  if (placeName === "camp") paintCampNight(now, camX, camY);
   ctx.restore();
   // Home has a warm light over everything.
   if (placeName === "home") {

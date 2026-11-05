@@ -9,6 +9,15 @@ html { background: #20303a; }
   --sami-yellow: #f7c919;
   --sami-stripe: linear-gradient(var(--sami-red) 0 6px, var(--sami-yellow) 6px 10px, var(--sami-green) 10px 14px, transparent 14px);
 }
+.camp-items { display: grid; grid-template-columns: repeat(auto-fit, minmax(92px, 1fr)); gap: 8px; margin: 10px 0; }
+.camp-items button { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px; }
+.camp-items canvas { max-width: 72px; max-height: 64px; image-rendering: pixelated; }
+.camp-items span { font-size: 13px; line-height: 1.25; }
+.camp-panel > canvas { display: block; margin: 0 auto 6px; image-rendering: pixelated; }
+.camp-name { display: flex; gap: 8px; margin-top: 10px; }
+.camp-name input { flex: 1; min-width: 0; padding: 8px; font: inherit; }
+.camp-panel .heard { max-height: 180px; overflow: auto; }
+
 body {
   margin: 0;
   color: #f4f1e8;
@@ -173,6 +182,12 @@ body.menu #view, body.menu #pad, body.menu #in-game { display: none; }
 .heard { max-height: 160px; overflow-y: auto; }
 .who { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; font-weight: 700; }
 #card .who canvas { width: 36px; height: 60px; }
+/* A frame around each section of the menu, coloured by how far along its places are. */
+.menu-section { --frame: #f2c14e; margin-top: 14px; padding: 0 10px 10px; border: 3px solid var(--frame); border-radius: 10px; background: rgba(8, 20, 50, 0.35); }
+.menu-section.ready { --frame: #5cc26e; }
+.menu-section.partly { --frame: #ffc61e; }
+.menu-section.early { --frame: #e8604c; }
+.menu-section h3 { margin: 0 -10px 10px; padding: 6px 12px; color: #14213d; background: var(--frame); border-radius: 6px 6px 0 0; font-size: 16px; font-weight: 700; }
 .menu-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
 .menu-grid.levels { grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); }
 #card.places button {
@@ -369,17 +384,9 @@ body.menu #view, body.menu #pad, body.menu #in-game { display: none; }
 footer { font-size: 13px; color: #a9bac2; }
 footer a { color: #cfe3ee; }
 
-/* Gold stars in a corner of each place in the menu, for how far along it is, out of five. */
-#card.places button.has-stars { position: relative; }
-.place-stars { position: absolute; top: 6px; right: 7px; display: flex; gap: 1px; font-size: 15px; line-height: 1; pointer-events: none; }
-.place-stars i { font-style: normal; color: transparent; }
-.place-stars i.full { color: #ffc61e; text-shadow: 0 0 4px rgba(255, 170, 0, 0.7); }
-.place-stars i.half { background: linear-gradient(90deg, #ffc61e 50%, transparent 50%); -webkit-background-clip: text; background-clip: text; }
-
 /* The place itself, showing faintly behind its button in the menu. */
 #card.places button.has-map { position: relative; overflow: hidden; isolation: isolate; }
 #card.places button.has-map > * { position: relative; }
-#card.places button.has-map > .place-stars { position: absolute; }
 .place-map { position: absolute !important; inset: 0; z-index: -1; width: 100%; height: 100%; object-fit: cover; opacity: 0.35; image-rendering: pixelated; transition: opacity 0.15s; }
 #card.places button.has-map:hover .place-map { opacity: 0.7; }
 #card.places button.has-map:focus-visible .place-map { opacity: 0.55; }

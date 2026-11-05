@@ -633,11 +633,11 @@ def sprite_reaching_arm(p, from_x, from_y, hand_x, hand_y):
 
 
 def frame(facing, *, up=0, left=(0, 0), right=(0, 0), swing=0, blink=False, look_x=0, hop=0, sway=0,
-          arms_up=False, flare=0, lift=0, squat=0, sitting=False, pat=0, bend=0, reach=0):
+          arms_up=False, flare=0, lift=0, squat=0, sitting=False, pat=0, bend=0, reach=0, reach_x=6):
     """left and right are (lift, shift) for the feet. up raises the upper body, squat lowers it.
     pat: a hand brushing the gákti, negative on the left, positive on the right, 2 being further
     along its stroke. bend: the head dips forward over the chest, looking down. reach: an arm held out to
-    pat an animal to the right, how low the hand has come in its stroke, negative being above the shoulder."""
+    pat an animal to the right, how low the hand has come in its stroke, negative being above the shoulder. reach_x: how far out the hand is."""
     p = Px()
     g = GROUND - hop
     body = GROUND - 9 - up - hop + squat  # belt row
@@ -654,7 +654,7 @@ def frame(facing, *, up=0, left=(0, 0), right=(0, 0), swing=0, blink=False, look
         sprite_head(p, CX, head, facing, blink)
         sprite_short_hair_flick(p, CX, head, facing, sway)
         if reach:
-            sprite_reaching_arm(p, CX - 1, collar_y + 2, CX + 6, collar_y + 2 + reach)
+            sprite_reaching_arm(p, CX - 1, collar_y + 2, CX + reach_x, collar_y + 2 + reach)
         else:
             sprite_arm(p, CX - 2, collar_y + 2, swing, light=True, up=arms_up, edge=not arms_up)
     else:
@@ -980,6 +980,16 @@ def pat_rows():
             for strokes in ((1, 2, 3, 2, 1, 2), (-6, -5, -4, -5, -6, -5))]
 
 
+def work_rows():
+    """Working to the right, each six frames: an axe raised and swung down, a saw pushed and pulled, and a stick thrown."""
+    chop = [frame("right", reach=r, reach_x=x, up=u, squat=s, flare=f) for r, x, u, s, f in
+            ((-8, 2, 1, 0, 0), (-10, 1, 1, 0, 0), (-9, 3, 0, 0, 0), (-4, 7, 0, 1, 1), (2, 8, 0, 2, 2), (3, 7, 0, 2, 1))]
+    saw = [frame("right", reach=3, reach_x=x, squat=2, flare=1) for x in (3, 5, 8, 9, 7, 4)]
+    throw = [frame("right", reach=r, reach_x=x, up=u, flare=f) for r, x, u, f in
+             ((-6, -2, 0, 0), (-9, 0, 1, 0), (-10, 3, 1, 1), (-7, 8, 0, 1), (-3, 9, 0, 1), (1, 7, 0, 0))]
+    return [chop, saw, throw]
+
+
 def main():
     (OUT / "base").mkdir(parents=True, exist_ok=True)
     (OUT / "sprites").mkdir(parents=True, exist_ok=True)
@@ -1012,7 +1022,7 @@ def main():
         rows += jump_rows() + [wipe()]
         rows += run_rows() + [[slide_frame(stage) for stage in range(6)]]
         rows += [[frame("right", squat=3, flare=1)] + [sit_frame(swing) for swing in (0, 1, 2, 1, 0, -1)]]
-        rows += pat_rows()
+        rows += pat_rows() + work_rows()
         sheet = Image.new("RGBA", (FW * 8, FH * len(rows)), (0, 0, 0, 0))
         for y, row in enumerate(rows):
             for x, fr in enumerate(row):

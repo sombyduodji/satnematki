@@ -26,6 +26,8 @@ Rows 36–55 are the diagonal views: idle lower right, idle upper right, walk lo
 with sway -2, -1, 0, 1 and 2. The other two diagonals are these mirrored. They are first drafts and still need
 checking by eye.
 
+Rows 101–103 are work to the right, for the lávvu camp: chopping, sawing and throwing, six frames each. The tool is drawn by `src/camp.js`.
+
 Rows 56–60 are the jump: rising, top and coming down, facing down, up, right, lower right and upper right. Row 61
 is getting up after a fall and brushing the gákti; row 9, the fall, leads into it.
 

@@ -64,6 +64,9 @@ DROP_FI = re.compile(r"\b(lappalai\w*|mustalai\w*|akka|ämmä)\b", re.I)
 # Also rare senses of otherwise fine words: goddi = villrein, not "morder"; čibbi = kne.
 DROP_NB = re.compile(r"\b(lapp\w*|sigøyner\w*|tater\w*|morder|avliver|penis)\b", re.I)
 
+# A translation shown in place of a dated one the dictionary has as its only choice, by hand. Must be checked by the user.
+SHOWN_INSTEAD = {("gákti", "N"): {"saamenpuku": "lapinpuku"}}
+
 # Words the translation patterns can't catch.
 BLOCK_LEMMAS = {
     "dagadit": "sexual",
@@ -180,7 +183,7 @@ def main():
         if not word:
             problems.append(f"{key}: filtered out or not in the database")
             continue
-        if s["fi"] not in word["_all_fi"]:
+        if SHOWN_INSTEAD.get(key, {}).get(s["fi"], s["fi"]) not in word["_all_fi"]:
             problems.append(f"{key}: fi {s['fi']!r} not in {word['_all_fi']}")
         if s["nb"] and s["nb"] not in word["_all_nb"]:
             problems.append(f"{key}: nb {s['nb']!r} not in {word['_all_nb']}")

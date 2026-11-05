@@ -73,13 +73,17 @@ const TEXT = {
       "library-mixed": "Etsi tavara, jonka nimi ja väri lukevat ylhäällä, esimerkiksi girji: ruoksat. Kirjat ovat hyllyissä, kynät ja vihot pöydillä.",
       library: "Etsi tavara, joka lukee ylhäällä, esimerkiksi rukses girji. Kirjat ovat hyllyissä, kynät ja vihot pöydillä.",
       store: "Ota kori oven vierestä E-näppäimellä ja hae ostoslistan ruoat koriin missä järjestyksessä haluat. Mene sitten kassalle: laita ostokset hihnalle yksi kerrallaan E:llä, ota kassi ja mene ovelle. Jos kaadut, ostokset putoavat lattialle: kävele niiden yli, niin saat ne takaisin.",
+      gearstore: "Ota kori oven vierestä E-näppäimellä ja hae ostoslistan tavarat koriin missä järjestyksessä haluat. Työkalut ja kalastustarvikkeet ovat tauluilla, vaatteet rekeissä ja isot tavarat omassa näyttelytilassaan kaupan oikealla puolella. Mene sitten kassalle: laita ostokset hihnalle yksi kerrallaan E:llä, ota kassi ja mene ovelle.",
+      "gearstore-count": "Ota kori oven vierestä ja hae ostoslistan tavarat. Listassa lukee, montako kutakin tarvitaan, ja E ottaa yhden kerrallaan. Kassalla laita ostokset hihnalle, kuuntele hinta saameksi ja näppäile se. Ota sitten kassi ja mene ovelle.",
       "store-count": "Ota kori oven vierestä ja hae ostoslistan ruoat. Listassa lukee, montako kutakin tarvitaan, ja E ottaa yhden kerrallaan. Kassalla laita ostokset hihnalle, kuuntele hinta saameksi ja näppäile se. Ota sitten kassi ja mene ovelle.",
+      camp: "",
       classroom: "Etsi oikea numero pulpetilta. Mene pulpetin tuolin luo ja paina E, niin istut ja katsot numeron. Puhelimessa paina Istu tai napauta pulpettia.",
     },
     move: "Liiku nuolilla tai WASD-näppäimillä tai napauta. Puhelimessa käytä painikkeita.",
     run: "Juokse: pidä Shift pohjassa. Juostessa et voi ottaa mitään, ja jos osut johonkin, kaadut tai liu'ut mahallasi!",
     jump: {
       forest: "Hyppää: välilyönti. Jos hyppäät päin puuta, kaadut!",
+      camp: "Hyppää: välilyönti. Jos hyppäät päin puuta, kaadut!",
       city: "Hyppää: välilyönti. Jos hyppäät päin ajoneuvoa tai seinää, kaadut!",
       indoors: "Hyppää: välilyönti. Jos hyppäät päin hyllyä tai seinää, kaadut!",
       classroom: "Hyppää: välilyönti. Jos hyppäät päin pulpettia, kaadut!",
@@ -92,11 +96,10 @@ const TEXT = {
   useIt: "Ota tai katso",
   helpOn: "Ohjekuplat: päällä",
   helpOff: "Ohjekuplat: pois",
-  placeStars: (count) => `Valmiusaste: ${count} / 5 tähteä`,
   needBasket: "Ota ensin kori oven vierestä.",
   enough: (word) => `Doarvái ${word.forms[UNCOUNTED_FOODS.has(word.sprite) ? "Sg+Acc" : "Pl+Acc"][0]}`,
   notOnList: "Tämä ei ole ostoslistallani.",
-  notOnListFi: (fi) => `Ei, tämä on ${fi}, eikä se ole ostoslistallani.`,
+  notOnListFi: (word) => (PLURAL_ONLY[word.sprite] ? `Ei, ${PLURAL_ONLY[word.sprite].fi.toLowerCase().slice(0, -1)}, eivätkä ne ole ostoslistallani.` : `Ei, tämä on ${word.fi}, eikä se ole ostoslistallani.`),
   shoppingList: "Ostoslista",
   pickFallen: "Kerää vielä putonneet ostokset.",
   storePay: "Vie ostokset kassalle.",
@@ -236,6 +239,21 @@ function storeWords(findCount, extraCount) {
   return { find, extra };
 }
 
+// The general store has no meat counter. A few of each kind of thing, and all the big ones, so that the showroom is never empty.
+const GEAR_ROOM = { tools: 5, fishing: 5, clothes: 4, platform: 4 };
+function gearWords(findCount, extraCount) {
+  counterMeat = null;
+  const room = {};
+  const gear = shuffled(wordsOfTheme("gear")).filter((word) => {
+    room[word.place] = (room[word.place] ?? 0) + 1;
+    return room[word.place] <= GEAR_ROOM[word.place];
+  });
+  const find = gear.slice(0, findCount);
+  const rest = gear.slice(findCount);
+  const big = rest.filter((word) => word.place === "platform");
+  return { find, extra: [...big, ...rest.filter((word) => word.place !== "platform").slice(0, Math.max(0, extraCount - big.length))] };
+}
+
 const THEMES = [
   { id: "home", title: "Koti", place: "home", sprite: "sofa", words: () => plainWords("home", 8, 99) },
   { id: "forest", title: "Metsä", place: "forest", sprite: "rieban", words: () => forestWords(8, 3) },
@@ -245,8 +263,11 @@ const THEMES = [
   { id: "library-books", title: "Kirjasto", level: "helppo", example: "girji: alit", place: "library", sprite: "book", colour: "blue", words: () => colouredWords("item", 5, 2, easyPhrase, { ...EASY, nouns: ["book"] }) },
   { id: "library-mixed", title: "Kirjasto", level: "keskitaso", example: "peanna: čáhppat", place: "library", sprite: "pen", colour: "red", words: () => colouredWords("item", 6, 5, easyPhrase) },
   { id: "library", title: "Kirjasto", level: "vaikeampi", example: "vilges girji", place: "library", sprite: "notebook", colour: "green", words: () => colouredWords("item", 6, 5, attributivePhrase) },
-  { id: "store", title: "Kauppa", level: "helppo", example: "mielki", place: "store", sprite: "apple", ordered: true, words: () => storeWords(5 + Math.floor(Math.random() * 2), 6) },
-  { id: "store-count", title: "Kauppa", level: "vaikeampi", example: "3 × mielkki", place: "store", sprite: "milk", ordered: true, counts: true, words: () => storeWords(5 + Math.floor(Math.random() * 2), 6) },
+  { id: "store", title: "Ruokakauppa", level: "helppo", example: "mielki", place: "store", sprite: "apple", ordered: true, words: () => storeWords(5 + Math.floor(Math.random() * 2), 6) },
+  { id: "store-count", title: "Ruokakauppa", level: "vaikeampi", example: "3 × mielkki", place: "store", sprite: "milk", ordered: true, counts: true, words: () => storeWords(5 + Math.floor(Math.random() * 2), 6) },
+  { id: "gearstore", title: "Rautakauppa", level: "helppo", example: "veažir", place: "gearstore", sprite: "hammer", ordered: true, words: () => gearWords(5 + Math.floor(Math.random() * 2), 6) },
+  { id: "gearstore-count", title: "Rautakauppa", level: "vaikeampi", example: "3 × vuokka", place: "gearstore", sprite: "boat", ordered: true, counts: true, words: () => gearWords(5 + Math.floor(Math.random() * 2), 6) },
+  { id: "camp", title: "Laavu", place: "camp", sprite: "lavvu", camp: true, words: () => ({ find: [], extra: [] }) },
   { id: "numbers-10", title: "Luokka", level: "0–10", place: "classroom", number: 7, desks: true, words: () => numberWords(10, 7, 4) },
   { id: "numbers-20", title: "Luokka", level: "0–20", place: "classroom", number: 15, desks: true, words: () => numberWords(20, 10, 8) },
   { id: "numbers-100", title: "Luokka", level: "0–100", place: "classroom", number: 64, desks: true, words: () => numberWords(100, 10, 8) },
@@ -254,6 +275,10 @@ const THEMES = [
 let theme = null;
 let shoppingList = [];
 const translation = (word) => word.fi;
+// Words that are only plural, as buvssat: "Dát leat buvssat", and their object form is the plural's. Must match PLURAL_ONLY in tools/fetch_voices.py.
+const PLURAL_ONLY = { trousers: { sme: "Dát leat buvssat.", fi: "Nämä ovat housut." } };
+const thisIs = (word) => word.thisWord || PLURAL_ONLY[word.sprite]?.sme || TEXT.thisWord(word.lemma);
+const thisIsFi = (word) => word.thisWordFi || PLURAL_ONLY[word.sprite]?.fi || TEXT.thisWordFi(translation(word));
 
 // Character art comes from tools/make_mahtte.py, one sheet per combination.
 // Everything facing left is mirrored. Jump and crouch are drawn facing the player.
@@ -283,6 +308,9 @@ const FRAME_W = 24;
 const FRAME_H = 40;
 const IDLE_ROW = { down: 0, up: 1, right: 2, left: 2 };
 const ACTIONS = {
+  chop: { row: 101, ms: 560 },
+  saw: { row: 102, ms: 500 },
+  throw: { row: 103, ms: 420 },
   cheer: { row: 6, ms: 540 },
   raiseHand: { row: 6, ms: 900 },
   pick: { row: 6, ms: 320 }, // a quick reach, with the cheer's arms until there is a drawing of it
@@ -311,7 +339,7 @@ const SIT_ROW = 98;
 const SLIDE = { ms: 340, lookAhead: 1.1, contact: 0.3, headOn: 0.35, freeAhead: 0.8, restMs: 380 };
 const RUN = { speed: 1.8, animation: 1.7, cloth: 1.9, stepStrength: 1.5 };
 const JUMP = { ms: 520, height: 14, clears: 6 }; // height is half the character; above clears, low things pass under
-const dusty = () => placeName === "forest"; // puffs of dust are for outdoors in the forest, not town or indoors
+const dusty = () => placeName === "forest" || placeName === "camp"; // puffs of dust are for outdoors in the forest, not town or indoors
 const DUST = { path: "240, 228, 196", ground: "214, 208, 164" }; // pale, to show on both; none on the bridge, in town or indoors
 const LINE_FADE = 0.07; // seconds a line takes to fade when something new is said over it
 const SOUND_AHEAD = 0.015; // sounds start this far ahead, as starting "now" can already be slightly too late
@@ -572,12 +600,16 @@ function enterTheme(chosenTheme) {
   enterPlace(theme.place);
   setPadForTheme();
   newRound();
+  if (theme.camp) setupCamp();
+  else camp = null;
+  showPrompt();
   showGuide();
 }
 
 // In the classroom the on-screen pad's crouch button sits at a chair.
 function setPadForTheme() {
   document.getElementById("use").textContent = theme?.desks ? TEXT.sit : "Ota";
+  for (const id of ["camp-pack", "camp-drop"]) document.getElementById(id).hidden = !theme?.camp;
 }
 
 // The rules first, and the round waits until the player has read them.
@@ -589,7 +621,7 @@ function showGuide() {
   const inClassroom = theme.place === "classroom";
   const lines = [
     ...(audioOnly ? [guide.listen] : []),
-    ...(audioOnly && !inClassroom ? [] : [guide.goal[inClassroom ? "classroom" : theme.id]]),
+    ...(theme.camp ? [CAMP_TEXT.guide, CAMP_TEXT.keys] : audioOnly && !inClassroom ? [] : [guide.goal[inClassroom ? "classroom" : theme.id]]),
     guide.move,
     guide.run,
     guide.jump[theme.place] || guide.jump.indoors,
@@ -611,6 +643,10 @@ function showGuide() {
   ok.addEventListener("click", () => {
     closeResults();
     paused = false;
+    if (theme.camp) {
+      if (!campDogName()) campAskDogName();
+      return;
+    }
     announce();
   });
   ok.focus();
@@ -622,7 +658,7 @@ function newRound() {
   const clear = ([x, y]) => Math.hypot(x + 0.5 - me.x, y + 0.5 - me.y) > 1.5;
   closeResults();
   roundEnding++;
-  timerEl.hidden = false;
+  timerEl.hidden = !!theme.camp;
   paused = false;
   me.sittingOn = null;
   const { find, extra } = theme.words();
@@ -630,7 +666,7 @@ function newRound() {
   for (let attempt = 0; attempt < PLACING_TRIES; attempt++) {
     const used = new Set();
     const placed = [];
-    const place = { forest: theme.place === "forest", store: theme.place === "store" };
+    const place = { forest: theme.place === "forest", store: isShop(theme.place) };
     objects = picked.map((word) => {
       if (word.place === "home") {
         const [x, y, facing] = SPOTS.home[word.sprite];
@@ -671,7 +707,7 @@ function newRound() {
     prepareLines([2, 3, 4, 5].map((count) => `audio/count-and-${count}-${id}.wav`));
     prepareLines([...cart.want].filter(([, wanted]) => wanted > 1).map(([word]) => `audio/enough-${word.sprite}-${id}.wav`));
   }
-  if (helpRound && theme.place === "store") prepareLines(Object.values(STORE_HINTS).map((hint) => `audio/${hint.line}-${VOICES[look.gender]}.wav`));
+  if (helpRound && isShop(theme.place)) prepareLines(Object.values(STORE_HINTS).map((hint) => `audio/${hint.line}-${VOICES[look.gender]}.wav`));
   prepareLines(targets.map((word) => askLine(word)));
   shoppingList = theme.ordered ? [...new Set(targets)] : [];
   roundSize = targets.length;
@@ -688,7 +724,7 @@ function newRound() {
 
 // The shopping list on a piece of paper, in handwriting. What's been found is crossed off, and things can be got in any order.
 // On the harder level's list things are in their object form after the number, as in a real shopping list: "5 × mielkki".
-const listWord = (word) => (!theme?.counts ? word.lemma : word.forms[word.sprite === "egg" ? "Pl+Acc" : "Sg+Acc"][0]);
+const listWord = (word) => (!theme?.counts ? word.lemma : word.forms[word.sprite === "egg" || PLURAL_ONLY[word.sprite] ? "Pl+Acc" : "Sg+Acc"][0]);
 
 function paperList() {
   const paper = document.createElement("ul");
@@ -701,7 +737,7 @@ function paperList() {
     const row = document.createElement("li");
     row.textContent = `${wanted > 1 ? `${wanted} × ` : ""}${listWord(word)}`;
     const price = document.createElement("small");
-    price.textContent = `${FOOD_PRICES[word.sprite]} ${TEXT.euro}`;
+    price.textContent = `${SHOP_PRICES[word.sprite]} ${TEXT.euro}`;
     row.append(price);
     if (!left) row.className = "bought";
     else if (left < wanted) row.dataset.left = `${wanted - left}/${wanted}`;
@@ -717,12 +753,16 @@ function escapeText(text) {
 }
 
 function showPrompt() {
+  if (theme?.camp) {
+    promptEl.replaceChildren(campList());
+    return;
+  }
   const starRow = "★".repeat(stars) + "☆".repeat(roundSize - stars);
   if (!theme) {
     promptEl.innerHTML = `<span>${escapeText(TEXT.choosePlace(loadName()))}</span>`;
   } else if (cart.spilled.length && !targets.length) {
     promptEl.innerHTML = `<span>${TEXT.pickFallen}</span>`;
-  } else if (STORE_PROMPTS[cart.stage] && theme.place === "store") {
+  } else if (STORE_PROMPTS[cart.stage] && isShop(theme.place)) {
     promptEl.innerHTML = `<span>${TEXT[cart.stage === "price" && theme.counts ? "storePriceTyped" : STORE_PROMPTS[cart.stage]]}</span>`;
   } else if (targets.length && audioOnly) {
     promptEl.innerHTML = `<span>${TEXT.listen}</span>
@@ -746,7 +786,7 @@ function showPrompt() {
       list.lang = "se";
       shoppingList.forEach((word) => {
         const row = document.createElement("li");
-        row.textContent = `${theme.counts ? `${cart.want.get(word)} × ` : ""}${listWord(word)} ${FOOD_PRICES[word.sprite]} ${TEXT.euro}`;
+        row.textContent = `${theme.counts ? `${cart.want.get(word)} × ` : ""}${listWord(word)} ${SHOP_PRICES[word.sprite]} ${TEXT.euro}`;
         if (!targets.includes(word)) row.className = "bought";
         else if (word === targets[0]) row.className = "now";
         list.append(row);
@@ -1079,13 +1119,16 @@ function showPlaces() {
 
 // The menu fills the page, so nothing needs scrolling to, and asks one thing at a time: where, and then how hard.
 // Pictures carry it for a child who doesn't read yet.
-// Stars out of five in the menu for how far along a place is; the rest have half a star.
-const PLACE_STARS = { store: 2, forest: 1 };
 // The start page's picture of each place, showing faintly behind its button in the menu. With the mouse over the button, its clip
 // plays instead; it loads only then, and phones and anyone who has asked for less motion keep the picture.
 const CLIPS_ON_HOVER = matchMedia("(hover: hover) and (prefers-reduced-motion: no-preference)").matches;
-const PLACE_MAPS = { home: "koti", forest: "elaimet", city: "parkkipaikka", library: "kirjasto", store: "kauppa", classroom: "luokka" };
-const HALF_STAR = 0.5;
+const PLACE_MAPS = { home: "koti", forest: "elaimet", city: "parkkipaikka", library: "kirjasto", store: "kauppa", gearstore: "rautakauppa", camp: "laavu", classroom: "luokka" };
+// The menu's sections, by how far along the places are. A new place has to be added to one of them to show.
+const MENU_SECTIONS = [
+  { heading: "Pelattava demo", places: ["forest", "store"], look: "ready" },
+  { heading: "Pelattava, mutta tärkeitä osia puuttuu", places: ["home", "city", "library", "classroom"], look: "partly" },
+  { heading: "Varhainen testaus, ei ehkä edes käynnisty", places: ["gearstore", "camp"], look: "early" },
+];
 
 // A finer picture for the menu than the one on a word's card: built again at double detail where it's made of round shapes, and
 // otherwise doubled.
@@ -1106,7 +1149,7 @@ function menuPicture(word) {
   return menuPictures.get(key);
 }
 
-function menuButton({ look: picture, title, small, example, onClick, className, starCount, map }) {
+function menuButton({ look: picture, title, small, example, onClick, className, map }) {
   const button = document.createElement("button");
   if (className) button.className = className;
   if (map) {
@@ -1156,20 +1199,6 @@ function menuButton({ look: picture, title, small, example, onClick, className, 
     const smallEl = document.createElement("small");
     smallEl.textContent = small;
     button.append(smallEl);
-  }
-  if (starCount) {
-    button.classList.add("has-stars");
-    const stars = document.createElement("span");
-    stars.className = "place-stars";
-    stars.setAttribute("aria-label", TEXT.placeStars(String(starCount).replace(".", ",")));
-    for (let left = starCount; left > 0; left--) {
-      const star = document.createElement("i");
-      star.textContent = "★";
-      star.setAttribute("aria-hidden", "true");
-      star.className = left >= 1 ? "full" : "half";
-      stars.append(star);
-    }
-    button.append(stars);
   }
   button.addEventListener("click", onClick);
   return button;
@@ -1245,22 +1274,27 @@ function menuPlaces() {
       onClick: () => enterTheme(last),
     }));
   }
-  const grid = document.createElement("div");
-  grid.className = "menu-grid";
-  const titles = [...new Set(THEMES.map((option) => option.title))];
-  for (const title of titles) {
-    const levels = THEMES.filter((option) => option.title === title);
-    const played = levels.filter(bestOf).length;
-    grid.append(menuButton({
-      look: themeLook(levels[0]),
-      title,
-      small: levels.length > 1 ? `${"●".repeat(played)}${"○".repeat(levels.length - played)} ${TEXT.levels(levels.length)}` : bestText(levels[0]),
-      starCount: PLACE_STARS[levels[0].place] ?? HALF_STAR,
-      map: PLACE_MAPS[levels[0].place],
-      onClick: () => (levels.length > 1 ? menuLevels(title, levels) : enterTheme(levels[0])),
-    }));
+  for (const { heading, places, look: sectionLook } of MENU_SECTIONS) {
+    const section = document.createElement("section");
+    section.className = `menu-section ${sectionLook}`;
+    const title = document.createElement("h3");
+    title.textContent = heading;
+    const grid = document.createElement("div");
+    grid.className = "menu-grid";
+    for (const place of places) {
+      const levels = THEMES.filter((option) => option.place === place);
+      const played = levels.filter(bestOf).length;
+      grid.append(menuButton({
+        look: themeLook(levels[0]),
+        title: levels[0].title,
+        small: levels.length > 1 ? `${"●".repeat(played)}${"○".repeat(levels.length - played)} ${TEXT.levels(levels.length)}` : bestText(levels[0]),
+        map: PLACE_MAPS[place],
+        onClick: () => (levels.length > 1 ? menuLevels(levels[0].title, levels) : enterTheme(levels[0])),
+      }));
+    }
+    section.append(title, grid);
+    cardEl.append(section);
   }
-  cardEl.append(grid);
   cardEl.querySelector("button.continue, .menu-grid button").focus();
 }
 
@@ -1455,8 +1489,8 @@ function showCard(word, right, count = 1) {
   const line = pickLine(right ? TEXT.right : TEXT.wrong);
   const [say, sayFi] = (right ? TEXT.right : TEXT.wrong)[line];
   const person = FAMILY.has(word.sprite);
-  bubble.querySelector(".say").textContent = count > 1 ? `Ja ${window.MAHTTE_NUMBERS[count]}. ${TEXT.enough(word)}.` : `${say} ${word.thisWord || (person ? TEXT.thisPerson : TEXT.thisWord)(word.lemma)}`;
-  bubble.querySelector(".note").textContent = count > 1 ? `${count} × ${translation(word)}.` : `${sayFi} ${word.thisWordFi || (person ? TEXT.thisPersonFi : TEXT.thisWordFi)(translation(word))}`;
+  bubble.querySelector(".say").textContent = count > 1 ? `Ja ${window.MAHTTE_NUMBERS[count]}. ${TEXT.enough(word)}.` : `${say} ${person ? TEXT.thisPerson(word.lemma) : thisIs(word)}`;
+  bubble.querySelector(".note").textContent = count > 1 ? `${count} × ${translation(word)}.` : `${sayFi} ${person ? TEXT.thisPersonFi(translation(word)) : thisIsFi(word)}`;
   if (!audioOnly) cardEl.append(bubble);
   const id = VOICES[look.gender];
   const lines = count > 1 ? [`audio/count-and-${count}-${id}.wav`, `audio/enough-${word.sprite}-${id}.wav`] : [`audio/${right ? "praise" : "wrong"}-${line}-${id}.wav`, wordLine(word, id)];
@@ -1476,7 +1510,7 @@ function showCard(word, right, count = 1) {
 }
 
 // A wrong pick holds the character still for a moment while it's explained, so that guessing doesn't pay.
-const WRONG_HOLD_MS = 2000;
+const WRONG_HOLD_MS = 3000;
 const holdForWrongPick = (now) => {
   if (me.sittingOn) return; // at a desk, reading the number is how it's played
   me.heldUntil = now + WRONG_HOLD_MS;
@@ -1487,19 +1521,19 @@ const holdForWrongPick = (now) => {
 function touch(object, now) {
   // The shopping list can be followed in any order.
   const right = theme?.ordered ? targets.includes(object.word) : targets[0] === object.word;
-  if (right && placeName === "store" && !cart.has) {
+  if (right && isShop(placeName) && !cart.has) {
     cardEl.className = "";
     cardEl.innerHTML = `<div class="note">${TEXT.needBasket}</div>`;
     return;
   }
   // In the store only what's on the list can be taken; anything else stays where it is, and is said what it is.
-  if (!right && placeName === "store") {
+  if (!right && isShop(placeName)) {
     const id = VOICES[look.gender];
     cardEl.className = "";
     cardEl.innerHTML = audioOnly ? `<div class="note">${TEXT.notOnList}</div>`
-      : `<div><span lang="se">Ii. Dát lea <b>${escapeText(object.word.lemma)}</b>. Dat ii leat mu listtus.</span>
-        <div class="note">${TEXT.notOnListFi(translation(object.word))}</div></div>`;
-    if (!rightSpeech) playVoice(`audio/store-no-${id}.wav`, wordLine(object.word, id), `audio/store-notonlist-${id}.wav`);
+      : `<div><span lang="se">Ii. ${escapeText(thisIs(object.word)).replace(escapeText(object.word.lemma), `<b>${escapeText(object.word.lemma)}</b>`)} ${PLURAL_ONLY[object.word.sprite] ? "Dat eai leat" : "Dat ii leat"} mu listtus.</span>
+        <div class="note">${TEXT.notOnListFi(object.word)}</div></div>`;
+    if (!rightSpeech) playVoice(`audio/store-no-${id}.wav`, wordLine(object.word, id), `audio/store-notonlist${PLURAL_ONLY[object.word.sprite] ? "-plural" : ""}-${id}.wav`);
     holdForWrongPick(now);
     return;
   }
@@ -1531,7 +1565,7 @@ function touch(object, now) {
     return;
   }
   stars++;
-  if (placeName === "store") {
+  if (isShop(placeName)) {
     pickOne(object.word);
     if (object.word.place === "meat") cart.meatSpot = [object.x, object.y]; // what was taken doesn't come straight back
   }
@@ -1549,7 +1583,7 @@ function touch(object, now) {
   if (theme.counts && cart.want.get(object.word) > 1) saying = { say: TEXT.enough(object.word), until: now + ENOUGH_SHOWN_MS };
   showPrompt();
   if (targets.length) announceAfter(speech);
-  else if (placeName === "store") {
+  else if (isShop(placeName)) {
     cart.stage = "pay"; // still to go through the till and out of the door
     showPrompt();
   } else finishRound(loadName() || "", speech);
@@ -2019,6 +2053,10 @@ function enterPlace(name) {
     fridge: SPOTS.fridge || [],
     freezer: SPOTS.freezer || [],
     produce: SPOTS.produce || [],
+    tools: SPOTS.tools || [],
+    fishing: SPOTS.fishing || [],
+    clothes: SPOTS.clothes || [],
+    platform: SPOTS.platform || [],
     meat: SPOTS.meat || [],
     desk: SPOTS.desk || [],
     bay: SPOTS.bay || [],
@@ -2139,8 +2177,9 @@ const AMBIENCE_STOP = 0.25; // seconds to fall silent on leaving a place
 const AMBIENCE_NOISE_SECONDS = 41;
 const AMBIENCE_SPEAKING = 0.5;
 // How loud each place is overall, so that all of them are heard at about the same level.
-const AMBIENCE_LEVEL = { forest: 1, city: 1, home: 1, store: 1, library: 1, classroom: 1 };
+const AMBIENCE_LEVEL = { forest: 1, city: 1, home: 1, store: 1, gearstore: 1, library: 1, classroom: 1 };
 let ambiencePlace = null;
+const AMBIENCE_SAME_AS = { camp: "forest" }; // the camp is in the same woods, and the file need not be there twice
 let ambienceRun = null; // what is playing: its output, its endless sounds and its timers
 
 // Long enough, and started at random points, that nothing is heard to repeat.
@@ -2372,6 +2411,9 @@ const AMBIENCE = {
       for (let i = 0; i < count; i++) softBeep(run.output, at + i * (0.35 + Math.random() * 0.5), 1760, 0.005, 95);
     });
   },
+  gearstore(run) {
+    AMBIENCE.store(run);
+  },
   library(run) {
     endlessHum(run, 110, 0.002); // keeps the sound channel open between the small noises
     nowAndThen(run, 5, 16, (at) => pageTurn(run.output, at));
@@ -2389,7 +2431,7 @@ function duckAmbience(speaking) {
 }
 
 // Recordings where there are good ones, with how loud each should end up on average, in decibels below full scale.
-const AMBIENCE_TRACKS = { forest: 40, city: 40, home: 45, library: 47, classroom: 45, store: 43 };
+const AMBIENCE_TRACKS = { forest: 40, city: 40, home: 45, library: 47, classroom: 45, store: 43, gearstore: 43 };
 // Places whose recording has a hiss, and the pitch above which it's softened.
 const AMBIENCE_SOFTEN = { city: 5000 };
 const AMBIENCE_BLEND = 5; // seconds of a track's end blended into its start, so its loop has no join
@@ -2496,7 +2538,7 @@ function startAmbience() {
 }
 
 function setAmbience(place) {
-  ambiencePlace = place;
+  ambiencePlace = AMBIENCE_SAME_AS[place] ?? place;
   startAmbience();
 }
 
@@ -2769,7 +2811,7 @@ function pecking(o, way, now) {
 // Each picture of an animal takes a moment to draw the first time, so this round's are made a few at a time now.
 // The finer pictures of what's on the shelves, one at a time while the round's first word is being announced.
 async function buildStoreAhead() {
-  if (theme?.place !== "store") return;
+  if (!isShop(theme?.place)) return;
   const round = objects;
   for (const o of round) {
     if (round !== objects) return;
@@ -2802,8 +2844,9 @@ const TILL = {
   cashier: [8.1, 19.1], belt: [7.2, 18], beltTiles: [6], beltFrom: 5.9, beltTo: 7.9, goodsApart: 0.5, beltHolds: 5, beltSpeed: 0.002, register: [8.4, 18], registerReach: 0.6, bag: [9.3, 18], closed: 14, counterTop: 11,
 };
 const BASKET_TILES = new Set([TILL.baskets, TILL.usedBaskets].map(([x, y]) => `${Math.round(x)},${Math.round(y)}`)); // nobody walks through the stacks
-const CUSTOMER_LOOKS = Object.keys(PERSON_LOOKS).filter((name) => !["cashier", "stocker", "butcher"].includes(name));
-const DISPLAY_TILES = new Set("SRZP");
+// Each customer has a look for each kind of shop, with that shop's goods in the basket.
+const customerLooks = () => Object.keys(PERSON_LOOKS).filter((name) => !["cashier", "stocker", "butcher"].includes(name) && name.startsWith("gear_") === (placeName === "gearstore"));
+const DISPLAY_TILES = new Set("SRZPOU");
 let shoppers = [];
 let till = { queue: [], current: null, goods: [], bag: null, scanning: false, usedBaskets: 0, baskets: TILL.startBaskets };
 let stocker = null;
@@ -2871,12 +2914,12 @@ function goShopping(s) {
 
 // The clock starts at the first move of a round, except in the store, where it starts with taking a basket.
 function startClock() {
-  if (!timer.running && timer.ms === 0 && targets.length && theme?.place !== "store") timer.running = true;
+  if (!timer.running && timer.ms === 0 && targets.length && !isShop(theme?.place) && !theme?.camp) timer.running = true;
 }
 
 function newShopper(inside) {
   const present = new Set(shoppers.map((s) => s.look));
-  const look = shuffled(CUSTOMER_LOOKS).find((name) => !present.has(name));
+  const look = shuffled(customerLooks()).find((name) => !present.has(name));
   const s = {
     look, x: TILL.outside[0], y: TILL.outside[1], facing: 2, path: [], hasBasket: inside, arrived: null, doing: "shop", wait: 0, clock: Math.random() * 1000,
     picked: 0, wants: 1 + Math.floor(Math.random() * SHOPPING.wants), bag: `bag${Math.floor(Math.random() * BAGS.length)}`, alpha: inside ? 1 : 0, leaving: false, speed: SHOPPING.walk * (PERSON_LOOKS[look].pace ?? 1),
@@ -2924,7 +2967,7 @@ const newCart = () => ({ has: false, bag: null, stage: "basket", goods: [], drop
 
 // What each thing costs, in whole euros: prices on s-kaupat.fi on 2026-11-04 (no shop chosen), rounded, at least 1.
 // Small packs, so that nothing costs more than 8: coffee 250 g, a small cake.
-const FOOD_PRICES = {
+const SHOP_PRICES = {
   apple: 1, banana: 1, bread: 2, milk: 1, cheese: 4, egg: 2, potato: 1, carrot: 1, butter: 4, sausage: 3, berries: 3, icecream: 2, guolli: 6, coffee: 4, sugar: 1, salt: 1,
   tomato: 1, cucumber: 1, onion: 1, cabbage: 2, lettuce: 2, orange: 1, pear: 1, lemon: 1, strawberry: 4, grapes: 3,
   juice: 1, yoghurt: 1, flour: 1, rice: 2, tea: 3, chocolate: 4, candy: 3, cookie: 2, cake: 5, soda: 2, pizza: 4, mushroom: 2, lingonberry: 2, jam: 1,
@@ -2932,22 +2975,29 @@ const FOOD_PRICES = {
   reindeermeat: 2, // a 50 g plate, worked out from 15.89 for 400 g
   steak: 5, mince: 4, pork: 3,
   cloudberry: 6, // no price found: an estimate
+  // The general store's are play prices and not real ones: a whole list has to stay within what the cashier can say.
+  axe: 5, saw: 4, spade: 4, hammer: 3, knife: 4, kuksa: 3, lasso: 3, reindeerbell: 2,
+  fishnet: 6, lure: 1, rod: 6, scoopnet: 3, bait: 1, oar: 3, fishingline: 1, reel: 3,
+  shirt: 3, trousers: 4, gakti: 12, jacket: 6, hat: 2, sock: 1, rubberboots: 5,
+  boat: 15, snowscooter: 20, pulk: 8, lavvu: 12,
 };
 const ENOUGH_SHOWN_MS = 2000;
 const MOST_OF_ONE = 5, MAX_TOTAL = 99; // the cashier has a spoken line for every total up to this
 
 function pickOne(word) {
   cart.goods.push(word);
-  cart.total += FOOD_PRICES[word.sprite];
+  cart.total += SHOP_PRICES[word.sprite];
 }
 
+// Nobody buys three boats either. "platform" is where the big things stand.
+const ONLY_ONE = new Set(["meat", "egg", "platform", "gakti"]);
 // How many of each, from one to five, without the whole list costing more than can be said.
 function wantedCounts(words) {
-  const cost = () => words.reduce((sum, word) => sum + cart.want.get(word) * FOOD_PRICES[word.sprite], 0);
+  const cost = () => words.reduce((sum, word) => sum + cart.want.get(word) * SHOP_PRICES[word.sprite], 0);
   // Only one plate of meat, so nobody waits at the counter for more to be cut, and one carton of eggs, as "moniid" says.
-  for (const word of words) cart.want.set(word, word.place === "meat" || word.sprite === "egg" ? 1 : 1 + Math.floor(Math.random() * MOST_OF_ONE));
+  for (const word of words) cart.want.set(word, ONLY_ONE.has(word.place) || ONLY_ONE.has(word.sprite) ? 1 : 1 + Math.floor(Math.random() * MOST_OF_ONE));
   while (cost() > MAX_TOTAL) {
-    const dearest = words.filter((word) => cart.want.get(word) > 1).sort((p, q) => FOOD_PRICES[q.sprite] - FOOD_PRICES[p.sprite])[0];
+    const dearest = words.filter((word) => cart.want.get(word) > 1).sort((p, q) => SHOP_PRICES[q.sprite] - SHOP_PRICES[p.sprite])[0];
     cart.want.set(dearest, cart.want.get(dearest) - 1);
   }
   return words.flatMap((word) => Array(cart.want.get(word)).fill(word));
@@ -3082,7 +3132,8 @@ const STORE_HINTS = {
 
 // What can be done or should be done next in the store.
 function storeHint() {
-  if (placeName !== "store" || !theme) return null;
+  if (placeName === "camp" && theme?.camp) return campHint();
+  if (!isShop(placeName) || !theme) return null;
   if (cart.stage === "basket") return nearBaskets() ? STORE_HINTS.basket : null;
   if (cart.spilled.length) return null;
   if (cart.stage === "pay") {
@@ -3189,7 +3240,7 @@ function updateHint() {
 }
 
 function updateCart(now) {
-  if (placeName !== "store" || fallingDown()) return;
+  if (!isShop(placeName) || fallingDown()) return;
   cart.dropped = null;
   if (cart.stage === "door" && onDoorMat()) {
     cart.stage = "out";
@@ -3207,7 +3258,7 @@ function updateCart(now) {
 
 // Where the basket hangs beside the character on the screen, and whether the body hides it.
 const CARRIED = { S: [8, -8, true], SE: [8, -8, true], E: [4, -8, true], NE: [8, -8, false], N: [-8, -8, false], NW: [-8, -8, false], W: [-4, -8, true], SW: [-8, -8, true] };
-const carriedBasket = () => (placeName === "store" && (cart.has || cart.bag) && !cart.dropped ? CARRIED[me.facing] : null);
+const carriedBasket = () => (isShop(placeName) && (cart.has || cart.bag) && !cart.dropped ? CARRIED[me.facing] : null);
 
 // It swings with each step, further at a run, and comes down when the character crouches.
 function basketSwing() {
@@ -3221,7 +3272,7 @@ function setupShoppers() {
   till = { queue: [], current: null, goods: [], bag: null, scanning: false, usedBaskets: 0, baskets: TILL.startBaskets };
   stocker = null;
   wantedShoppers = 0;
-  if (placeName !== "store") return;
+  if (!isShop(placeName)) return;
   wantedShoppers = SHOPPING.least + Math.floor(Math.random() * (SHOPPING.most - SHOPPING.least + 1));
   nextShopperIn = betweenMs(SHOPPING.newAfter, SHOPPING.moreNewAfter);
   setupStocker();
@@ -3519,7 +3570,7 @@ function updateStocker(dt) {
 }
 
 function updateShoppers(dt) {
-  if (placeName !== "store") return;
+  if (!isShop(placeName)) return;
   moveQueue();
   moveGoodsOnBelt(dt);
   scanForPlayer(dt);
@@ -3538,7 +3589,7 @@ function updateShoppers(dt) {
 
 // What of all this to draw, nearest last. Things on the counter are lifted by its height.
 function storeLife(now) {
-  if (placeName !== "store") return [];
+  if (!isShop(placeName)) return [];
   const flying = (thing, along) => ({
     x: thing.fromX + (thing.x - thing.fromX) * along - 0.5, y: thing.fromY + (thing.y - thing.fromY) * along - 0.5,
     lift: Math.round(Math.sin(along * Math.PI) * CART.spillHigh),
@@ -3550,12 +3601,13 @@ function storeLife(now) {
     onCounter("till_belt_end", [TILL.beltTiles[0] + 2 + offset, TILL.belt[1]]), onCounter("till_register", [TILL.register[0] + offset, TILL.register[1]], TILL.registerReach),
   ];
   const things = [
-    ...tillAt(0), ...tillAt(TILL.closed),
+    ...tillAt(0), ...(placeName === "gearstore" ? [] : tillAt(TILL.closed)), // the general store is small enough for one till
     { sprite: "store_mat", x: TILL.door[0], y: TILL.door[1], facing: 0, frame: 0, order: -2 },
     { sprite: "store_door", x: TILL.doorway[0], y: TILL.doorway[1], facing: 0, frame: 0 },
     { sprite: "staff_door", x: TILL.staffDoor[0], y: TILL.staffDoor[1], facing: 0, frame: 0 },
     { sprite: "person_cashier", x: TILL.cashier[0], y: TILL.cashier[1], facing: 2, frame: till.scanning ? 3 : 0, carrying: 0, shadow: true },
   ];
+  if (placeName !== "store") return shopGoings(things, now, flying, onCounter);
   // The butcher, cutting the big piece.
   const cutting = Math.floor(now / BUTCHER.cutMs) % 2;
   things.push({ sprite: "person_butcher", x: BUTCHER.at[0], y: BUTCHER.at[1], facing: 1, frame: cutting ? 3 : 0, carrying: 0, shadow: true });
@@ -3570,6 +3622,11 @@ function storeLife(now) {
       if (!objects.some((o) => o.x === x && o.y === y)) things.push({ sprite: counterMeat.sprite, x, y, facing: 0, frame: 0, lift: TILL.counterTop, d: x + y + 2.2 });
     });
   }
+  return shopGoings(things, now, flying, onCounter);
+}
+
+// What happens in any shop: the baskets, the helper's arrow, spilled shopping, the belt and the customers.
+function shopGoings(things, now, flying, onCounter) {
   if (till.baskets) things.push({ sprite: "basket_stack", x: TILL.baskets[0], y: TILL.baskets[1], facing: 0, frame: 0, carrying: Math.min(5, till.baskets), shadow: true });
   if (till.usedBaskets) things.push({ sprite: "basket_stack", x: TILL.usedBaskets[0], y: TILL.usedBaskets[1], facing: 0, frame: 0, carrying: Math.min(5, till.usedBaskets), shadow: true });
   if (stocker) {
@@ -3945,6 +4002,7 @@ function frame(now) {
   if (action && now - action.start > ACTIONS[action.name].ms) action = null;
   if (!crouching) crouchClock = 0;
   moveCharacter(dt, now);
+  if (theme?.camp) updateCamp(paused ? 0 : dt, now);
   if (!paused) {
     updateAnimals(dt, now);
     updateShoppers(dt);
@@ -4004,6 +4062,14 @@ document.addEventListener("keydown", (event) => {
   }
   if (event.key.toLowerCase() === "c") {
     sitOrCrouch(event.repeat);
+    return;
+  }
+  if (theme?.camp && event.key.toLowerCase() === "q") {
+    if (!event.repeat) campPutDown();
+    return;
+  }
+  if (theme?.camp && event.key.toLowerCase() === "b") {
+    if (!event.repeat) campOpenPack();
     return;
   }
   const dir = KEYS[event.key] || KEYS[event.key.toLowerCase()];
@@ -4079,6 +4145,8 @@ document.querySelectorAll("#pad button[data-dir]").forEach((button) => {
   }
 });
 
+document.getElementById("camp-pack").addEventListener("click", () => campOpenPack());
+document.getElementById("camp-drop").addEventListener("click", () => campPutDown());
 document.getElementById("change-outfit").addEventListener("click", showChooser);
 document.getElementById("help-toggle").addEventListener("click", (event) => {
   setHelp(!helpRound);

@@ -31,7 +31,25 @@ LINES = {
     "store-pay": "Mávsse.",
     "store-no": "Ii.",
     "store-notonlist": "Dat ii leat mu listtus.",
+    "store-notonlist-plural": "Dat eai leat mu listtus.",
     "store-full": "Vuordde.",
+    # The lávvu camp. Drafts, machine made like the game's other sentences: for the user to check. Must match CHORES in src/camp.js.
+    "camp-axe": "Váldde ákšu.",
+    "camp-fell": "Čuohpa muora.",
+    "camp-saw": "Váldde sahá.",
+    "camp-cut": "Sahá muora.",
+    "camp-branches": "Čohkke ovssiid.",
+    "camp-light": "Cahkket dola.",
+    "camp-wood": "Bija muora dollii.",
+    "camp-roast": "Base márffi.",
+    "camp-water": "Viečča čázi.",
+    "camp-boil": "Vuošša čázi.",
+    "camp-sleep": "Mana nohkkat.",
+    "camp-nottired": "In leat vel váiban. Mus leat vel barggut.",
+    "camp-goodnight": "Buorre idja!",
+    "camp-play": "Háliidatgo stoahkat?",
+    "camp-gooddog": "Buorre beana!",
+    "camp-fetch": "Viečča!",
 }
 # What the cashier says at the till: whole euros, up to MAX_TOTAL in src/game.js.
 PRICES = range(3, 100)
@@ -55,6 +73,7 @@ WRONG = [
     "Dat lei juoga eará.",
 ]
 THIS_IS = "Dát lea {word}."
+THIS_ARE = "Dát leat {word}."  # a word that is only plural, with buvssat
 THIS_PERSON = "Son lea {word}."
 # Asking for what to find. The object form is the accusative; family are "my mother", with iežan.
 ASK = "Veahket mu gávdnat {what}!"
@@ -75,8 +94,12 @@ def load_words():
 UNCOUNTED_FOODS = {"bread", "milk", "cheese", "butter", "guolli", "icecream", "coffee", "juice", "chocolate", "cake", "soda", "jam"}
 
 
+# Words that are only plural. Must match PLURAL_ONLY in src/game.js.
+PLURAL_ONLY = {"trousers"}
+
+
 def accusative(word):
-    forms = word["forms"].get("Sg+Acc")
+    forms = word["forms"].get("Pl+Acc" if word["sprite"] in PLURAL_ONLY else "Sg+Acc")
     return forms[0] if forms else word["lemma"]
 
 
@@ -88,12 +111,14 @@ def wanted_lines():
     words = load_words()
     colours = [w for w in words if w["theme"] == "colour"]
     for word in words:
-        if word["theme"] in ("river", "animal", "food", "vehicle", "lot", "home"):
-            said = THIS_PERSON if word["sprite"] in FAMILY else THIS_IS
+        if word["theme"] in ("river", "animal", "food", "vehicle", "lot", "home", "gear"):
+            said = THIS_PERSON if word["sprite"] in FAMILY else THIS_ARE if word["sprite"] in PLURAL_ONLY else THIS_IS
             lines.append((f"word-{word['sprite']}", said.format(word=word["lemma"])))
             if word["theme"] != "river":  # no level asks for these any more
                 what = accusative(word)
                 lines.append((f"ask-{word['sprite']}", ASK.format(what=f"iežan {what}" if word["sprite"] in FAMILY else what)))
+        if word["theme"] == "camp":  # named when met, and never asked for
+            lines.append((f"word-{word['sprite']}", THIS_IS.format(word=word["lemma"])))
         if word["theme"] in ("item", "vehicle"):
             for colour in colours:
                 # Harder level: "Dát lea rukses biila." Easy level: "Dát biila lea ruoksat."
@@ -111,7 +136,7 @@ def wanted_lines():
     lines += [(f"count-{n}", f"{numbers[n].capitalize()}.") for n in range(1, 6)]
     # Picking several of a food is counted out, which needs no number with the noun: "Okta. Guokte. Ja golbma. Doarvái mielkki."
     lines += [(f"count-and-{n}", f"Ja {numbers[n]}.") for n in range(2, 6)]
-    lines += [(f"enough-{word['sprite']}", f"Doarvái {accusative(word) if word['sprite'] in UNCOUNTED_FOODS else word['forms']['Pl+Acc'][0]}.") for word in words if word["theme"] == "food" and word["place"] != "meat" and word["sprite"] != "egg"]
+    lines += [(f"enough-{word['sprite']}", f"Doarvái {accusative(word) if word['sprite'] in UNCOUNTED_FOODS else word['forms']['Pl+Acc'][0]}.") for word in words if (word["theme"] == "food" and word["place"] != "meat" and word["sprite"] != "egg") or (word["theme"] == "gear" and word["place"] != "platform" and word["sprite"] != "gakti")]
     return list(dict(lines).items())
 
 

@@ -1,10 +1,10 @@
 # Sátnemátki
 
-*Sátnemátki* means "word journey" in Northern Sámi. Version 0.1.7, a technology demo.
+*Sátnemátki* means "word journey" in Northern Sámi. Version 0.1.8, a technology demo.
 
 A Northern Sámi word game for children. The player creates a character, Máhtte or Biret, chooses a place, and
 walks around it in an isometric view with a camera that follows: furniture and family at home, animals in the forest, coloured books on the shelves and
-writing things on the tables in the library, coloured vehicles in the car park, a shopping list to buy in order in the store, and numbers on
+writing things on the tables in the library, coloured vehicles in the car park, a shopping list to buy in the store and in a general store, and numbers on
 the desks of a classroom. The game names a Sámi word, and the player finds the thing it means. Touching anything shows its word and its
 Finnish translation, so no prior knowledge is needed, and there is no way to lose.
 
@@ -22,11 +22,15 @@ The animals, store and library things are small 3D models in `src/models.js`. Th
 
 Every place is drawn at double detail, on a finer canvas: food, fittings, people and animals are modelled finer, and floors, trees, shelves and the player are enlarged with Scale2x. A butcher behind the meat counter cuts a big piece of meat, or grinds it for mince, into plates under plastic. A round has one kind of meat, and it's the only one the list can ask for. A worker fills the shelves from a small trolley, which can't be walked through and never closes an aisle, and carries used baskets back to the door. In the store, five to seven customers of different ages and looks pick things off the shelves into baskets (nothing leaves the shelf), queue at the till, pay the cashier, leave the empty basket at the end of the counter and go with a bag in the Sámi flag's colours, one of six kinds. The player needs a basket too, from the stack by the door, and what they find goes into it. A fall drops the basket and spills the shopping: the character takes the basket back on getting up, and the blinking shopping is gathered by walking over it, without a word. With everything found, the player goes to the till, puts the shopping on the belt one thing at a time, pays, takes the bag and walks to the door, where the clock stops. Things cost whole euros, after real prices. On the harder level the list asks for up to five of each, C takes one at a time, and the price the cashier says must be typed into a calculator.
 
-A wrong pick holds the character still for two seconds while it's explained. E is the key for using things on every map (Q is kept for putting things away later): walking against something does nothing by itself, though what is tapped on is taken on arriving. Help bubbles show when E can be used, and in the store arrows point the way. They're on by default, with a switch in the menu and under the game. What E does just now also shows as text above the game, except when playing by sound only. They are only company: the player walks through them and can't touch them.
+A wrong pick holds the character still for three seconds while it's explained. E is the key for using things on every map (Q is kept for putting things away later): walking against something does nothing by itself, though what is tapped on is taken on arriving. Help bubbles show when E can be used, and in the store arrows point the way. They're on by default, with a switch in the menu and under the game. What E does just now also shows as text above the game, except when playing by sound only. They are only company: the player walks through them and can't touch them.
 
 A clock starts at the first move of a round and stops at the last word; in the store it runs from taking the basket until the door. Play then stops, and a window shows the
 time, the ten best times for that place (kept in the browser, with the name the player gave), and the choice to
 play again or go to the main menu. The main menu fills the page: pick a place, then its level if it has several, or replay the last one. It also changes the player, which asks for the character and name again.
+
+The general store, Rautakauppa, is played the same way, without the butcher. It's L-shaped: tools and fishing gear hang on pegboards and clothes on rails in the hall, and a wide opening leads to a showroom where big things stand on low platforms. Its prices are play prices. It has one till and a background sound of its own, from a large hardware store.
+
+Laavu is a slow evening with no clock or list to race. The chores come one after another: take the axe, fell the birch, saw it, carry the wood to the ring of stones, gather branches and light the fire. Then the backpack (B, or E beside it) holds what's needed for cooking and for making a drink, and when the chores are done, or it's late, the player goes into the lávvu and to bed. E uses things and Q puts down what's in the hands. The dog has a name of its own, kept in the browser, which can be changed from the backpack. All of it is in `src/camp.js`.
 
 ## Art
 
@@ -89,6 +93,8 @@ on their own, so any other word needs review before it goes into the game. None 
 
 - **The gákti**: see [art/mahtte/README.md](art/mahtte/README.md).
 - **The kota sprite and the landscape** are rough guesses.
+- **The general store's cultural models**: the gákti, the pulk (`geres`), the lávvu, the kuksa, the knife and the lasso in `src/models.js` are generic and have no source. `saamenpuku` isn't in the dictionary; it's set by hand in `tools/export_words.py`. The Sámi sentences for `buvssat` are drafts.
+- **Laavu**: the open fire follows a photograph used only as a reference, which isn't in the project. The lávvu, the pulk, the twig floor and the skin to sleep on are generic and have no source. The dog follows the breed's descriptions. The camp's Sámi sentences in `tools/fetch_voices.py` are drafts.
 - **Starter words and translations** in `tools/starter_words.tsv`.
 
 Credits and licences: [CREDITS.md](CREDITS.md).

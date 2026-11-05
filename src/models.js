@@ -849,6 +849,10 @@ const SMALL_FOOD = {
   bread: (x, y, z, k = 1) => tube([x - 1.5 * k, y, z + 0.8], [x + 1.5 * k, y + 0.5, z + 1.2], k, 0.9 * k, "#c9925a"),
   cheese: (x, y, z, k = 1) => rounded(x - 1.2 * k, x + 1.2 * k, y - 0.9 * k, y + 0.9 * k, z, z + 1.5 * k, 0.2, "#f2c14e"),
   greens: (x, y, z, k = 1) => ball(x, y, z + 0.8 * k, 1.3 * k, 1.3 * k, k, "#4f9a3e"),
+  // And what comes out of a general store's baskets.
+  parcel: (x, y, z, k = 1) => rounded(x - 1.3 * k, x + 1.3 * k, y - k, y + k, z, z + 1.8 * k, 0.2, "#b98a56"),
+  mitten: (x, y, z, k = 1) => ball(x, y, z + k, 1.2 * k, 0.9 * k, 1.4 * k, "#2f5fa8"),
+  rope: (x, y, z, k = 1) => tube([x - 1.1 * k, y, z + 0.8 * k], [x + 1.1 * k, y, z + 0.8 * k], 1.1 * k, 1.1 * k, "#d8c79a"),
 };
 
 // A basket on the arm, with what's in it showing over the rim.
@@ -921,6 +925,11 @@ const PERSON_LOOKS = {
   butcher: { k: 1.1, w: 1.12, legs: "#30384a", top: "#f4f1e8", apron: "#c9ccd2", stripe: "#7a2f3a", hair: "cap", hairColour: "#f4f1e8", beard: "#5a3a22", knife: true },
   stocker: { k: 1.08, w: 1.02, legs: "#30384a", top: "#f4f1e8", apron: "#2f5fa8", badge: "#f2c14e", hair: "short", hairColour: "#2e2620", beard: "#2e2620", pace: 1.2 },
 };
+
+const GEAR_GOODS = { milk: "parcel", bread: "rope", cheese: "parcel", apple: "mitten", orange: "rope", greens: "mitten" };
+for (const [name, person] of Object.entries(PERSON_LOOKS)) {
+  if (person.goods) PERSON_LOOKS[`gear_${name}`] = { ...person, goods: person.goods.map((good) => GEAR_GOODS[good]) };
+}
 
 // A shape moved, for carrying a whole model.
 const shifted = (shape, dx, dy, dz) => {
@@ -1198,6 +1207,417 @@ Object.assign(MODELS, {
       ]),
     ];
   },
+});
+
+// ------------------------------------------------------------- the general store
+// What hangs on a board or a rail is built flat across x, facing +y, as it is seen there. Big things lie along x, the way their platform runs.
+const RUBBER = "#2c2c36", BIRCH = "#dcb880", LEATHER = "#5a3a22", BRASS = "#c9a23a", ROPE = "#d8c79a";
+const GAKTI_BLUE = "#2450a6", GAKTI_RED = "#bb2a2d", GAKTI_YELLOW = "#ecb92e"; // the colours of the player's gákti in tools/make_mahtte.py
+const flat = (shape, half) => ({ ...shape, cuts: [[0, 1, 0, half], [0, -1, 0, half]] });
+// A round, flat-ended piece, lying level or turned to face +y. A short tube alone would come out as a ball.
+const level = (z0, z1, r, colour) => ({ ...tube([0, 0, z0], [0, 0, z1], r, r, colour), cuts: [[0, 0, 1, z1], [0, 0, -1, -z0]] });
+const wheel = (z, y0, y1, r, colour) => ({ ...tube([0, y0, z], [0, y1, z], r, r, colour), cuts: [[0, 1, 0, y1], [0, -1, 0, -y0]] });
+
+// A ring standing across x and z, in short lengths of tube.
+const ring = (x, z, rx, rz, r, colour, pieces = 14) => Array.from({ length: pieces }, (_, i) => {
+  const at = (n) => [x + Math.cos((n / pieces) * Math.PI * 2) * rx, 0, z + Math.sin((n / pieces) * Math.PI * 2) * rz];
+  return tube(at(i), at(i + 1), r, r, colour);
+});
+const hanger = (z, wide) => [
+  ...sides((s) => tube([s * wide, 0, z - 1.4], [0, 0, z], 0.3, 0.3, "#8c9198")),
+  tube([0, 0, z], [0, 0, z + 1.6], 0.25, 0.25, "#8c9198"),
+  tube([0, 0, z + 1.6], [1, 0, z + 2.4], 0.25, 0.2, "#8c9198"),
+];
+
+Object.assign(MODELS, {
+  hammer: () => [
+    tube([0, 0, 1], [0, 0, 15], 0.85, 0.75, BIRCH),
+    tube([0, 0, 1], [0, 0, 5], 0.95, 0.95, "#b53a30"),
+    rounded(-1, 4.4, -1.1, 1.1, 13.4, 16.4, 0.3, "#7f8894"),
+    tube([-1, 0, 15], [-4.4, 0, 14], 1, 0.35, "#7f8894"),
+    rounded(4.4, 5, -1.3, 1.3, 13.2, 16.6, 0.2, STEEL),
+  ],
+  axe: () => [
+    tube([-0.4, 0, 1], [0.3, 0, 7], 0.8, 0.75, BIRCH),
+    tube([0.3, 0, 7], [0, 0, 17.5], 0.75, 0.8, BIRCH),
+    flat(tube([0, 0, 15.5], [5, 0, 15.2], 1.5, 3.6, "#6f7884"), 0.9),
+    { ...flat(tube([3.2, 0, 15.3], [5.4, 0, 15.2], 2.6, 3.8, STEEL), 0.5), paint: ([x]) => (x > 7.3 ? "#eef2f6" : STEEL) },
+    rounded(-1.2, 1.2, -1, 1, 14.8, 17.6, 0.4, "#6f7884"),
+  ],
+  saw: () => [
+    {
+      ...flat(tube([-9, 0, 8.2], [5, 0, 9.3], 1.3, 3.3, STEEL), 0.25),
+      paint: ([x, , z]) => (z < 6.8 + (x + 9) * 0.03 && (x + 20) % 1.6 < 0.8 ? "#6f7884" : STEEL),
+    },
+    { ...rounded(5, 10, -0.8, 0.8, 5.5, 13.5, 0.7, "#b53a30"), holes: [[7.6, 0, 9.5, 1.6]], paint: () => "#b53a30" },
+  ],
+  spade: () => [
+    tube([0, 0, 8], [0, 0, 22], 0.75, 0.7, BIRCH),
+    tube([-2, 0, 22.5], [2, 0, 22.5], 0.6, 0.6, RUBBER),
+    tube([0, 0, 8], [0, 0, 11], 0.95, 0.75, "#6f7884"),
+    flat(tube([0, 0, 6], [0, 0, 2.2], 3.2, 2.4, "#8f98a4"), 0.35),
+  ],
+  // A knife in its sheath, with the handle up, as large as can be seen on the board.
+  knife: () => [
+    { ...tube([0, 0, 11.5], [0.5, 0, 17.5], 1.5, 1.2, BIRCH), paint: mottled(["#dcb880", "#c79f62", "#dcb880"], 1) },
+    tube([0, 0, 11], [0, 0, 11.8], 1.6, 1.6, BRASS),
+    flat(tube([0, 0, 10.5], [0.3, 0, 3], 1.9, 1.1, LEATHER), 0.95),
+    tube([0.3, 0, 3], [1.1, 0, 1.2], 1, 0.4, BRASS),
+    ...ring(0, 11, 2.4, 1.2, 0.22, "#3a2616", 8),
+  ],
+  // A wooden cup with its handle, turned from a burl.
+  kuksa: () => [
+    { ...tube([0, 0, 1.6], [0, 0, 8.4], 3.2, 4.6, "#b98a56"), paint: mottled(["#b98a56", "#a0713f", "#c9a06a"], 1.2), cuts: [[0, 0, 1, 9.6], [0, 0, -1, -0.5]] },
+    level(9.5, 9.7, 3.9, "#5c3a1e"),
+    flat(tube([4.2, 0, 8.4], [7.4, 0, 8.8], 1.5, 1.2, "#a0713f"), 0.9),
+    ball(7.3, 0, 7.3, 0.9, 0.8, 1.1, "#8a5f35"),
+  ],
+  // Coiled up, with the end hanging down and the ring it runs through.
+  lasso: () => [
+    ...[0, 0.5, 1].flatMap((k, i) => ring(k - 0.5, 13 + k * 0.6, 6.4 - i * 0.3, 7 - i * 0.3, 0.5, i === 1 ? "#c9b888" : ROPE, 14)),
+    tube([0, 0, 21], [0, 0, 22.5], 0.3, 0.3, "#8c9198"),
+    ...ring(5.7, 7.6, 1.2, 1.2, 0.3, "#f4f1e8", 8),
+    tube([5.2, 0, 7], [4.2, 0, 3.4], 0.45, 0.4, ROPE),
+    tube([4.2, 0, 3.4], [5, 0, 1.2], 0.4, 0.35, ROPE),
+  ],
+  // A reindeer's bell: a round bell on a wide leather collar with a buckle, and no face to take it for a clock.
+  reindeerbell: () => [
+    ...ring(0, 15, 6.4, 5.2, 0.75, LEATHER, 16),
+    rounded(-1.3, 1.3, -0.9, 0.9, 19.3, 21.2, 0.2, BRASS),
+    tube([0, 0, 10.2], [0, 0, 8.8], 0.5, 0.5, "#8c9198"),
+    { ...tube([0, 0, 8.4], [0, 0, 3], 2.1, 3.7, BRASS), cuts: [[0, 0, -1, -2.4]] },
+    ball(0, 0, 8.4, 2.3, 2.3, 1.6, "#ddb94c"),
+    level(2, 2.4, 4, "#a07f26"),
+    ball(0, 2.4, 1.2, 1, 1, 1, "#4a3a20"),
+  ],
+  // A folded net hung by its float line: floats along the top, the mesh, and weights along the bottom.
+  fishnet: () => [
+    { ...rounded(-8, 8, -0.3, 0.3, 3, 18, 0.1, "#3e6a5a"), paint: ([x, , z]) => (Math.abs(((x + z + 40) % 2.4) - 1.2) < 0.3 || Math.abs(((x - z + 40) % 2.4) - 1.2) < 0.3 ? "#cfe0cc" : "#3e6a5a") },
+    tube([-8.4, 0, 18], [8.4, 0, 18], 0.25, 0.25, ROPE),
+    ...[-6, -2, 2, 6].map((x) => ball(x, 0, 18, 1.5, 1.2, 1.2, "#e8902e")),
+    tube([-8.4, 0, 3], [8.4, 0, 3], 0.25, 0.25, ROPE),
+    ...[-7, -3.5, 0, 3.5, 7].map((x) => ball(x, 0, 2.6, 0.7, 0.6, 0.7, "#6f7884")),
+  ],
+  // A spoon with red and silver sides, and its hook.
+  lure: () => [
+    { ...ball(0, 0, 10, 3.4, 0.7, 6, STEEL), paint: ([, , z]) => ((z > 11.5 && z < 13.5) || (z > 7 && z < 9) ? "#d13a30" : "#dfe6ec") },
+    ...ring(0, 17, 0.8, 0.8, 0.2, "#8c9198", 6),
+    ...ring(0, 3.2, 0.7, 0.7, 0.2, "#8c9198", 6),
+    tube([0, 0, 2.5], [0, 0, 0.8], 0.2, 0.2, "#6f7884"),
+    ...sides((s) => tube([0, 0, 0.8], [s * 1.5, 0, 1.8], 0.2, 0.12, "#6f7884")),
+  ],
+  rod: () => [
+    tube([-0.5, 0, 1], [-0.1, 0, 8], 0.9, 0.8, "#b98a56"),
+    tube([-0.1, 0, 8], [1.6, 0, 34], 0.5, 0.15, "#2f5fa8"),
+    ...[14, 21, 28].map((z) => ball(-0.1 + ((z - 8) / 26) * 1.7, 0, z, 0.55, 0.3, 0.55, "#c9ccd2")),
+    tube([-0.3, 2.1, 5.8], [-0.3, -0.6, 5.8], 1.6, 1.6, "#3a3a48"),
+    ball(1.9, 2.4, 5.8, 0.6, 0.6, 0.6, "#e8902e"),
+  ],
+  scoopnet: () => [
+    tube([0, 0, 1], [0, 0, 13], 0.65, 0.6, BIRCH),
+    ...ring(0, 20, 6.5, 7.5, 0.5, "#6f7884", 16),
+    { ...ball(0, 0, 19.5, 6.2, 0.5, 7.2, "#3e6a5a"), paint: ([x, , z]) => (Math.abs(((x + 30) % 2) - 1) < 0.25 || Math.abs(((z + 30) % 2) - 1) < 0.25 ? "#d8e4d4" : "#3e6a5a") },
+  ],
+  // A tin of worms.
+  bait: () => [
+    { ...tube([0, 0, 0.8], [0, 0, 5], 4.2, 4.2, "#c9ccd2"), cuts: [[0, 0, 1, 5.6], [0, 0, -1, -0.1]], paint: ([, , z]) => (z > 1.5 && z < 4.6 ? "#3e8a4e" : "#c9ccd2") },
+    level(5.4, 5.7, 3.7, "#4a3019"),
+    tube([-2.2, -1, 6], [1.5, 1.4, 6.2], 0.6, 0.6, "#d9798a"),
+    tube([1.5, 1.4, 6.2], [2.8, -1, 6.5], 0.6, 0.55, "#d9798a"),
+    tube([-1, 1.8, 6.2], [-2.8, 3.4, 8.8], 0.6, 0.5, "#e090a0"),
+    tube([-2.8, 3.4, 8.8], [-3.4, 4.6, 7.4], 0.5, 0.4, "#e090a0"),
+  ],
+  oar: () => [
+    tube([0, 0, 1], [0, 0, 22], 0.8, 0.75, BIRCH),
+    tube([0, 0, 1], [0, 0, 3.5], 0.85, 0.85, "#6b4a32"),
+    { ...flat(tube([0, 0, 24], [0, 0, 33], 1.8, 2.4, BIRCH), 0.4), paint: ([, , z]) => (z > 31.4 ? "#d13a30" : BIRCH) },
+    tube([0, 0, 22], [0, 0, 25], 0.75, 1, BIRCH),
+    ...sides((s) => ball(s * 0.2, 0, 10, 1.1, 1.1, 0.5, "#6b4a32")),
+  ],
+  // A spool of line, and its end.
+  fishingline: () => [
+    { ...wheel(8, -1.8, 1.8, 4.4, "#5aa8d8"), paint: ([x, , z]) => (((x + z + 30) % 1.4) < 0.5 ? "#8cc8ec" : "#5aa8d8") },
+    ...[-2.2, 1.8].map((y) => wheel(8, y, y + 0.4, 5.8, "#f4f1e8")),
+    wheel(8, 2.2, 2.4, 1.4, "#2c2c36"),
+    tube([3, 2, 3.8], [4.6, 2, 1.4], 0.18, 0.18, "#2f7ab0"),
+    tube([4.6, 2, 1.4], [6.4, 2, 1], 0.18, 0.18, "#2f7ab0"),
+  ],
+  // A reel for a rod, with its handle and the foot it's fixed by.
+  reel: () => [
+    wheel(8, -2, 2, 4.4, "#3a3a48"),
+    wheel(8, -2.5, -2, 5, BRASS),
+    wheel(8, 2, 2.5, 5, BRASS),
+    wheel(8, 2.5, 3.7, 1.2, "#8c9198"),
+    tube([0, 3.7, 8], [4.6, 3.7, 6], 0.55, 0.45, "#8c9198"),
+    ball(4.8, 4.8, 5.9, 1, 1.2, 1, "#d13a30"),
+    rounded(-1, 1, -1.2, 1.2, 12.5, 14, 0.2, "#6f7884"),
+    rounded(-5, 5, -0.8, 0.8, 14, 14.9, 0.2, "#8c9198"),
+  ],
+  shirt: () => [
+    ...hanger(21, 5),
+    {
+      ...flat(rounded(-5.4, 5.4, -1.6, 1.6, 6, 20, 1, "#c84a3a"), 1.4),
+      paint: ([x, , z]) => (Math.abs(x) < 0.35 && (z + 40) % 2.6 < 0.9 ? "#f4f1e8" : ((x + 40) % 3.2 < 1) !== ((z + 40) % 3.2 < 1) ? "#e8d8c4" : "#c84a3a"),
+    },
+    ...sides((s) => tube([s * 5.2, 0, 19], [s * 8.2, 0, 9], 1.6, 1.3, "#c84a3a")),
+    ...sides((s) => tube([s * 1.7, 0.8, 20.2], [0, 1.2, 19], 0.8, 0.5, "#f4f1e8")),
+  ],
+  trousers: () => [
+    ...hanger(23, 4.4),
+    { ...rounded(-4.6, 4.6, -1.5, 1.5, 18.6, 21.6, 0.6, "#2f4a72"), paint: ([, , z]) => (z > 20.5 ? "#5a3a22" : "#2f4a72") },
+    rounded(-0.5, 0.5, 1.2, 1.7, 20.2, 21.8, 0.1, BRASS),
+    ...sides((s) => ({ ...flat(tube([s * 2.4, 0, 19], [s * 3.1, 0, 3], 2.4, 1.9, "#2f4a72"), 1.5), paint: ([, , z]) => (z < 3.6 ? "#5c7ca6" : "#2f4a72") })),
+  ],
+  // A gákti in general, in the colours of the player's, with no place's own cut or bands: for the user to check.
+  gakti: () => [
+    ...hanger(25, 5),
+    {
+      ...flat(tube([0, 0, 22], [0, 0, 8], 4.4, 7.6, GAKTI_BLUE), 1.5), cuts: [[0, 1, 0, 1.5], [0, -1, 0, 1.5], [0, 0, -1, -2.5]],
+      paint: ([, , z]) => (z < 3.2 ? GAKTI_YELLOW : z < 5.4 ? GAKTI_RED : z < 6 ? GAKTI_YELLOW : z > 13.4 && z < 14.8 ? LEATHER : z > 21.8 && z < 22.8 ? GAKTI_RED : GAKTI_BLUE),
+    },
+    ...sides((s) => ({ ...tube([s * 4.6, 0, 23], [s * 8.6, 0, 11], 1.7, 1.5, GAKTI_BLUE), paint: ([, , z]) => (z < 12.8 ? GAKTI_RED : GAKTI_BLUE) })),
+    { ...tube([0, 0, 24], [0, 0, 26], 2.3, 2.1, GAKTI_RED), paint: ([, , z]) => (z > 25 ? GAKTI_YELLOW : GAKTI_RED) },
+  ],
+  jacket: () => [
+    ...hanger(24, 5),
+    { ...ball(0, -1.2, 22.6, 3.4, 1.8, 2.6, "#3a7a5a") },
+    {
+      ...flat(rounded(-5.6, 5.6, -2, 2, 5.5, 22, 1.6, "#3a7a5a"), 1.8),
+      paint: ([x, , z]) => (Math.abs(x) < 0.3 ? "#f2c14e" : (z + 40) % 3.4 < 0.6 ? "#2c6048" : "#3a7a5a"),
+    },
+    ...sides((s) => ({ ...tube([s * 5.6, 0, 21], [s * 8.8, 0, 8.6], 2, 1.7, "#3a7a5a"), paint: ([, , z]) => ((z + 40) % 3.4 < 0.6 ? "#2c6048" : "#3a7a5a") })),
+    ...sides((s) => rounded(s * 3 - 1.3, s * 3 + 1.3, 1.6, 2, 8, 11, 0.2, "#2c6048")),
+  ],
+  hat: () => [
+    tube([0, 0, 20], [0, 0, 22.4], 0.25, 0.25, "#8c9198"),
+    { ...ball(0, 0, 10, 6.4, 5.8, 8.5, "#c84a3a"), cuts: [[0, 0, -1, -9]], paint: ([, , z]) => ((z + 40) % 2.6 < 1 ? "#d8c79a" : "#c84a3a") },
+    level(9, 11, 6.6, "#2f5fa8"),
+    ball(0, 0, 20, 2, 2, 1.9, "#f4f1e8"),
+  ],
+  sock: () => [
+    { ...tube([0, 0, 20], [0, 0, 8], 2.5, 2.3, "#d8d2c0"), paint: ([, , z]) => (z > 18.6 ? "#b53a30" : (z + 40) % 3 < 1 ? "#2f5fa8" : "#d8d2c0") },
+    { ...tube([0, 0, 8], [6, 0, 5.6], 2.3, 2, "#d8d2c0"), paint: ([x]) => (x > 4.6 ? "#b53a30" : x < 1.4 ? "#b53a30" : "#d8d2c0") },
+    tube([-1, 0, 20.6], [-1, 0, 23], 0.2, 0.2, "#8c9198"),
+  ],
+  rubberboots: () => sides((s) => [
+    { ...tube([s * 3.4, 0, 15], [s * 3.4, 0, 4.4], 3, 2.5, "#3a6a48"), paint: ([, , z]) => (z > 13.8 ? "#2c5238" : "#3a6a48") },
+    tube([s * 3.4, 0.6, 3], [s * 3.4, 4.6, 2.4], 2.5, 2.2, "#3a6a48"),
+    rounded(s * 3.4 - 2.4, s * 3.4 + 2.4, -2.4, 6.6, 0, 1, 0.3, RUBBER),
+  ]).flat(),
+  // A rowing boat, painted blue and white, with two thwarts and its oars inside.
+  boat: () => [
+    {
+      ...ball(0, 0, 6, 18, 6.6, 6.4, "#f4f1e8"), cuts: [[0, 0, 1, 9], [0, 0, -1, -0.4]],
+      paint: ([, , z]) => (z > 7.8 ? "#2f5fa8" : z > 7.2 ? "#f2c14e" : (z + 40) % 2.2 < 0.3 ? "#c9c5b8" : "#f4f1e8"),
+    },
+    { ...ball(0, 0, 9, 15.6, 5, 0.4, "#6a4426"), paint: ([x]) => ((x + 40) % 2.6 < 0.4 ? "#553419" : "#6a4426") },
+    ...[-7, 6].map((x) => rounded(x - 1.6, x + 1.6, -4.8, 4.8, 8.6, 9.8, 0.2, "#c9975f")),
+    tube([-11, 2.6, 9.6], [12, 2.8, 9.9], 0.4, 0.4, BIRCH),
+    flat(tube([12, 2.8, 9.9], [14, 2.9, 10], 0.9, 1.2, BIRCH), 3.4),
+    tube([16.4, 0, 8.2], [18, 0, 10.8], 0.8, 0.5, "#2f5fa8"),
+  ],
+  // A snowmobile: two skis in front, a track behind, a red cowl, a windscreen and a long seat.
+  snowscooter: () => [
+    { ...rounded(-15, 3, -3.4, 3.4, 0.2, 4.2, 1.8, RUBBER), paint: ([x, y, z]) => ((x + 40) % 1.6 < 0.6 && z < 1.4 ? "#55555f" : Math.abs(y) < 0.2 ? "#55555f" : RUBBER) },
+    ...sides((s) => [
+      rounded(6, 16, s * 4.6 - 1.1, s * 4.6 + 1.1, 0, 0.8, 0.2, "#3a3a48"),
+      tube([16, s * 4.6, 0.5], [18.6, s * 4.6, 2.8], 0.8, 0.5, "#3a3a48"),
+      tube([10, s * 4.6, 0.8], [8, s * 3, 5], 0.5, 0.5, "#6f7884"),
+    ]).flat(),
+    rounded(-15, 4, -4, 4, 3.6, 6.6, 1, "#c8372d"),
+    { ...ball(7, 0, 7.8, 9.6, 4.6, 4.6, "#c8372d"), cuts: [[0, 0, -1, -3]], paint: ([x, y, z]) => (z > 8 && Math.abs(y) < 1.1 ? "#f4f1e8" : "#c8372d") },
+    rounded(-14, 2, -2.8, 2.8, 6.4, 9.2, 1.1, "#23232a"),
+    rounded(-15, -11.6, -3.2, 3.2, 8, 12, 0.8, "#23232a"),
+    flat(ball(3.4, 0, 13, 1, 3.6, 3.2, "#a8d4f0"), 3.4),
+    tube([2.2, -4.8, 12.2], [2.2, 4.8, 12.2], 0.45, 0.45, "#3a3a48"),
+    tube([3.5, 0, 9.5], [2.2, 0, 12.2], 0.6, 0.5, "#3a3a48"),
+    ball(16, 0, 8, 0.8, 1.6, 1.2, "#ffe680"),
+  ],
+  // A sled shaped like a boat, in wood, with its raised back and a skin in it: for the user to check.
+  pulk: () => [
+    tube([-11, 0, 0.8], [12, 0, 0.8], 0.8, 0.8, "#5c3a1e"),
+    { ...ball(0, 0, 4.4, 15, 5.6, 4.4, "#a9743f"), cuts: [[0, 0, 1, 6.4], [0, 0, -1, -0.6]], paint: ([, , z]) => ((z + 40) % 1.8 < 0.3 ? "#6f4726" : "#a9743f") },
+    { ...ball(0, 0, 6.4, 13, 4.3, 0.3, "#6a4426") },
+    { ...ball(-1, 0, 6.8, 8, 3.6, 1, "#e0d0ae"), paint: mottled(["#e0d0ae", "#cdbc9f", "#e8decb"], 1) },
+    tube([13, 0, 4.6], [17, 0, 10.4], 1.3, 0.7, "#a9743f"),
+    rounded(-12.6, -10.6, -3.6, 3.6, 5.6, 12, 0.6, "#8a5f35"),
+    tube([17, 0, 10.4], [15, 0, 8], 0.3, 0.3, LEATHER),
+  ],
+  // A plain lávvu: canvas on poles that cross at the top, with the door towards the viewer: for the user to check.
+  lavvu: () => [
+    {
+      ...tube([0, 0, 2], [0, 0, 27], 14, 1.2, "#d9cdb0"), cuts: [[0, 0, -1, -0.2]],
+      paint: ([x, y, z]) => {
+        const off = Math.abs(Math.atan2(y, x) - Math.PI / 4);
+        if (off < 0.42 - z * 0.012 && z < 15) return z > 14 ? "#5c4430" : "#6f5a40";
+        return z < 2.2 ? "#a89878" : Math.abs(((Math.atan2(y, x) + 7) % 0.7) - 0.35) < 0.03 ? "#b5a888" : "#d9cdb0";
+      },
+    },
+    ...[0, 1, 2, 3, 4, 5].map((i) => {
+      const a = i * 1.05 + 0.3;
+      return tube([Math.cos(a) * 1.6, Math.sin(a) * 1.6, 25], [-Math.cos(a) * 2.2, -Math.sin(a) * 2.2, 33], 0.4, 0.3, "#8a5f35");
+    }),
+  ],
+});
+
+// ------------------------------------------------------------- the lávvu camp
+const BARK = "#efece2", BARK_MARK = "#2c2a28", LEAF = "#6e9a3e", LEAF_DARK = "#4f7a34", LEAF_LIGHT = "#94b84e", LOG = "#8a6a44", LOG_END = "#d8b888", CHAR = "#2a2320", CANVAS = "#d9cdb0";
+const LAPHUND = { coat: "#2c2624", coat2: "#3c332e", tan: "#c58a4c", cream: "#e8d4ae", nose: "#16120f", tongue: "#d9798a" };
+const birchBark = ([x, y, z]) => (Math.abs(Math.sin(z * 1.3 + x * 0.9)) > 0.93 && Math.sin(y * 3 + z) > -0.2 ? BARK_MARK : BARK);
+// Lying along x, with a bark or log end at each end.
+const logAlong = (x0, x1, y, z, r, colour = LOG) => [tube([x0, y, z], [x1, y, z], r, r, colour), ball(x0, y, z, 0.3, r * 0.9, r * 0.9, LOG_END), ball(x1, y, z, 0.3, r * 0.9, r * 0.9, LOG_END)];
+
+Object.assign(MODELS, {
+  // A Finnish Lapphund, after the breed's descriptions: a thick double coat with a mane at the neck, pricked ears, a plumed tail, black with
+  // tan legs, chest and "spectacles" around the eyes, and a friendly face. Frames: 0 stands, 1 and 2 walk or run, 3 and 4 wag standing,
+  // 5 sits, 6 and 7 wag sitting, 8 barks, 9 has its head down to drink or eat, 10 bows to play. With "stick" it carries a stick.
+  laphund: (frame, carrying) => {
+    const sits = frame >= 5 && frame <= 7, bows = frame === 10, wag = frame === 3 || frame === 6 ? 1.8 : frame === 4 || frame === 7 ? -1.8 : 0;
+    const stride = frame === 1 ? 2 : frame === 2 ? -2 : 0;
+    const down = frame === 9, bark = frame === 8;
+    const hipZ = sits ? 3.6 : bows ? 8 : 7.6, chestZ = sits ? 8.6 : bows ? 4.6 : 7.8, chestY = sits ? 3 : 4.4, hipY = sits ? -3.4 : -4.4;
+    const fur = mottled([LAPHUND.coat, LAPHUND.coat2, LAPHUND.coat, "#231e1c"], 1);
+    const headY = down ? 11 : sits ? 6 : bows ? 9.5 : 8.4, headZ = down ? 3.6 : sits ? 14.6 : bows ? 8.2 : bark ? 14.2 : 13.2;
+    const parts = [
+      // The legs are tan below the coat, and the hind ones fold when it sits.
+      ...(sits
+        ? sides((s) => [ball(s * 3.2, -3, 2.2, 1.9, 3.2, 2.2, LAPHUND.coat2), ball(s * 2.6, -0.4, 0.8, 1.2, 2, 0.8, LAPHUND.tan), tube([s * 1.5, 3.4, 7], [s * 1.5, 3.8, 0.8], 1, 0.85, LAPHUND.tan)]).flat()
+        : [[2.1, 4.6, stride], [-2.1, 4.6, -stride], [2.2, -4.6, -stride], [-2.2, -4.6, stride]].flatMap(([x, y, swing]) => [
+          tube([x, y, bows && y > 0 ? 3 : 7], [x, y + swing, 0.9], 1.15, 0.85, LAPHUND.tan),
+          ball(x, y + swing + 0.5, 0.7, 1, 1.4, 0.7, LAPHUND.tan),
+        ])),
+      { ...tube([0, hipY, hipZ], [0, chestY, chestZ], 3.7, 4, LAPHUND.coat), paint: fur },
+      { ...ball(0, chestY + 0.6, chestZ + 2.6, 4.1, 3.6, 4.4, LAPHUND.coat), paint: fur },
+      ball(0, chestY + 2.9, chestZ - 0.4, 2.4, 1.3, 3, LAPHUND.tan),
+      // The plume, carried up over the back and swinging when it wags.
+      { ...tube([0, hipY - 2.6, hipZ + 1], [wag * 0.6, hipY - 4.6, hipZ + 5], 1.5, 2.3, LAPHUND.coat), paint: fur },
+      tube([wag * 0.6, hipY - 4.6, hipZ + 5], [wag * 1.4, hipY - 2.6, hipZ + 8], 2.3, 1, LAPHUND.tan),
+      // The head: a broad skull, tan muzzle and brows, and pricked ears.
+      ...(down ? [{ ...tube([0, chestY + 1.5, chestZ + 2], [0, headY - 1.4, headZ + 0.8], 3, 2.2, LAPHUND.coat), paint: fur }] : []),
+      { ...ball(0, headY, headZ, 3.3, 3.1, 3, LAPHUND.coat), paint: fur },
+      tube([0, headY + 2, headZ - 1], [0, headY + 4.7, headZ - (bark ? 0.4 : 1.2)], 1.8, 1.25, LAPHUND.tan),
+      ball(0, headY + 5.3, headZ - (bark ? 0.2 : 1), 0.8, 0.5, 0.65, LAPHUND.nose),
+      ...sides((s) => ball(s * 1.45, headY + 2.5, headZ + 1.25, 0.95, 0.5, 0.75, LAPHUND.tan)),
+      ...eyes(1.5, headY + 2.8, headZ + 0.7, 0.6),
+      ...sides((s) => tube([s * 1.9, headY - 0.7, headZ + 2.2], [s * 2.5, headY - 0.9, headZ + 5.6], 1.25, 0.2, LAPHUND.coat)),
+      ...sides((s) => tube([s * 1.95, headY - 0.3, headZ + 2.8], [s * 2.45, headY - 0.6, headZ + 4.8], 0.55, 0.15, LAPHUND.tan)),
+    ];
+    if (bark) parts.push(tube([0, headY + 2.4, headZ - 2.8], [0, headY + 4, headZ - 3.4], 0.9, 0.6, LAPHUND.tongue));
+    else if (sits && !carrying) parts.push(tube([0, headY + 3.6, headZ - 2.4], [0, headY + 4.2, headZ - 3.4], 0.5, 0.4, LAPHUND.tongue));
+    if (carrying === "stick") parts.push(tube([-5.5, headY + 4.4, headZ - 1.6], [5.5, headY + 4.4, headZ - 1.2], 0.5, 0.4, "#6e4f30"));
+    return parts;
+  },
+  // The birch to fell, with a notch cut in it from frame 1.
+  birch: (frame) => [
+    { ...tube([0, 0, 0], [0.5, 0, 34], 3, 1.6, BARK), paint: frame ? ([x, y, z]) => (z > 4 && z < 7 && x > -0.5 ? "#c9a56c" : birchBark([x, y, z])) : birchBark },
+    tube([0.5, 0, 28], [-5, 2, 37], 0.8, 0.4, BARK), tube([0.5, 0, 26], [5, -2, 36], 0.8, 0.4, BARK),
+    ...[[0, 0, 40, 10, LEAF], [-6, 2, 36, 7, LEAF_DARK], [6, -2, 35, 7, LEAF_DARK], [3, 4, 44, 6, LEAF_LIGHT], [-3, -4, 45, 6, LEAF], [0, 5, 34, 5, LEAF_LIGHT]].map(([x, y, z, r, c]) => ({
+      ...ball(x, y, z, r, r, r * 0.86, c), paint: mottled([c, c, LEAF_LIGHT, LEAF_DARK], 1.6),
+    })),
+  ],
+  stump: () => [
+    { ...tube([0, 0, 0], [0, 0, 7], 5, 4.4, BARK), cuts: [[0, 0, 1, 7]], paint: birchBark },
+    level(6.7, 7, 4.2, LOG_END),
+    ...sides((s) => ball(s * 4.2, 1.8, 0.8, 1.4, 1.4, 0.8, "#c9c5b4")),
+  ],
+  // The felled tree, lying along x from where it stood, with its top still on.
+  felledbirch: () => [
+    { ...tube([0, 0, 2.6], [36, 0, 2], 2.8, 1.5, BARK), paint: ([x, y, z]) => birchBark([y, z, x]) },
+    ...[[34, 0, 7, LEAF], [40, -3, 7, LEAF_DARK], [41, 4, 6, LEAF_LIGHT], [46, 0, 8, LEAF], [50, 2, 5, LEAF_DARK]].map(([x, y, r, c]) => ({ ...ball(x, y, r * 0.8, r, r, r * 0.8, c), paint: mottled([c, LEAF_LIGHT, LEAF_DARK], 1.6) })),
+  ],
+  // Two long sawn logs, ready to be carried.
+  longlog: () => logAlong(-12, 12, 0, 2.2, 2.2),
+  billet: () => [{ ...tube([-4, 0, 1.8], [4, 0, 1.8], 2, 2, LOG), paint: ([, y]) => (y > 0.6 ? LOG_END : LOG) }, ball(-4, 0, 1.8, 0.3, 1.7, 1.7, LOG_END), ball(4, 0, 1.8, 0.3, 1.7, 1.7, LOG_END)],
+  stick: () => [tube([-7, 0, 1], [7, 0, 1.8], 0.65, 0.45, "#6e4f30"), tube([2, 0, 1.4], [6, 2.4, 3], 0.4, 0.25, "#6e4f30"), tube([-3, 0, 1.2], [-6, -2, 2.4], 0.4, 0.25, "#6e4f30"), ball(6.3, 2.6, 3.2, 1, 0.8, 0.5, LEAF)],
+  // An open fire in a ring of stones on bare ground, after a photograph the user gave as a reference: split logs side by side, long split
+  // pieces across them, and kindling on top. Frame 5 is the ring alone, 1 has the logs, 2 the pieces across, 3 the kindling, 4 is lit and
+  // charred, and 0 is the picture of it burning.
+  campfire: (frame) => {
+    const stage = frame || 4;
+    const burnt = stage === 4;
+    const split = (colour, y0) => ([, y, z]) => (z > y0 && y > -1 ? (burnt && z > y0 + 1 ? CHAR : colour) : burnt ? "#4a3a2c" : LOG);
+    return [
+      ...[[0, 0, 19, 17], [-11, 5, 11, 9], [10, -6, 12, 10], [8, 9, 10, 8], [-9, -8, 10, 8]].map(([x, y, rx, ry]) => ({ ...ball(x, y, 0, rx, ry, 0.5, "#54442f"), paint: mottled(["#54442f", "#4a3a28", "#5e4c36", "#46362a"], 1.4) })),
+      ...(stage !== 5 ? [ball(0, 1, 0.8, 10, 8, 0.5, burnt ? "#2a2320" : "#54422e")] : []),
+      ...Array.from({ length: 12 }, (_, i) => {
+        const angle = (i / 12) * Math.PI * 2 + 0.2, big = i % 3 === 0 ? 5 : i % 3 === 1 ? 3.9 : 4.5;
+        const c = ["#8f9498", "#74787c", "#a09a90", "#83786c"][i % 4];
+        return { ...ball(Math.cos(angle) * 15, Math.sin(angle) * 14, big * 0.72, big, big * 0.92, big * 0.85, c), paint: mottled([c, c, "#5e6266", "#b0aca2"], 1) };
+      }),
+      ...(stage >= 1 && stage <= 4 ? [-8, -2.8, 2.8, 8].flatMap((x, i) => [
+        { ...tube([x, -7.4 + (i % 2), 2.8], [x, 7.4 - (i % 2), 2.8], 2.6, 2.6, BARK), paint: burnt ? () => "#4a3a2c" : birchBark },
+        ball(x, 7.6 - (i % 2), 2.8, 2.3, 0.3, 2.3, LOG_END),
+      ]) : []),
+      ...(stage >= 2 && stage <= 4 ? [-5.5, 0, 5.5].map((y, i) => ({
+        ...rounded(-11 + i, 11 - i, y - 2.3, y + 2.3, 5.4, 8, 0.4, LOG_END), paint: split(i === 1 ? "#e0c494" : LOG_END, 7.4),
+      })) : []),
+      ...(stage >= 3 && stage <= 4 ? [[-6, -4, 2, 5, 9], [-2, 4, 5, -3, 10], [3, -5, -3, 4, 11], [-5, 3, 6, 2, 12], [1, 5, 2, -5, 12.6], [5, -2, -6, 1, 11.5]].map(([x0, y0, x1, y1, z]) => tube([x0, y0, z], [x1, y1, z + 1.2], 0.55, 0.4, burnt ? CHAR : "#b98a56")) : []),
+      ...(burnt ? [ball(0, 2, 10, 5.6, 4, 1, "#c8501e"), ball(-1, 1, 11, 2.6, 2, 0.7, "#ffb04a")] : []),
+      ...(frame ? [] : [[-6, 15, "#e24a1c"], [-3, 25, "#ff9430"], [1, 31, "#ff9430"], [4, 23, "#ff7a2a"], [7, 16, "#e24a1c"], [-1, 19, "#ffd65a"], [2, 21, "#ffd65a"], [0.5, 14.5, "#fff6c4"]].map(([x, high, c]) => tube([x, 1, 10], [x - 1.2, 1, high], 3, 0.2, c))),
+    ];
+  },
+  backpack: () => [
+    { ...rounded(-4.6, 4.6, -3, 3, 0, 12, 2, "#5f6e3e"), paint: ([x, , z]) => (Math.abs(x) < 0.25 && z < 11 ? "#3e4a2a" : "#5f6e3e") },
+    rounded(-5, 5, -3.2, 3.2, 10, 13, 1.2, "#7a5230"),
+    rounded(-3.4, 3.4, 2.8, 4.4, 1.6, 7, 1, "#4f5c34"),
+    ...sides((s) => rounded(s * 2.6 - 0.5, s * 2.6 + 0.5, 3, 3.8, 8, 12, 0.2, "#7a5230")),
+    level(13, 15, 1, "#7a5230"),
+  ],
+  // Rolled out, with who's asleep in it from frame 1: their hair comes as the colour.
+  sleepingbag: (frame = 0, hair = "#7a4d2b") => [
+    { ...ball(0, 0, 2.2, 17, 6.4, 2.6, "#2f5fa8"), cuts: [[0, 0, -1, 0]], paint: ([x, y]) => (Math.abs(y) < 0.3 && x < 8 ? "#f2c14e" : x > 11 ? "#e8d4ae" : "#2f5fa8") },
+    ...(frame ? [ball(12.6, 0, 3.6, 3.4, 3.2, 2.8, SKIN), ball(14.2, 0, 4.4, 3, 3.5, 2.8, hair), ...sides((s) => ball(11.2, s * 1.3, 5.8, 0.5, 0.5, 0.2, "#22222c"))] : []),
+  ],
+  // A sooty kettle with a bail handle; frame 1 has water in it, which shows in its open top.
+  kettle: () => [
+    { ...tube([0, 0, 1], [0, 0, 7], 5, 3.4, "#3a3a40"), cuts: [[0, 0, -1, -0.5]], paint: ([, , z]) => (z < 3 ? "#26262a" : "#3a3a40") },
+    level(9.2, 10, 3, "#55555c"),
+    ball(0, 0, 10.8, 0.7, 0.7, 0.7, "#8c9198"),
+    flat(tube([4.4, 0, 6], [8.4, 0, 8.6], 1.2, 0.5, "#3a3a40"), 1),
+    ...ring(0, 9.2, 5, 5.4, 0.25, "#8c9198", 10).slice(0, 5),
+  ],
+  tea: () => [rounded(-3.6, 3.6, -2.2, 2.2, 0, 8, 0.4, "#3e8a4e"), rounded(-2.2, 2.2, 2.2, 2.3, 2, 5.6, 0.1, "#e8d4ae"), tube([2.4, 2.4, 5], [4.6, 3, 1], 0.1, 0.1, "#f4f1e8"), rounded(3.9, 5.3, 2.8, 3.2, 0, 1.6, 0.1, "#f2c14e")],
+  cocoa: () => [{ ...tube([0, 0, 0.6], [0, 0, 8], 3.6, 3.6, "#7a4426"), cuts: [[0, 0, 1, 8.6], [0, 0, -1, 0]], paint: ([, , z]) => (z > 3 && z < 6 ? "#f4e4c4" : "#7a4426") }, level(8.6, 9.2, 3.4, "#c9ccd2")],
+  water: () => [{ ...ball(0, 0, 4.4, 4, 4, 4.4, "#5aa8e0"), paint: ([x, , z]) => (x < -1 && z > 5 ? "#c4e6fa" : "#5aa8e0") }, tube([0, 0, 7.6], [0, 0, 12.4], 2.2, 0.2, "#5aa8e0")],
+  bowl: (frame = 0) => [
+    { ...tube([0, 0, 0.8], [0, 0, 3], 3.8, 5.2, "#b53a30"), cuts: [[0, 0, 1, 3.2], [0, 0, -1, 0]] },
+    level(3, 3.3, 4.4, frame ? "#7a4426" : "#6e2a24"),
+    ...(frame ? [[-2, 0], [1, 1.6], [1.6, -1.4], [-0.6, -2.2], [-1, 2]].map(([x, y]) => ball(x, y, 3.6, 0.8, 0.8, 0.5, "#9a6030")) : []),
+  ],
+  river: () => [{ ...rounded(-11, 11, -5, 5, 0, 1.4, 0.4, "#3e86c4"), paint: ([x, y]) => (Math.sin(x * 0.7 + y) > 0.75 ? "#c4e6fa" : "#3e86c4") }, ...[-9, 2, 8].map((x, i) => ball(x, i % 2 ? 5 : -5, 1.2, 2, 1.4, 1.2, "#8f9498"))],
+  match: () => [tube([-7, 0, 6], [5, 0, 10], 0.5, 0.5, "#e0c48c"), ball(6, 0, 10.4, 1.3, 0.9, 1.1, "#c8372d"), ball(8, 0, 13.6, 1.4, 0.5, 2.8, "#ffb04a"), ball(8, 0, 12.6, 0.8, 0.4, 1.4, "#fff3b0")],
+  dogfood: () => [{ ...rounded(-4, 4, -2, 2, 0, 11, 0.6, "#c9722e"), paint: ([x, , z]) => (z > 3.6 && z < 7.4 && Math.abs(x) < 2.6 ? "#f4e4c4" : z > 10 ? "#8a4c1e" : "#c9722e") }, ball(0, 2.1, 5.4, 1.4, 0.2, 1.2, "#3a2a24")],
+  // On a stick, for holding over the fire. Frame 0 is raw, 1 is done.
+  roastsausage: (frame = 0) => [tube([-9, 0, 2], [5, 0, 6], 0.3, 0.25, "#6e4f30"), tube([3, 0, 5.4], [9.6, 0, 7.4], 1, 1, frame ? "#7a3a22" : "#d98a7c")],
+  roastbread: (frame = 0) => [tube([-9, 0, 2], [5, 0, 6], 0.3, 0.25, "#6e4f30"), ...[3.6, 5.2, 6.8, 8.4].map((x, i) => ball(x, i % 2 ? 0.5 : -0.5, 5.6 + (x - 3.6) * 0.3, 1.2, 1.2, 1.2, frame ? "#b5763a" : "#ecd8a8"))],
+  // A pad of reindeer skin to sleep on, for the user to check.
+  sleepingpad: () => [{ ...rounded(-19, 19, -8, 8, 0, 1, 0.5, "#c9b896"), paint: mottled(["#c9b896", "#b5a07a", "#ddd0b0", "#a8926c"], 1) }],
+  hearth: () => [
+    ...Array.from({ length: 9 }, (_, i) => ball(Math.cos(i * 0.7) * 7, Math.sin(i * 0.7) * 7, 1.2, 1.9, 1.7, 1.3, i % 2 ? "#8f9498" : "#6f7478")),
+    ball(0, 0, 0.5, 5.4, 5.4, 0.5, "#2a2320"), ball(1, -1, 0.9, 2.2, 2.2, 0.6, "#c8501e"), ball(-1, 1, 1, 1.4, 1.4, 0.5, "#ffb04a"),
+    ...logAlong(-3, 3, 0, 1.4, 0.8, CHAR),
+  ],
+  // The big lávvu: built at half size and drawn at twice that, as it's far too large for the usual picture. The door faces the viewer.
+  camp_lavvu: () => [
+    {
+      ...tube([0, 0, 2], [0, 0, 44], 24, 1.6, CANVAS), cuts: [[0, 0, -1, -0.2]],
+      paint: ([x, y, z]) => {
+        const angle = Math.atan2(y, x), off = Math.abs(angle - Math.PI / 4), seam = Math.abs(((angle + 7) % 0.5236) - 0.26) < 0.012;
+        if (off < 0.34 - z * 0.009 && z < 25) return z > 24 ? "#5c4430" : "#2a2018";
+        if (off < 0.42 - z * 0.009 && z < 27) return "#a89878";
+        if (z < 2.4) return "#7a6a50";
+        if (z > 37) return "#54483a"; // smoke-blackened around the opening
+        if (z > 31) return "#b5a888";
+        return seam ? "#b8ac8c" : (z + 40) % 8 < 0.25 ? "#c4b89a" : CANVAS;
+      },
+    },
+    ...Array.from({ length: 9 }, (_, i) => {
+      const a = i * 0.698 + 0.2;
+      return tube([Math.cos(a) * 2.2, Math.sin(a) * 2.2, 40], [-Math.cos(a) * 3.2, -Math.sin(a) * 3.2, 53 + (i % 3)], 0.42, 0.3, "#7a5a38");
+    }),
+    // Stakes around the hem, and the door flap folded to the side.
+    ...Array.from({ length: 12 }, (_, i) => i * 0.5236).filter((a) => Math.abs(a - Math.PI / 4) > 0.5).map((a) => tube([Math.cos(a) * 24.5, Math.sin(a) * 24.5, 2], [Math.cos(a) * 25.5, Math.sin(a) * 25.5, 0], 0.3, 0.25, "#5c4430")),
+  ],
 });
 
 // How each animal moves, and the shape of its shadow. Things only have a shadow.

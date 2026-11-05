@@ -1,8 +1,9 @@
 # Hand-picked words the game actually shows. The export stops if a word or a
 # chosen translation is no longer in satni.db, or if the word is filtered out.
 # Being listed here overrides only the frequency limit, not the filters.
-# theme: river, animal, later (kept for a place to come), item, vehicle, lot (only in the car park's first level), home, food, or colour (sprite is then the colour's id).
+# theme: river, animal, later (kept for a place to come), item, vehicle, lot (only in the car park's first level), home, food, gear (the general store), camp (the lávvu camp, named but never asked for), or colour (sprite is then the colour's id).
 # place: land or water; food goes on a shelf, in a fridge, in a freezer, in a produce crate or on the meat counter;
+# in the general store: tools and fishing on a pegboard, clothes on a rail, big things on a platform;
 # library things go on a bookshelf or a table; vehicles park in a bay; things at home have a place of their own.
 # Norwegian may be empty for a home or food word the dictionary gives no Norwegian for.
 # lemma	pos	fi	nb	sprite	place	theme
@@ -125,3 +126,46 @@ njukča	N	joutsen	svane	njukca	land	animal
 goaskin	N	kotka	ørn	goaskin	land	animal
 jievjaskuolfi	N	tunturipöllö	snøugle	jievjaskuolfi	land	animal
 beahceloddi	N	metso	storfugl	beahceloddi	land	animal
+ákšu	N	kirves	øks	axe	tools	gear
+sahá	N	saha	sag	saw	tools	gear
+goaivu	N	lapio	spade	spade	tools	gear
+veažir	N	vasara	hammer	hammer	tools	gear
+buvku	N	puukko	tollekniv	knife	tools	gear
+guksi	N	kuksa	øse	kuksa	tools	gear
+suohpan	N	suopunki	lasso	lasso	tools	gear
+biellu	N	kello	bjelle	reindeerbell	tools	gear
+fierbmi	N	verkko	fiskegarn	fishnet	fishing	gear
+vuogga	N	viehe	sluk	lure	fishing	gear
+oaggunstággu	N	onkivapa	fiskestang	rod	fishing	gear
+hoavva	N	haavi	håv	scoopnet	fishing	gear
+seakti	N	syötti	agn	bait	fishing	gear
+áiru	N	airo	åre	oar	fishing	gear
+duorgu	N	siima	fiskesnøre	fishingline	fishing	gear
+rulla	N	kela	snelle	reel	fishing	gear
+báidi	N	paita	skjorte	shirt	clothes	gear
+buvssat	N	housut	bukse	trousers	clothes	gear
+gákti	N	saamenpuku	kofte	gakti	clothes	gear
+jáhkka	N	takki	jakke	jacket	clothes	gear
+gahpir	N	lakki	lue	hat	clothes	gear
+suohkku	N	sukka	strømpe	sock	clothes	gear
+gummestevvel	N	kumisaapas	gummistøvel	rubberboots	clothes	gear
+fanas	N	vene	båt	boat	platform	gear
+muohtaskohter	N	moottorikelkka	snøskuter	snowscooter	platform	gear
+geres	N	pulkka	pulk	pulk	platform	gear
+lávvu	N	laavu	samisk sommertelt	lavvu	platform	gear
+muorra	N	puu	tre	birch	camp	camp
+oaksi	N	oksa	grein	stick	camp	camp
+dolla	N	tuli	bål	campfire	camp	camp
+hálgu	N	halko	vedkubbe	billet	camp	camp
+dimbbar	N	tukki	tømmerstokk	longlog	camp	camp
+jalŋŋis	N	kanto	stubbe	stump	camp	camp
+niestelávka	N	eväsreppu	nistesekk	backpack	camp	camp
+oađđinseahkka	N	makuupussi	sovepose	sleepingbag	camp	camp
+gievdni	N	kahvipannu	kjel	kettle	camp	camp
+deadja	N	tee	te	tea	camp	camp
+kakáo	N	kaakao	kakao	cocoa	camp	camp
+čáhci	N	vesi	vann	water	camp	camp
+lihtti	N	kulho	beholder	bowl	camp	camp
+johka	N	joki	bekk	river	camp	camp
+riššasággi	N	tulitikku	fyrstikk	match	camp	camp
+biebmu	N	ruoka	mat	dogfood	camp	camp

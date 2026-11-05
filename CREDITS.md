@@ -68,6 +68,7 @@ Shortened by [`tools/make_ambience.py`](tools/make_ambience.py), from Freesound'
 | Library | [Quiet library ambience](https://freesound.org/people/xkeril/sounds/620683/) | xkeril |
 | Classroom | [classroom_ambiance](https://freesound.org/people/joedeshon/sounds/258094/) | joedeshon |
 | Store | [Grocery store ambience](https://freesound.org/people/thaighaudio/sounds/350488/) | thaighaudio |
+| General store | [Home Depot ambience](https://freesound.org/people/kyles/sounds/452506/) | kyles |
 
 If a recording can't load, the game makes its own sounds instead.
 
