@@ -931,11 +931,6 @@ const PERSON_LOOKS = {
   teacher: { k: 1, w: 1, legs: "#3a3f52", top: "#f4efe2", long: "#2b3a5c", bands: ["#c8372d", "#f2c14e", "#2f5fa8"], risku: true, hair: "bun", hairColour: "#5a3a22" },
   teacher_blue: { k: 1, w: 1, legs: "#3a3f52", top: "#2f4a6b", long: "#23262f", bands: ["#c8372d", "#f2c14e", "#2f5fa8"], risku: true, hair: "bun", hairColour: "#5a3a22" },
   teacher_red: { k: 1, w: 1, legs: "#3a3f52", top: "#8c2f33", long: "#23262f", bands: ["#f2c14e", "#2f5fa8", "#f4efe2"], risku: true, hair: "bun", hairColour: "#5a3a22" },
-  // Classmates: one in a gákti, the others dressed for the north. Generic, for the user to check.
-  classmate_gakti: { k: 0.66, w: 0.82, legs: "#2557a8", top: "#2557a8", long: "#2557a8", bands: ["#c8372d", "#f2c14e", "#c8372d"], hair: "braids", hairColour: "#6a4326" },
-  classmate_anorak: { k: 0.62, w: 0.86, legs: "#3f4656", top: "#3f6f5a", stripe: "#e8d4ae", hair: "beanie", hairColour: "#c8372d" },
-  classmate_wool: { k: 0.64, w: 0.86, legs: "#39424f", top: "#d9d2c2", stripe: "#2f5fa8", hair: "short", hairColour: "#2e2620" },
-  classmate_parka: { k: 0.6, w: 0.86, legs: "#2c3340", top: "#b5533f", stripe: "#f2c14e", hair: "beanie", hairColour: "#2f5fa8" },
   // The grocery store's own uniform: the brand's blue and gold, in two cuts to go with the two voices.
   store_cashier: { k: 1, w: 0.96, legs: "#2b3a5c", top: "#f4f1e8", apron: "#2f5fa8", stripe: "#f2c14e", badge: "#f2c14e", skirt: "#2f5fa8", hair: "bun", hairColour: "#5a3a22" },
   store_cashier_man: { k: 1.04, w: 1.04, legs: "#2b3a5c", top: "#f4f1e8", apron: "#2f5fa8", stripe: "#f2c14e", badge: "#f2c14e", hair: "cap", hairColour: "#2f5fa8" },
@@ -958,6 +953,20 @@ const shifted = (shape, dx, dy, dz) => {
   const paint = shape.paint && (([x, y, z]) => shape.paint([x - dx, y - dy, z - dz]));
   return { ...shape, low: move(shape.low), high: move(shape.high), ...(paint ? { paint } : {}) };
 };
+
+// What someone has with them: a basket on one arm, a bag, or a stack of baskets. Made ahead people have it drawn over them.
+function personCarried(p, frame, carrying) {
+  const leg = 11 * p.k;
+  const hand = 3.7 * p.w + 0.5;
+  // In the other hand while reaching, so it stays on the arm that hangs down.
+  const side = frame === 3 || frame === 4 ? -1 : 1;
+  const size = Math.max(0.7, Math.min(1, p.k + 0.05));
+  const carriedX = side * (hand + 0.3 + 2 * size);
+  if (carrying === "stack") return MODELS.basket_stack(0, 4).map((shape) => shifted(shape, 0, 5.5, leg - 1));
+  if (`${carrying}`.startsWith("bag")) return samiBag(carriedX * 1.1, 0.6, Math.max(leg - 2, size * 9), size * 1.3, Number(carrying.slice(3)));
+  if (p.basket && carrying !== "none" && carrying !== undefined) return shoppingBasket(carriedX, 0.6, leg - 2.4, p.basket, p.goods.slice(0, carrying), size);
+  return [];
+}
 
 function personModel(p) {
   return (frame, carrying) => {
@@ -1016,13 +1025,7 @@ function personModel(p) {
     } else {
       parts.push(tube([3.7 * w, 0, top], hand, 1.1, 0.95, p.top), ball(...hand, 0.9, 0.9, 0.9, SKIN));
     }
-    // In the other hand while reaching, so it stays on the arm that hangs down.
-    const side = frame === 3 || frame === 4 ? -1 : 1;
-    const size = Math.max(0.7, Math.min(1, k + 0.05));
-    const carriedX = side * (hand[0] + 0.3 + 2 * size);
-    if (carrying === "stack") parts.push(...MODELS.basket_stack(0, 4).map((shape) => shifted(shape, 0, 5.5, leg - 1)));
-    else if (`${carrying}`.startsWith("bag")) parts.push(...samiBag(carriedX * 1.1, 0.6, Math.max(leg - 2, size * 9), size * 1.3, Number(carrying.slice(3))));
-    else if (p.basket && carrying !== "none") parts.push(...shoppingBasket(carriedX, 0.6, leg - 2.4, p.basket, p.goods.slice(0, carrying), size));
+    parts.push(...personCarried(p, frame, carrying));
     const hair = [...PERSON_HAIR[p.hair](z, r, p.hairColour)];
     if (p.beard) hair.push(ball(0, 1.7, z - r * 0.62, r * 0.78, r * 0.55, r * 0.55, p.beard));
     if (p.glasses) hair.push(...sides((s) => ball(s * r * 0.37, r * 0.93, z + 0.4, 0.8, 0.12, 0.7, "#22222c")));
@@ -1033,6 +1036,7 @@ function personModel(p) {
 // On the till's counter, drawn from the counter's top. The belt runs along x, towards the door.
 Object.assign(MODELS, {
   ...Object.fromEntries(Object.entries(PERSON_LOOKS).map(([name, look]) => [`person_${name}`, personModel(look)])),
+  ...Object.fromEntries(Object.entries(PERSON_LOOKS).map(([name, look]) => [`carried_${name}`, (frame, carrying) => personCarried(look, frame, carrying)])),
   ...Object.fromEntries(Object.entries(SMALL_FOOD).map(([name, make]) => [`good_${name}`, () => [make(0, 0, 0.5, 1.1)]])),
   // One tile's length of belt, as the counter is drawn tile by tile; the last stops short of the register.
   till_belt: () => [rounded(-8, 8, -5, 5, -0.2, 0.5, 0.1, "#23232a")],
@@ -1660,8 +1664,14 @@ Object.assign(MODELS, {
   ],
 });
 
+// Made ahead by tools/make_animals.py; until those pictures have loaded, a dog's shape holds their place.
+Object.assign(MODELS, { gumpe: MODELS.beana, geatki: MODELS.beana, albbas: MODELS.beana });
+// Made ahead in tools/make_animals.py, and these only stand in until they've loaded.
+Object.assign(MODELS, { crispbread: MODELS.bread, ryebread: MODELS.bread, toast: MODELS.bread, smokedmeat: MODELS.reindeermeat });
+
 // How each animal moves, and the shape of its shadow. Things only have a shadow.
 const ANIMAL_WAYS = {
+  gumpe: { shadow: [20, 7] }, geatki: { shadow: [17, 7] }, albbas: { shadow: [18, 6] },
   boazu: { shadow: [23, 8] }, beana: { greets: true, near: 3.2, shadow: [15, 6] }, loddi: { flights: true, pecks: true, shadow: [9, 4] },
   njoammil: { hops: true, shadow: [12, 5] }, guovza: { shadow: [22, 9] }, rieban: { shadow: [16, 5] },
   oarri: { hops: true, shadow: [9, 3] }, skuolfi: { flights: true, looks: true, shadow: [11, 5] }, cuoppu: { hops: true, shadow: [12, 5] },

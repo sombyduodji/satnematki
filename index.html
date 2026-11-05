@@ -11,7 +11,7 @@
 <div class="stripe"></div>
 <header class="hero">
   <div class="hero-text">
-    <h1 lang="se">Sátnemátki <small>v0.2.4</small></h1>
+    <h1 lang="se">Sátnemátki <small>v0.2.5</small></h1>
     <p class="lead">Pohjoissaamen sanapeli lapsille. Nimi tarkoittaa <em>sanamatkaa</em>: kuljet hahmollasi kodissa, metsässä ja kaupassa ja etsit sen, mitä saamenkielinen sana tarkoittaa.</p>
     <a class="play" href="peli.html">Pelaa selaimessa</a>
     <p class="fine">Maksuton. Ei rekisteröitymistä eikä asennusta.</p>
@@ -42,6 +42,7 @@
 
   <section>
     <h2>Uusimmat lisäykset</h2>
+    <p>Versiossa 0.2.5 Metsä, Ruokakauppa ja Luokka ovat saaneet kasvojenkohotuksen: ne on tehty uudelleen tarkemmalla 3D-grafiikalla, ja niissä näkyy isossa ikkunassa enemmän paikkaa. Muut paikat ovat toistaiseksi jääneet jälkeen, ja niitä kannattaa nyt kokeilla vain vikojen etsimiseen.</p>
     <div class="places showcase">
       <figure><picture><source media="(hover: hover) and (prefers-reduced-motion: no-preference)" srcset="art/site/clips/oppitunti.webp"><img src="art/site/oppitunti.png" width="280" height="190" alt="Luokassa opettaja on kirjoittanut luvun taululle ja kysyy puhekuplassa saameksi ja suomeksi, mikä luku se on. Hahmo viittaa ja vastaa." loading="lazy"></picture><figcaption><b>Luokan oppitunti</b> Opettaja kirjoittaa luvun taululle, sinä viittaat ja vastaat. Puhekuplat kertovat saameksi ja suomeksi, mitä sanotaan.</figcaption></figure>
       <figure><picture><source media="(hover: hover) and (prefers-reduced-motion: no-preference)" srcset="art/site/clips/rautakauppa.webp"><img src="art/site/rautakauppa.png" width="280" height="190" alt="Hahmo kävelee rautakaupan näyttelytilassa veneen, moottorikelkan ja laavun välissä." loading="lazy"></picture><figcaption><b>Rautakauppa</b> Työkaluja, kalastustarvikkeita ja vaatteita sekä oma näyttelytila isoille tavaroille.</figcaption></figure>
@@ -107,14 +108,18 @@
   </section>
 
   <section>
-    <h2>Uutta versioissa 0.1.5–0.2.4</h2>
+    <h2>Uutta versioissa 0.1.5–0.2.5</h2>
     <ul class="points">
+      <li><strong>3D-grafiikka.</strong> Máhtte, Biret, Metsä, Ruokakauppa ja molemmat luokat on tehty uudelleen 3D-malleista. Hahmoilla on yhdeksän kampausta, liukusäätimet hiusten ja silmien värille ja liikkuva suu.</li>
+      <li><strong>Isompi Metsä.</strong> Metsä on noin kaksi kertaa isompi, ja siellä on Pielpajärven kirkko. Eläimillä on uudet liikkeet, jotkut nukkuvat ja pakenevat, jos niitä ei lähesty hiipien, ja uusina ovat susi, ahma ja ilves.</li>
+      <li><strong>Uusi Ruokakauppa.</strong> Kaupassa on kaksi kassaa ja portti, kylmäkaapit ja pakastimet, lihatiski ja suomenkieliset kyltit. Jokaisella ruoalla on oma paikkansa, ja uusina ovat näkkileipä, ruisleipä, paahtoleipä, savuliha ja tee. Jos kori putoaa, tavarat palaavat ostoslistalle, kunnes ne poimii uudelleen.</li>
+      <li><strong>Isompi pelinäkymä.</strong> Ruokakaupassa, Luokassa ja Metsässä iso selainikkuna näyttää enemmän paikkaa, ja zoomauksen voi valita. Ostoslista on muistilappu, ja ohjeet ovat laatikossa, jonka voi sulkea.</li>
       <li><strong>Uusi luokka.</strong> Pieni aurinkoinen luokka, jossa opettaja kirjoittaa numeroita taululle. Kirjoita numerot -tehtävässä luet luvun saameksi ja näppäilet sen numeroina, ja vaikeammassa Kirjoita sanalla -tehtävässä kirjoitat numeron sanana saamelaisella näppäimistöllä. Luokkatoverit viittaavat, jos odotat liian kauan, ja opettaja kiittää vastaajaa nimeltä.</li>
       <li><strong>Puhekuplat luokassa.</strong> Kun luokassa joku puhuu, sanottu näkyy puhekuplassa saameksi ja suomeksi. Kummankin kielen voi kytkeä pois tason valinnan yhteydessä.</li>
-      <li><strong>Kaupan kassa.</strong> Ruokakaupassa kassa on joka kierroksella nainen tai mies, kaupan omissa vaatteissa, ja toivottaa hahmosi tervetulleeksi puhekuplassa.</li>
-      <li><strong>Rautakauppa.</strong> Uusi kauppa, jossa on työkaluja, kalastustarvikkeita, vaatteita ja oma näyttelytila isoille tavaroille, kuten veneelle ja moottorikelkalle. Se on pelattava, mutta ominaisuuksia voi puuttua.</li>
-      <li><strong>Laavu.</strong> Rauhallinen ilta ilman kelloa: kaada koivu, halkaise puut, sytytä nuotio, laita ruokaa, leiki koiran kanssa ja mene nukkumaan, kun nuotio sammuu. Se on testattavissa, mutta ominaisuudet ja pelattavuus ovat vielä puutteelliset.</li>
-      <li><strong>Valikon osiot.</strong> Pelin valikko kertoo nyt osioissa, kuinka pitkällä kukin paikka on. Kauppa on nyt nimeltään Ruokakauppa.</li>
+      <li><strong>Kaupan kassa.</strong> Ruokakaupassa kassa on joka kierroksella nainen tai mies, kaupan omissa vaatteissa, ja muut asiakkaat jonottavat kumpaankin kassaan.</li>
+      <li><strong>Rautakauppa.</strong> Uusi kauppa, jossa on työkaluja, kalastustarvikkeita, vaatteita ja oma näyttelytila isoille tavaroille, kuten veneelle ja moottorikelkalle. Se on vielä keskeneräinen: sitä voi testata, mutta sen kehitys on vasta alkamassa.</li>
+      <li><strong>Laavu.</strong> Rauhallinen ilta ilman kelloa: kaada koivu, halkaise puut, sytytä nuotio, laita ruokaa, leiki koiran kanssa ja mene nukkumaan, kun nuotio sammuu. Se on vielä keskeneräinen: sitä voi testata, mutta sen kehitys on vasta alkamassa.</li>
+      <li><strong>Valikon osiot.</strong> Pelin valikossa on kaksi osiota: pelattava demo ja keskeneräiset kentät. Kauppa on nyt nimeltään Ruokakauppa.</li>
       <li><strong>Paikat liikkeessä.</strong> Tällä sivulla paikan kuva näyttää lyhyen pätkän pelistä, kun hiiri on sen päällä. Pelin valikossa kartta näkyy himmeästi painikkeen takana, ja hiiri sen päällä näyttää saman pätkän. Eläimet-paikan nimi on nyt Metsä.</li>
       <li><strong>Kauppareissu.</strong> Ota kori, hae tavarat käsin kirjoitetun listan mukaan missä järjestyksessä tahansa, jonota kassalle, maksa, ota kassi ja lähde ovesta. Kaupassa on muita asiakkaita, kassa, lihatiski ja hyllyjä täyttävä työntekijä.</li>
       <li><strong>Vaikeampi kauppataso.</strong> Samaa tavaraa haetaan useita kappaleita, ja hinta näppäillään itse. Ruokia on nyt paljon enemmän.</li>

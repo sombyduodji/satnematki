@@ -1,9 +1,9 @@
 // A lesson in the small classroom. The character sits at a desk and can't get up. The teacher writes a number in Sámi on the board, and
 // whoever knows it raises a hand: E, and then the number goes into a keypad like the shop's. Left too long, a classmate answers instead.
-const LESSON = { rounds: 8, teacherAt: [10.3, 3.3], myChair: 1, firstMs: 2200, writeMsPerLetter: 120, writeLeastMs: 900, nextMs: 800, wipeMs: 450, handMs: 1100, longestWord: 30, speakUpAfterMs: 20000, speakUpSaysMs: 3600, swingLeastMs: 10000, swingMoreMs: 20000, swingForMs: 1600, bubbleLingerMs: 1500, bubbleReadMsPerLetter: 55, bubbleWide: 130, walk: 0.0035, boardFrom: 3.4, boardTo: 9, sunPanes: [[3, 4], [4, 5], [7, 8], [8, 9]] };
+const LESSON = { rounds: 8, teacherAt: [12.3, 3.3], myChair: 4, firstMs: 2200, writeMsPerLetter: 120, writeLeastMs: 900, nextMs: 800, wipeMs: 450, handMs: 1100, longestWord: 30, speakUpAfterMs: 20000, speakUpSaysMs: 3600, swingLeastMs: 10000, swingMoreMs: 20000, swingForMs: 1600, bubbleLingerMs: 1500, bubbleReadMsPerLetter: 55, bubbleWide: 130, walk: 0.0035, boardFrom: 3.4, boardTo: 11 };
 const LESSON_TEACHERS = ["teacher", "teacher_blue", "teacher_red"];
 // Each classmate's voice: one of the two characters' lines, played higher.
-const LESSON_VOICES = { classmate_gakti: ["biret", 1.14], classmate_anorak: ["mahtte", 1.14], classmate_wool: ["biret", 1.25], classmate_parka: ["mahtte", 1.28] };
+const LESSON_VOICES = { classmate_gakti: ["biret", 1.14], classmate_gakti_two: ["biret", 1.2], classmate_fleece: ["mahtte", 1.2], classmate_anorak: ["mahtte", 1.14], classmate_wool: ["biret", 1.25], classmate_parka: ["mahtte", 1.28] };
 const LESSON_TOUCH = matchMedia("(hover: none) and (pointer: coarse)").matches;
 // The Sámi keyboard layout, after a picture from the user that they think is Divvun's. The keys for punctuation give way to ⌫ and OK.
 const LESSON_KEY_ROWS = ["ášertyuiopåŋ", "asdfghjkløæđ", "žzčcvbnm"].map((row) => [...row]);
@@ -13,7 +13,7 @@ const LESSON_NAMES = {
   mahtte: ["Niillas", "Issát", "Heaika", "Ánte", "Jovnna", "Áilu", "Mihkkal", "Ásllat", "Nillá", "Juhán"],
 };
 const lessonNameFile = (name) => name.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
-const LESSON_CLASSMATES = ["classmate_anorak", "classmate_wool", "classmate_parka"];
+const LESSON_CLASSMATES = ["classmate_anorak", "classmate_wool", "classmate_parka", "classmate_fleece"];
 const LESSON_TEXT = {
   guide: "Istut omalla paikallasi, etkä voi nousta. Opettaja kirjoittaa taululle luvun saameksi. Kun tiedät sen, viittaa painamalla E tai Viittaa-painiketta ja näppäile luku numeroina. Jos odotat liian kauan, luokkatoveri vastaa ensin.",
   guideAudio: "Istut omalla paikallasi, etkä voi nousta. Opettaja sanoo luvun saameksi. Kun tiedät sen, viittaa painamalla E tai Viittaa-painiketta ja näppäile luku numeroina. Jos odotat liian kauan, luokkatoveri vastaa ensin.",
@@ -42,16 +42,25 @@ const LESSON_SPEECH = {
   praise: ([say, sayFi], number, name) => [`${say} Dát lea ${window.MAHTTE_NUMBERS[number]}. Buorre, ${name}!`, `${sayFi} Tämä on ${number}. Hyvä, ${name}!`],
 };
 // Things in the room, by x and y; the last is how high they stand, for one on a desk.
-const LESSON_PLANTS = [["lesson_plant", 2.7, 2.7], ["lesson_plant", 2.7, 11.1], ["flower", 11.2, 2.8], ["flower", 6.5, 4.5, 13]];
+const LESSON_PLANTS = [["lesson_plant", 2.7, 2.7], ["lesson_plant", 2.7, 11.1], ["flower", 13.2, 2.8], ["flower", 5, 4.6]];
 
-const LESSON_BOARD_DEPTH = 10.59; // after the wall behind the board
+// The pens on the board's tray, in the colours of the Sámi flag. What each writes is a little deeper where the true colour wouldn't show on
+// white: yellow writes as dark gold with a thin edge.
+const LESSON_PENS = [
+  { body: "#dc241f", ink: "#c81e18" },
+  { body: "#0035ad", ink: "#0035ad" },
+  { body: "#007229", ink: "#007229" },
+  { body: "#ffce00", ink: "#b87a00", edge: "rgba(84, 50, 0, 0.6)" },
+];
+const LESSON_BACKPACKS = 10; // to choose from each round, from tools/make_animals.py
+const LESSON_BOARD_DEPTH = 0; // after the walls, which are behind everything, and before all in the room
 let lesson = null;
 
 function setupLesson() {
   const now = performance.now();
-  const looks = ["classmate_gakti", ...shuffled(LESSON_CLASSMATES).slice(0, 2)];
+  const looks = shuffled(["classmate_gakti", "classmate_gakti_two", ...shuffled(LESSON_CLASSMATES).slice(0, 3)]);
   lesson = {
-    people: [], teacher: LESSON_TEACHERS[Math.floor(Math.random() * LESSON_TEACHERS.length)], teacherX: LESSON.teacherAt[0], teacherY: LESSON.teacherAt[1],
+    pen: Math.floor(Math.random() * LESSON_PENS.length), backpacks: shuffled(Array.from({ length: LESSON_BACKPACKS }, (_, i) => i)), people: [], teacher: LESSON_TEACHERS[Math.floor(Math.random() * LESSON_TEACHERS.length)], teacherX: LESSON.teacherAt[0], teacherY: LESSON.teacherAt[1],
     numbers: shuffled(Array.from({ length: theme.most + 1 }, (_, number) => number)), current: null, wipeAt: null, wiped: null, nextAt: Infinity, typed: "", typing: false, handUntil: 0, handAt: 0, started: false, ended: false, bubbles: [],
   };
   objects = [];
@@ -66,15 +75,8 @@ function setupLesson() {
   stars = 0;
   targets = [];
   document.fonts?.load('16px "Satnematki Hand"', "čđŋšŧž");
-  buildLessonAhead();
   showPrompt();
-  lessonNote(LESSON_TEXT.start);
-}
-
-function buildLessonAhead() {
-  const ahead = (sprite, frame, facing) => queueFinePicture(`${sprite}/${facing}/${frame}/${facing}/none/${viewDetail}`, sprite, facing, frame, facing, "none");
-  for (const person of lesson.people) if (person.look) for (const frame of [5, 6, 7, 8]) ahead(`person_${person.look}`, frame, 2);
-  for (const facing of [0, 1, 2, 3]) for (const frame of [0, 1, 2, 3]) ahead(`person_${lesson.teacher}`, frame, facing);
+  showGuideBox(LESSON_TEXT.start);
 }
 
 const lessonSay = (...lines) => playVoice(...lines);
@@ -154,18 +156,29 @@ function lessonSwingLegs(now) {
 function lessonMoveTeacher(dt, now) {
   const current = lesson.current;
   const writing = current && !current.asked && !current.answered && now < current.until;
-  const along = writing ? (now - current.at) / (current.until - current.at) : 0;
   const [from, to] = lesson.writtenFrom ?? [LESSON.boardFrom + 0.8, LESSON.boardTo - 0.4];
+  // The writing waits until she's at the board to write it.
+  if (writing && !current.reached) {
+    if (Math.hypot(from - lesson.teacherX, 2.7 - lesson.teacherY) < 0.3) current.reached = true;
+    else {
+      current.at += dt;
+      current.until += dt;
+    }
+  }
+  const along = writing && current.reached ? (now - current.at) / (current.until - current.at) : 0;
   const toX = writing ? from + along * (to - from) : LESSON.teacherAt[0];
   const toY = writing ? 2.7 : LESSON.teacherAt[1];
   const dx = toX - lesson.teacherX, dy = toY - lesson.teacherY, away = Math.hypot(dx, dy);
-  lesson.teacherMoving = away > 0.08;
-  if (lesson.teacherMoving) {
+  // Following her own writing she only edges along, still facing the board with the pen; further than that she walks.
+  const edging = writing && away < 0.6 && Math.abs(dy) < 0.2;
+  lesson.teacherMoving = away > 0.08 && !edging;
+  if (away > 0.08) {
     const step = Math.min(away, LESSON.walk * dt);
     lesson.teacherX += (dx / away) * step;
     lesson.teacherY += (dy / away) * step;
-    lesson.teacherFacing = Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 1 : 3) : (dy > 0 ? 0 : 2);
-  } else lesson.teacherFacing = writing ? 2 : 0;
+  }
+  if (lesson.teacherMoving) lesson.teacherFacing = Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 1 : 3) : (dy > 0 ? 0 : 2);
+  else lesson.teacherFacing = writing ? 2 : 0;
 }
 
 function lessonNote(html) {
@@ -249,7 +262,8 @@ function lessonCloseKeypad() {
   lesson.typing = false;
   lesson.handUntil = performance.now() + 150;
   if (lesson.current?.waitFrom) lesson.current.waitFrom = performance.now();
-  lessonNote(LESSON_TEXT.start);
+  cardEl.className = "";
+  cardEl.innerHTML = "";
 }
 
 function lessonTypeKey(key) {
@@ -314,11 +328,18 @@ function lessonPrompt() {
   });
 }
 
-// Which picture of the seated character is showing: the raised hand, or just sitting.
+// Which picture of someone seated is showing: the raised hand, or just sitting.
+const handFrame = (since) => (since < 120 ? 0 : 1 + (Math.floor(since / 260) % 2));
 function lessonSeatFrame(now) {
   if (!lesson.handAt || now >= lesson.handUntil) return null;
-  const since = now - lesson.handAt;
-  return since < 120 ? 0 : 1 + (Math.floor(since / 260) % 2);
+  return handFrame(now - lesson.handAt);
+}
+
+// The classmates' pictures, from tools/make_mahtte.py: the same frame as the player's, the hand on the first row and sitting on the second.
+const classmateSheets = new Map();
+function classmateSheet(look) {
+  if (!classmateSheets.has(look)) classmateSheets.set(look, Object.assign(new Image(), { src: `art/classmates/${look}.png` }));
+  return classmateSheets.get(look);
 }
 
 // Sitting still, or for a moment swinging the legs: the row's first picture, then six of swinging.
@@ -328,73 +349,58 @@ function lessonSeatColumn(now) {
 }
 
 // ------------------------------------------------------------- the room
-// What the sun through the windows lays on the floor, painted once into the world.
-function lessonSunlight(g) {
-  const corner = (x, y) => [isoX(x, y), isoY(x, y) + HH];
-  g.save();
-  g.fillStyle = "rgba(255, 226, 150, 0.34)";
-  for (const [from, to] of LESSON.sunPanes) {
-    const a = from + 0.08, b = to - 0.08;
-    g.beginPath();
-    g.moveTo(...corner(2, a));
-    g.lineTo(...corner(2, b));
-    g.lineTo(...corner(7, b + 1.7));
-    g.lineTo(...corner(7, a + 1.7));
-    g.closePath();
-    g.fill();
-  }
-  g.restore();
-}
-
-// A good white board on the wall behind the teacher, in an aluminium frame with a tray for the pens.
+// What's written on the white board, which is made with the room in tools/make_classrooms.py: it must match LESSON_BOARD there.
 function lessonPaintBoard() {
-  const [x0, x1, wall, low, high] = [LESSON.boardFrom, LESSON.boardTo, 2, 9, 28];
-  const at = (x, up) => [isoX(x, wall), isoY(x, wall) + HH - up];
-  const shape = (points, colour) => {
-    ctx.fillStyle = colour;
-    ctx.beginPath();
-    points.forEach((point, i) => (i ? ctx.lineTo(...point) : ctx.moveTo(...point)));
-    ctx.closePath();
-    ctx.fill();
-  };
-  const face = (a, b, down, up) => [at(a, down), at(b, down), at(b, up), at(a, up)];
-  shape(face(x0 + 0.08, x1 + 0.08, low - 1.5, high - 1.5), "rgba(60, 40, 24, 0.28)"); // its shadow on the wall
-  shape(face(x0, x1, low, high), "#aeb6bd");
-  shape(face(x0, x1, high - 0.6, high), "#dfe4e8");
-  shape(face(x0 + 0.1, x1 - 0.1, low + 0.8, high - 0.8), "#fbfcfb");
-  // The light from the windows, falling across it from the left.
-  shape(face(x0 + 0.1, x0 + 1.6, low + 0.8, high - 0.8), "rgba(255, 236, 190, 0.5)");
-  shape([at(x0 + 2.2, low + 0.8), at(x0 + 3, low + 0.8), at(x0 + 3.9, high - 0.8), at(x0 + 3.1, high - 0.8)], "rgba(226, 234, 240, 0.7)");
-  // The tray, with two pens and an eraser.
-  shape(face(x0 - 0.05, x1 + 0.05, low - 1.6, low), "#8d959c");
-  shape(face(x0 - 0.05, x1 + 0.05, low - 0.5, low), "#c8ced3");
-  shape(face(x0 + 3.9, x0 + 4.35, low, low + 0.9), "#2f5fa8");
-  shape(face(x0 + 4.5, x0 + 4.95, low, low + 0.9), "#c8372d");
-  shape(face(x0 + 1.1, x0 + 1.8, low, low + 1.6), "#40464e");
-  // What's written on it, going along the wall as the board does.
+  const [x0, x1, wall, low, high] = [LESSON.boardFrom, LESSON.boardTo, 2.08, 10, 30];
+  const at = (x, up) => [isoX(x, wall), isoY(x, wall) - up];
+  // Going along the wall as the board does.
   const now = performance.now();
+  const onWall = (x, up, wallAt = wall) => ctx.transform(1, HH / HW, 0, 1, isoX(x, wallAt), isoY(x, wallAt) - up);
+  // The pens lie on the tray at the board's right end, but for the one the teacher has picked up.
+  LESSON_PENS.forEach(({ body }, i) => {
+    if (i === lesson.pen) return;
+    ctx.save();
+    onWall(x1 - 2.75 + i * 0.62, low - 0.1, 2.14);
+    ctx.fillStyle = "#23262a";
+    ctx.fillRect(-0.25, -1.65, 8.5, 1.8);
+    ctx.fillStyle = body;
+    ctx.fillRect(0, -1.4, 6, 1.3);
+    ctx.fillStyle = "#f4f4f0";
+    ctx.fillRect(6, -1.4, 1, 1.3);
+    ctx.fillStyle = body;
+    ctx.fillRect(7, -1.1, 1, 0.7);
+    ctx.fillStyle = "rgba(255, 255, 255, 0.38)";
+    ctx.fillRect(0.3, -1.3, 5.4, 0.34);
+    ctx.restore();
+  });
   const paintWord = (word, shown, alpha) => {
-    const [left, bottom] = at(x0 + 0.3, low + 5);
+    const [left, bottom] = at(x0 + 0.3, (low + high) / 2 - 4);
     const room = (x1 - x0 - 0.6) * HW;
     ctx.save();
     ctx.transform(1, HH / HW, 0, 1, left, bottom);
-    ctx.font = '15px "Satnematki Hand", cursive';
+    ctx.font = '20px "Satnematki Hand", cursive';
     const scale = Math.min(1, room / ctx.measureText(word).width);
     const wide = ctx.measureText(word).width, margin = (room - wide * scale) / 2;
     if (word === lesson.current?.shown) lesson.writtenFrom = [x0 + 0.3 + margin / HW, x1 - 0.3 - margin / HW]; // the teacher's hand follows it
     ctx.translate(margin, 0);
     ctx.scale(scale, scale);
     ctx.beginPath();
-    ctx.rect(-1, -18, (wide + 2) * shown, 26);
+    ctx.rect(-1, -22, (wide + 2) * shown, 32);
     ctx.clip();
     ctx.globalAlpha = alpha;
-    ctx.fillStyle = "#1f3a78";
+    const pen = LESSON_PENS[lesson.pen];
     ctx.textBaseline = "alphabetic";
+    if (pen.edge) {
+      ctx.strokeStyle = pen.edge;
+      ctx.lineWidth = 0.5;
+      ctx.strokeText(word, 0, 0);
+    }
+    ctx.fillStyle = pen.ink;
     ctx.fillText(word, 0, 0);
     ctx.restore();
   };
   const current = lesson.current;
-  if (current && !audioOnly) paintWord(current.shown, Math.min(1, (now - current.at) / (current.until - current.at)), 1);
+  if (current && !audioOnly) paintWord(current.shown, Math.max(0, Math.min(1, (now - current.at) / (current.until - current.at))), 1);
   const wiped = lesson.wiped;
   if (wiped?.word && !audioOnly && now - wiped.at < LESSON.wipeMs) paintWord(wiped.word, 1, 1 - (now - wiped.at) / LESSON.wipeMs);
 }
@@ -403,11 +409,11 @@ function lessonScene(scene, now, seen) {
   if (!lesson) return;
   scene.push({ d: 1000, paint: () => paintLessonBubbles(now) });
   // After the wall behind it, and before the teacher in front of it.
-  scene.push({ d: LESSON_BOARD_DEPTH, paint: () => lessonPaintBoard() });
+  scene.push({ d: LESSON_BOARD_DEPTH, box: [isoX(LESSON.boardFrom, 2), isoY(LESSON.boardFrom, 2) - 32, isoX(LESSON.boardTo, 2), isoY(LESSON.boardTo, 2) - 8], paint: () => lessonPaintBoard() });
   const person = (sprite, x, y, facing, frame, inFront = 0) => {
     const cx = isoX(x, y), cy = isoY(x, y);
     if (!seen(cx, cy, 90)) return;
-    scene.push({ d: x + y + inFront, paint: () => {
+    scene.push({ d: x + y + inFront, box: [cx - 22, cy - 60, cx + 22, cy + 10], paint: () => {
       ctx.fillStyle = SHADOW;
       ctx.globalAlpha = 0.2;
       castShadow(ctx, Math.round(cx) - 3, Math.round(cy) + 1, 9, 5);
@@ -417,18 +423,39 @@ function lessonScene(scene, now, seen) {
   };
   // At the board she reaches up to write, and otherwise walks or faces the class.
   const writing = lesson.current && !lesson.current.asked && !lesson.teacherMoving;
-  const frame = lesson.teacherMoving ? 1 + (Math.floor(now / 170) % 2) : writing ? 3 : 0;
+  // Writing, her hand goes along the board with the pen, back and forth a little.
+  const frame = lesson.teacherMoving ? 1 + (Math.floor(now / 170) % 2) : writing ? [3, 14, 3, 15][Math.floor(now / 160) % 4] : 0;
   person(`person_${lesson.teacher}`, lesson.teacherX, lesson.teacherY, lesson.teacherFacing ?? 0, frame, Math.max(0, LESSON_BOARD_DEPTH + 0.01 - lesson.teacherX - lesson.teacherY)); // always in front of the board
   for (const someone of lesson.people) {
     if (someone.me) continue;
     const up = now >= someone.handAt && now < someone.handUntil;
-    const swinging = someone.swingUntil > now;
-    const frame = up ? 6 : swinging ? 7 + (Math.floor(now / 210) % 2) : 5;
-    person(`person_${someone.look}`, someone.chair.x, someone.chair.y - 0.1, 2, frame, 0.15); // over the chair's back, so that they can be seen
+    const [column, row] = up ? [handFrame(now - someone.handAt), 0] : [someone.swingUntil > now ? 1 + Math.floor(now / SIT.swingMs) % 6 : 0, 1];
+    const { x, y } = someone.chair;
+    scene.push({ d: x + y + 0.15, box: [isoX(x, y) - 18, isoY(x, y) - 42, isoX(x, y) + 22, isoY(x, y) + 10], paint: () => { // over the chair's back, so that they can be seen
+      const cx = Math.round(isoX(x, y)) + SIT.forward, cy = Math.round(isoY(x, y));
+      ctx.fillStyle = SHADOW;
+      ctx.globalAlpha = 0.3;
+      castShadow(ctx, cx - 3, cy + 2, 19, 7);
+      ctx.globalAlpha = 1;
+      const sheet = classmateSheet(someone.look);
+      if (sheet.complete) ctx.drawImage(sheet, column * FRAME_W * SHEET_DETAIL, row * FRAME_H * SHEET_DETAIL, FRAME_W * SHEET_DETAIL, FRAME_H * SHEET_DETAIL, cx - 12, cy + 4 - FRAME_H, FRAME_W, FRAME_H);
+    } });
   }
+  // Everyone's backpack on the floor beside their desk.
+  lesson.people.forEach(({ chair }, i) => {
+    const x = chair.deskX + 1.42, y = chair.deskY + 0.86;
+    const cx = isoX(x, y), cy = isoY(x, y);
+    scene.push({ d: x + y, box: [cx - 12, cy - 20, cx + 14, cy + 8], paint: () => {
+      ctx.fillStyle = SHADOW;
+      ctx.globalAlpha = 0.26;
+      castShadow(ctx, Math.round(cx) - 3, Math.round(cy) + 1, 11, 5);
+      ctx.globalAlpha = 1;
+      paintImage(modelImage(`backpack-${lesson.backpacks[i]}`, 0, 0), Math.round(cx) - MODEL_ANCHOR.x, Math.round(cy) - MODEL_ANCHOR.y);
+    } });
+  });
   for (const [sprite, x, y, high = 0] of LESSON_PLANTS) {
     const cx = isoX(x, y), cy = isoY(x, y);
-    scene.push({ d: x + y + (high ? 1 : 0), paint: () => {
+    scene.push({ d: x + y + (high ? 1 : 0), box: [cx - 16, cy - 40 - high, cx + 16, cy + 10], paint: () => {
       if (!high) {
         ctx.fillStyle = SHADOW;
         ctx.globalAlpha = 0.2;
@@ -528,29 +555,38 @@ function lessonBubbleBox(text, finnish, x, y, below = false) {
   const rows = [...lessonBubbleRows(text, LESSON_BUBBLE_SE), ...lessonBubbleRows(finnish, LESSON_BUBBLE_FI)];
   const wide = Math.ceil(Math.max(...rows.map((row) => row.wide))) + 10;
   const high = 4 + rows.reduce((sum, row) => sum + row.high, 0);
-  const top = Math.round(below ? Math.min(cam.y + VIEW_H - high - 3, y) : Math.max(cam.y + 3, y - high));
-  // Whole on screen, even when who is speaking stands near the edge of the view.
-  const left = Math.round(Math.max(cam.x + 3, Math.min(cam.x + VIEW_W - wide - 3, x - wide / 2)));
-  return { rows, wide, high, top, left, below, x: Math.max(left + 6, Math.min(left + wide - 6, x)) };
+  // Whole on screen, even when who is speaking stands near the edge of the view or out of it. On the screen's pixels, as the view is, so that it
+  // neither shakes against the picture standing still in the world nor against the screen while it's held at the edge.
+  const pixel = (value) => Math.round(value * CANVAS_DETAIL) / CANVAS_DETAIL;
+  const viewX = pixel(cam.x), viewY = pixel(cam.y);
+  const top = Math.max(viewY + 3, Math.min(viewY + VIEW_H - high - 9, pixel(below ? y : y - high)));
+  const left = Math.max(viewX + 3, Math.min(viewX + VIEW_W - wide - 3, pixel(x - wide / 2)));
+  // The tail only points at someone who can be seen.
+  const inView = x > viewX && x < viewX + VIEW_W && y > viewY && y < viewY + VIEW_H;
+  return { rows, wide, high, top, left, below, inView, x: pixel(Math.max(left + 6, Math.min(left + wide - 6, x))) };
 }
 
-function lessonPaintBubble({ rows, wide, high, top, left, below, x }) {
+function lessonPaintBubble({ rows, wide, high, top, left, below, inView, x }) {
   // The tail points at who is speaking, from whichever side the bubble is on.
   const edge = below ? top : top + high, way = below ? -1 : 1;
   ctx.save();
   ctx.fillStyle = "#1f2a38";
   ctx.beginPath();
   ctx.roundRect(left - 1, top - 1, wide + 2, high + 2, 5);
-  ctx.moveTo(x - 4, edge);
-  ctx.lineTo(x, edge + 6 * way);
-  ctx.lineTo(x + 4, edge);
+  if (inView) {
+    ctx.moveTo(x - 4, edge);
+    ctx.lineTo(x, edge + 6 * way);
+    ctx.lineTo(x + 4, edge);
+  }
   ctx.fill();
   ctx.fillStyle = "#fffdf4";
   ctx.beginPath();
   ctx.roundRect(left, top, wide, high, 4);
-  ctx.moveTo(x - 3, edge - way);
-  ctx.lineTo(x, edge + 4 * way);
-  ctx.lineTo(x + 3, edge - way);
+  if (inView) {
+    ctx.moveTo(x - 3, edge - way);
+    ctx.lineTo(x, edge + 4 * way);
+    ctx.lineTo(x + 3, edge - way);
+  }
   ctx.fill();
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";

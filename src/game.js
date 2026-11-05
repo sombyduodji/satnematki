@@ -2,7 +2,7 @@
 // means. Touching anything shows its word and translation, so a child who knows
 // no words yet can learn by exploring. There is no way to lose.
 const WORDS_PER_ROUND = 8;
-const FOREST_APART = 10; // tiles between things placed in the forest, if there's room
+const FOREST_APART = 14; // tiles between things placed in the forest, if there's room
 const STORE_APART = 7; // and on the store's shelves, around the store
 const PLACING_TRIES = 20;
 const BEST_TIMES = 10;
@@ -65,7 +65,7 @@ const TEXT = {
   guide: {
     goal: {
       home: "Etsi se tai hän, jonka nimi lukee ylhäällä. Mene lähelle ja paina E, niin näet, oliko se oikea.",
-      forest: "Etsi eläin, jonka nimi lukee ylhäällä. Mene sen luo ja paina E, niin näet, oliko se oikea.",
+      forest: "Etsi eläin, jonka nimi lukee ylhäällä. Mene sen luo ja paina E, niin näet, oliko se oikea. Jotkin eläimet nukkuvat: hiivi luo kyykyssä pitämällä C pohjassa. Jos kävelet tai juokset lähellä, eläin herää ja juoksee karkuun.",
       "city-names": "Etsi se, jonka nimi lukee ylhäällä. Mene sen luo ja paina E, niin näet, oliko se oikea.",
       "city-mixed": "Etsi ajoneuvo, jonka nimi ja väri lukevat ylhäällä, esimerkiksi biila: ruoksat.",
       city: "Etsi ajoneuvo, joka lukee ylhäällä, esimerkiksi rukses biila.",
@@ -89,8 +89,8 @@ const TEXT = {
       classroom: "Hyppää: välilyönti. Jos hyppäät päin pulpettia, kaadut!",
     },
     listen: "Kuuntele, mitä hahmo pyytää etsimään, mene sen luo ja paina E. Kuule pyyntö uudelleen painikkeesta tai R-näppäimestä. Sanat näkyvät kierroksen lopussa.",
-    crouch: "E: ota tai katso se, mikä on lähellä. C: kyykisty.",
-    crouchClassroom: "E tai C: istu tuolille. Kun tuoli ei ole lähellä, C kyykistää.",
+    crouch: "E: ota tai katso se, mikä on lähellä. C pohjassa: kyykisty ja kävele hitaasti kyykyssä.",
+    crouchClassroom: "E tai C: istu tuolille. Kun tuoli ei ole lähellä, C kyykistää, ja kyykyssä voi kävellä hitaasti.",
     ok: "OK",
   },
   useIt: "Ota tai katso",
@@ -222,29 +222,26 @@ function forestWords(findCount, extraCount) {
 }
 
 // A few of each kind of place in a round, so that things are spread all around the store and don't pile up in the crates.
-const STORE_ROOM = { shelf: 4, fridge: 3, freezer: 4, produce: 3 };
+const STORE_ROOM = { shelf: 4, fridge: 3, freezer: 4, produce: 3, pallet: 1 };
 const MEAT_WANTED = 0.5;
-let counterMeat = null;
 function storeWords(findCount, extraCount) {
+  // All the food is in the store, each always in its own place: what the list asks for changes, what's on the shelves doesn't.
+  const food = shuffled(wordsOfTheme("food").filter((word) => window.MAHTTE_MAPS.store.stock[word.sprite]));
+  const meats = food.filter((word) => word.place === "meat");
   const room = {};
-  const food = shuffled(wordsOfTheme("food"));
   const others = food.filter((word) => {
     if (word.place === "meat") return false;
     room[word.place] = (room[word.place] ?? 0) + 1;
     return room[word.place] <= STORE_ROOM[word.place];
   });
-  // One kind of meat on the counter in a round, to keep it easy, so it's the only one the list can ask for.
-  counterMeat = food.find((word) => word.place === "meat");
-  const wanted = Math.random() < MEAT_WANTED ? [counterMeat] : [];
+  const wanted = Math.random() < MEAT_WANTED ? [meats[0]] : [];
   const find = shuffled([...wanted, ...others.slice(0, findCount - wanted.length)]);
-  const extra = [...others.slice(findCount - wanted.length, findCount - wanted.length + extraCount), ...(wanted.length ? [] : [counterMeat])];
-  return { find, extra };
+  return { find, extra: food.filter((word) => !find.includes(word)) };
 }
 
 // The general store has no meat counter. A few of each kind of thing, and all the big ones, so that the showroom is never empty.
 const GEAR_ROOM = { tools: 5, fishing: 5, clothes: 4, platform: 4 };
 function gearWords(findCount, extraCount) {
-  counterMeat = null;
   const room = {};
   const gear = shuffled(wordsOfTheme("gear")).filter((word) => {
     room[word.place] = (room[word.place] ?? 0) + 1;
@@ -258,7 +255,7 @@ function gearWords(findCount, extraCount) {
 
 const THEMES = [
   { id: "home", title: "Koti", place: "home", sprite: "sofa", words: () => plainWords("home", 8, 99) },
-  { id: "forest", title: "Metsä", place: "forest", sprite: "rieban", words: () => forestWords(8, 3) },
+  { id: "forest", title: "Metsä", place: "forest", sprite: "rieban", words: () => forestWords(8, 6) },
   { id: "city-names", title: "Parkkipaikka", level: "helppo", example: "biila", place: "city", sprite: "car", colour: "red", words: () => carParkWords(8, 4) },
   { id: "city-mixed", title: "Parkkipaikka", level: "keskitaso", example: "biila: vielgat", place: "city", sprite: "bus", colour: "yellow", words: () => colouredWords("vehicle", 6, 5, easyPhrase) },
   { id: "city", title: "Parkkipaikka", level: "vaikeampi", example: "vilges biila", place: "city", sprite: "truck", colour: "blue", words: () => colouredWords("vehicle", 6, 5, attributivePhrase) },
@@ -289,15 +286,42 @@ const thisIsFi = (word) => word.thisWordFi || PLURAL_ONLY[word.sprite]?.fi || TE
 const CHOICES = [
   { key: "gender", label: "Hahmo", options: [["boy", "Poika"], ["girl", "Tyttö"]] },
   { key: "outfit", label: "Gákti", options: [["ohcejohka", "1"], ["karasjohka", "2"]] }, // numbered on purpose: no place names for players
-  { key: "hair", label: "Hiusväri", options: [["blond", "Vaalea"], ["brown", "Ruskea"], ["red", "Punainen"]] },
+  { key: "hair", label: "Hiusväri", slider: true, options: [["platinum", "Platina"], ["blond", "Vaalea"], ["red", "Punainen"], ["brown", "Ruskea"], ["dark", "Tumma"], ["black", "Musta"], ["gray", "Harmaa"]] },
   { key: "length", label: "Hiukset", byGender: true },
+  // These two are a place along the list, with every shade between: see rampAt.
+  { key: "eyes", label: "Silmät", slider: true, options: [["blue", "Sininen"], ["green", "Vihreä"], ["gray", "Harmaa"], ["pink", "Pinkki"], ["lilac", "Liila"], ["brown", "Ruskea"], ["black", "Musta"]] },
 ];
-// Each gender has its own styles, the same ones as HAIR_STYLES in tools/make_mahtte.py.
+// Each gender's own, numbered, in the same order as HAIR_STYLES in tools/make_mahtte.py.
+const numberedStyles = (styles) => styles.map((id, i) => [id, String(i + 1)]);
 const STYLES = {
-  boy: [["short", "Lyhyet"], ["tousled", "Pörröiset"], ["mid", "Puolipitkät"]],
-  girl: [["mid", "Puolipitkät"], ["long", "Pitkät"], ["braids", "Letit"]],
+  boy: numberedStyles(["short", "tousled", "parting", "swept", "crop", "fringe", "mid", "lowtail", "curls"]),
+  girl: numberedStyles(["short", "tousled", "mid", "long", "braids", "bun", "ponytail", "bob", "curls"]),
 };
-const HAIR_SWATCHES = { blond: "#e6c46e", brown: "#7a4d2b", red: "#b5472a" };
+// What a style a gender no longer has, or one chosen for the other gender, becomes.
+const NEAREST_STYLE = { long: "mid", braids: "lowtail", bun: "lowtail", ponytail: "lowtail", bob: "fringe", parting: "short", swept: "short", crop: "short", fringe: "bob", lowtail: "ponytail" };
+const styleFor = (gender, style) => (STYLES[gender].some(([id]) => id === style) ? style : NEAREST_STYLE[style] ?? DEFAULT_STYLE[gender]);
+// A sheet is drawn with these key colours for hair and irises, dark to light, and they're swapped for the player's choice as it
+// loads. HAIR_RAMPS is the same as HAIRS in tools/make_mahtte.py, and the keys as HAIR and IRIS there.
+const HAIR_KEYS = [0xfe00a1, 0xfe00a2, 0xfe00a3], EYE_KEYS = [0x00fea1, 0x00fea2, 0x00fea3];
+const HAIR_RAMPS = {
+  platinum: [0xb8a578, 0xe8dcb4, 0xfbf5dc], blond: [0xa9782c, 0xdcae4e, 0xf6d98a], red: [0x7c2a14, 0xb5481d, 0xe27a3a], brown: [0x2f1b17, 0x55321f, 0x835433],
+  dark: [0x1c1210, 0x35231b, 0x54392a], black: [0x0f0d10, 0x1f1b20, 0x3a3338], gray: [0x5c5f62, 0x93979a, 0xcfd2d3],
+};
+const HAIR_ORDER = ["platinum", "blond", "red", "brown", "dark", "black", "gray"];
+const EYE_RAMPS = {
+  blue: [0x2450a6, 0x3a78d6, 0x6ea6ee], green: [0x1f7a3e, 0x35a85a, 0x6bd487], gray: [0x5d6873, 0x87929d, 0xb4bdc6], pink: [0xc23c86, 0xee62a8, 0xfa9ccb],
+  lilac: [0x6d48b0, 0x9570d8, 0xbfa2ee], brown: [0x4f2d15, 0x7a4a24, 0xa36c3a], black: [0x17131c, 0x2a2430, 0x443b4c],
+};
+const EYE_ORDER = ["blue", "green", "gray", "pink", "lilac", "brown", "black"];
+const hexColour = (colour) => `#${colour.toString(16).padStart(6, "0")}`;
+// The colours at a place on a slider, blended between the two nearest.
+function rampAt(order, ramps, place) {
+  const below = Math.min(order.length - 2, Math.floor(place)), part = place - below;
+  const mix = (a, b) => [16, 8, 0].reduce((sum, shift) => sum + (Math.round(((a >> shift) & 255) * (1 - part) + ((b >> shift) & 255) * part) << shift), 0);
+  return ramps[order[below]].map((tone, i) => mix(tone, ramps[order[below + 1]][i]));
+}
+const eyeRamp = (place) => rampAt(EYE_ORDER, EYE_RAMPS, place);
+const hairRamp = (place) => rampAt(HAIR_ORDER, HAIR_RAMPS, place);
 const DEFAULT_STYLE = { boy: "short", girl: "long" };
 const optionsFor = (choice, { gender }) => (choice.byGender ? STYLES[gender] : choice.options);
 const NAMES = { boy: "Máhtte", girl: "Biret" };
@@ -307,9 +331,14 @@ const NAME_MAX = 15;
 const LINE_MAX_MS = 8000; // a line that never finishes must not silence the rest of the game
 const ANNOUNCE_MS = 3000;
 const ANNOUNCE_PAUSE_MS = 900; // after the last find, before the next word appears
-const DEFAULT_LOOK = { gender: "boy", outfit: "ohcejohka", hair: "brown", length: "short" };
+const DEFAULT_LOOK = { gender: "boy", outfit: "ohcejohka", hair: 3, length: "short", eyes: 0 };
 const FRAME_W = 24;
 const FRAME_H = 40;
+const SHEET_DETAIL = 4; // a sheet's pixels to each of the world's
+// Where a frame is on its sheet: two of the animation rows side by side, so that the sheet isn't too tall for a browser.
+const SHEET_ROWS_ACROSS = 2, SHEET_ROW_WIDTH = 8;
+const sheetX = (column, row) => (column + (row % SHEET_ROWS_ACROSS) * SHEET_ROW_WIDTH) * FRAME_W * SHEET_DETAIL;
+const sheetY = (row) => Math.floor(row / SHEET_ROWS_ACROSS) * FRAME_H * SHEET_DETAIL;
 const IDLE_ROW = { down: 0, up: 1, right: 2, left: 2 };
 const ACTIONS = {
   chop: { row: 101, ms: 560 },
@@ -321,6 +350,9 @@ const ACTIONS = {
   pat: { row: 99, ms: 1050 }, // to the right, with the hand low; 100 has it high
 };
 const CROUCH_ROW = 8;
+const CROUCH_WALK_ROWS = 106; // low down and slow, facing down, up, right, lower right and upper right, as with RUN_FACING
+const CROUCH_SPEED = 0.45;
+const STEP_LOUDNESS = { crouch: 0.5, walk: 0.8, run: 1.1 }; // of the footstep sounds' base volume
 // Momentum rows: idle and walk again for each direction and sway, then the lifted hem.
 const SWAY_ROWS = 10;
 const SWAYS = [-2, -1, 1, 2];
@@ -342,7 +374,7 @@ const LESSON_HAND_ROW = 104, LESSON_SIT_ROW = 105;
 // centre line it must be. contact: how much of a step being pushed back by anything counts as hitting it, so only
 // a shallow brush along something is run past.
 const SLIDE = { ms: 340, lookAhead: 1.1, contact: 0.3, headOn: 0.35, freeAhead: 0.8, restMs: 380 };
-const RUN = { speed: 1.8, animation: 1.7, cloth: 1.9, stepStrength: 1.5 };
+const RUN = { speed: 1.8, animation: 1.7, cloth: 1.9 };
 const JUMP = { ms: 520, height: 14, clears: 6 }; // height is half the character; above clears, low things pass under
 const dusty = () => placeName === "forest" || placeName === "camp"; // puffs of dust are for outdoors in the forest, not town or indoors
 const DUST = { path: "240, 228, 196", ground: "214, 208, 164" }; // pale, to show on both; none on the bridge, in town or indoors
@@ -354,14 +386,70 @@ const KNOCK = { sitAt: 220, wipeAt: 1000, wipeFrameMs: 120, pushMs: 220, pushSpe
 const WIPE_ORDER = [0, 1, 2, 3, 2, 3, 4, 5, 4, 5, 6, 7];
 const sheetCache = new Map();
 
-function sheetFor({ outfit, gender, hair, length }, fine = false) {
-  const name = `${fine ? "sprites-2x" : "sprites"}/${outfit}-${gender}-${hair}-${length}`;
-  if (!sheetCache.has(name)) {
+function sheetFor({ outfit, gender, hair, length, eyes }) {
+  const name = `${outfit}-${gender}-${length}`;
+  const had = sheetCache.get(name);
+  if (had?.complete && (had.eyes !== eyes || had.hair !== hair)) recolourSheet(had, hair, eyes);
+  if (!had) {
+    // A sheet takes a lot of memory, and only the one being played is needed.
+    sheetCache.clear();
+    const sheet = document.createElement("canvas");
+    sheet.complete = false;
     const image = new Image();
-    image.src = `art/mahtte/${name}.png`;
-    sheetCache.set(name, image);
+    image.onload = () => {
+      sheet.width = image.width;
+      sheet.height = image.height;
+      sheet.getContext("2d").drawImage(image, 0, 0);
+      findKeyColours(sheet);
+      recolourSheet(sheet, look.hair, look.eyes);
+      sheet.complete = true;
+    };
+    image.src = `art/mahtte/sprites/${name}.png`;
+    sheetCache.set(name, sheet);
   }
   return sheetCache.get(name);
+}
+
+// As the bytes lie in memory: red first, with alpha on top.
+const inMemory = (colour) => (0xff000000 | ((colour & 0xff) << 16) | (colour & 0xff00) | (colour >> 16)) >>> 0;
+
+// Notes where the hair and the irises are, so that they can change colour at any time.
+function findKeyColours(sheet) {
+  const g = sheet.getContext("2d");
+  const data = new Uint32Array(g.getImageData(0, 0, sheet.width, sheet.height).data.buffer);
+  const tones = new Map([...HAIR_KEYS.map((key, i) => [inMemory(key), i]), ...EYE_KEYS.map((key, i) => [inMemory(key), i + HAIR_KEYS.length])]);
+  const places = [...HAIR_KEYS, ...EYE_KEYS].map(() => []);
+  for (let i = 0; i < data.length; i++) {
+    const tone = tones.get(data[i]);
+    if (tone !== undefined) places[tone].push(i);
+  }
+  sheet.keyPlaces = places.map((list) => Int32Array.from(list));
+}
+
+function recolourSheet(sheet, hair, eyes) {
+  const g = sheet.getContext("2d");
+  const pixels = g.getImageData(0, 0, sheet.width, sheet.height);
+  const data = new Uint32Array(pixels.data.buffer);
+  [...hairRamp(hair), ...eyeRamp(eyes)].forEach((tone, i) => {
+    const colour = inMemory(tone);
+    for (const at of sheet.keyPlaces[i]) data[at] = colour;
+  });
+  g.putImageData(pixels, 0, 0);
+  sheet.hair = hair;
+  sheet.eyes = eyes;
+}
+
+// The mouth, a little open while the character is the one speaking. x and y are the world's, for the frame's top left corner.
+function paintTalkingMouth(g, row, column, x, y, flip, scale, now) {
+  if (!playerTalking) return;
+  const mouth = window.MAHTTE_MOUTHS?.[look.gender]?.[row]?.[column];
+  if (!mouth) return;
+  const open = 0.28 + 0.72 * Math.abs(Math.sin(now / 85));
+  const at = flip ? FRAME_W * SHEET_DETAIL - mouth[0] : mouth[0];
+  g.fillStyle = "#6e2230";
+  g.beginPath();
+  g.ellipse(x + (at / SHEET_DETAIL) * scale, y + ((mouth[1] + 1) / SHEET_DETAIL) * scale, Math.max(0.42, mouth[2] / SHEET_DETAIL / 2.3) * scale, 0.52 * open * scale, 0, 0, Math.PI * 2);
+  g.fill();
 }
 
 const DIRS = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
@@ -372,9 +460,23 @@ const KEYS = {
 
 const promptEl = document.getElementById("prompt");
 const cardEl = document.getElementById("card");
+// How to play, over the picture, until it's closed. It comes back with the next round.
+const guideBox = document.getElementById("guide-box");
+document.getElementById("guide-close").addEventListener("click", () => {
+  guideBox.hidden = true;
+  canvas.focus?.();
+});
+function showGuideBox(html) {
+  cardEl.className = "";
+  cardEl.innerHTML = "";
+  guideBox.lastElementChild.innerHTML = html;
+  guideBox.hidden = false;
+}
 const pictureCache = new Map();
 function pictureOf(word) {
   const key = `${word.sprite}/${word.colour || ""}/${word.number ?? ""}/${viewDetail}`;
+  // One made ahead that hasn't loaded yet is only for now.
+  if (window.MAHTTE_ANIMALS?.[word.sprite] && !bakedAnimal(word.sprite, 0, 0)) return modelPicture(word.sprite, word.colour);
   if (!pictureCache.has(key)) {
     pictureCache.set(key, word.number !== undefined ? numberCard(word.number)
       : VEHICLES[word.sprite] ? vehiclePicture(word.sprite, word.colour)
@@ -384,33 +486,33 @@ function pictureOf(word) {
   return pictureCache.get(key);
 }
 
-// A number on a sheet of paper, for the top of a desk.
-const DIGITS = ["111101101101111", "010110010010111", "111001111100111", "111001111001111", "101101111001001", "111100111001111", "111100111101111", "111001001010010", "111101111101111", "111101111001111"];
+// A number on a card, for the top of a desk. The plain picture only holds its size; the fine one is what's seen.
+const CARD_DETAIL = 4;
 function numberCard(number) {
   const text = String(number);
-  const scale = 2;
   const c = document.createElement("canvas");
-  c.width = text.length * 8 + 4;
+  c.width = text.length * 7 + 6;
   c.height = SPRITE_SIZE;
-  const g = c.getContext("2d");
-  g.fillStyle = OUTLINE;
-  g.fillRect(0, 2, c.width, 16);
-  g.fillStyle = "#fbf6e8";
-  g.fillRect(1, 3, c.width - 2, 14);
-  g.fillStyle = "#c8372d";
-  [...text].forEach((digit, i) => {
-    [...DIGITS[digit]].forEach((bit, k) => {
-      if (bit === "1") g.fillRect(3 + i * 8 + (k % 3) * scale, 5 + Math.floor(k / 3) * scale, scale, scale);
-    });
-  });
-  // At double detail it's plainly twice the size, as Scale2x would round a 7 into something like a question mark.
   c.fine = document.createElement("canvas");
-  c.fine.width = c.width * 2;
-  c.fine.height = c.height * 2;
-  const fine = c.fine.getContext("2d");
-  fine.imageSmoothingEnabled = false;
-  fine.drawImage(c, 0, 0, c.fine.width, c.fine.height);
-  c.fine.detail = 2;
+  c.fine.width = c.width * CARD_DETAIL;
+  c.fine.height = c.height * CARD_DETAIL;
+  c.fine.detail = CARD_DETAIL;
+  const g = c.fine.getContext("2d");
+  g.scale(CARD_DETAIL, CARD_DETAIL);
+  const top = SPRITE_SIZE - 15, high = 13;
+  g.fillStyle = "#4a3a2a";
+  g.beginPath();
+  g.roundRect(0, top, c.width, high, 1.4);
+  g.fill();
+  g.fillStyle = "#fbf6e8";
+  g.beginPath();
+  g.roundRect(0.4, top + 0.4, c.width - 0.8, high - 0.8, 1.1);
+  g.fill();
+  g.fillStyle = "#c8372d";
+  g.font = 'bold 12px Ubuntu, "DejaVu Sans", Verdana, sans-serif';
+  g.textAlign = "center";
+  g.textBaseline = "middle";
+  g.fillText(text, c.width / 2, top + high / 2 + 0.6);
   return c;
 }
 
@@ -440,7 +542,11 @@ let runKey = false; // Shift, or the run button on the on-screen pad
 function loadLook() {
   try {
     const saved = JSON.parse(localStorage.getItem("mahtte.look"));
-    return saved?.gender in STYLES && CHOICES.every((c) => optionsFor(c, saved).some(([id]) => id === saved[c.key])) ? saved : null;
+    // Saved before the sliders, or before eyes could be chosen.
+    if (saved && typeof saved.eyes !== "number") saved.eyes = Math.max(0, EYE_ORDER.indexOf(saved.eyes));
+    if (saved?.gender in STYLES) saved.length = styleFor(saved.gender, saved.length);
+    if (saved && typeof saved.hair !== "number") saved.hair = HAIR_ORDER.includes(saved.hair) ? HAIR_ORDER.indexOf(saved.hair) : DEFAULT_LOOK.hair;
+    return saved?.gender in STYLES && CHOICES.every((c) => c.slider || optionsFor(c, saved).some(([id]) => id === saved[c.key])) ? saved : null;
   } catch {
     return null;
   }
@@ -682,6 +788,11 @@ function newRound() {
     const placed = [];
     const place = { forest: theme.place === "forest", store: isShop(theme.place) };
     objects = picked.map((word) => {
+      const tiles = theme.place === "store" && window.MAHTTE_MAPS.store.stock[word.sprite];
+      if (tiles) {
+        const [x, y] = tiles[tiles.length >> 1];
+        return { word, x, y, tiles, phase: 0 };
+      }
       if (word.place === "home") {
         const [x, y, facing] = SPOTS.home[word.sprite];
         return { word, x, y, facing, phase: Math.random() * 3000 };
@@ -708,6 +819,8 @@ function newRound() {
     });
     if (everythingInReach()) break;
   }
+  chooseDogBreed();
+  chooseSleepers();
   prepareLines(objects.map((o) => wordLine(o.word))); // only this round's, as there are hundreds in all
   buildAnimalsAhead();
   buildStoreAhead();
@@ -778,7 +891,7 @@ function showPrompt() {
   const starRow = "★".repeat(stars) + "☆".repeat(roundSize - stars);
   if (!theme) {
     promptEl.innerHTML = `<span>${escapeText(TEXT.choosePlace(loadName()))}</span>`;
-  } else if (cart.spilled.length && !targets.length) {
+  } else if (cart.spilled.length && targets.every((word) => cart.spilled.some((item) => item.word === word))) {
     promptEl.innerHTML = `<span>${TEXT.pickFallen}</span>`;
   } else if (STORE_PROMPTS[cart.stage] && isShop(theme.place)) {
     promptEl.innerHTML = `<span>${TEXT[cart.stage === "price" && theme.counts ? "storePriceTyped" : STORE_PROMPTS[cart.stage]]}</span>`;
@@ -821,6 +934,7 @@ function showPrompt() {
 let voiceQueue = [];
 let voiceDone = null;
 let voiceBusy = false;
+let playerTalking = false; // the line being said is in the character's own voice
 
 // Lines are decoded ahead and played through the same sound channel as the footsteps. Two separate audio
 // streams opening and closing is a common cause of dropouts. Opened as a file the browser can't load them this way,
@@ -896,6 +1010,8 @@ async function playNextLine() {
   const line = voiceQueue.shift();
   // A line can come with a speed, which also raises its pitch: that's how classmates get voices of their own.
   const src = line?.src ?? line, rate = line?.rate ?? 1;
+  // A classmate or cashier has the same line played at another speed.
+  playerTalking = Boolean(src) && !line?.rate && src.endsWith(`-${VOICES[look.gender]}.wav`);
   if (!src) {
     voiceBusy = false;
     duckAmbience(false);
@@ -981,6 +1097,7 @@ function stopVoice() {
   silenceLine();
   voiceQueue = [];
   voiceBusy = false;
+  playerTalking = false;
   duckAmbience(false);
   voiceDone?.();
   voiceDone = null;
@@ -1064,8 +1181,8 @@ function showBubble(say, note) {
   cardEl.innerHTML = "";
   const figure = document.createElement("figure");
   const canvasEl = document.createElement("canvas");
-  canvasEl.width = FRAME_W;
-  canvasEl.height = FRAME_H;
+  canvasEl.width = FRAME_W * SHEET_DETAIL;
+  canvasEl.height = FRAME_H * SHEET_DETAIL;
   const nameEl = document.createElement("figcaption");
   nameEl.lang = "se";
   nameEl.textContent = NAMES[look.gender];
@@ -1152,8 +1269,7 @@ const PLACE_MAPS = { home: "koti", forest: "elaimet", city: "parkkipaikka", libr
 // The menu's sections, by how far along the places are. A new place has to be added to one of them to show.
 const MENU_SECTIONS = [
   { heading: "Pelattava demo", places: ["forest", "store", "classroom"], look: "ready" },
-  { heading: "Pelattava, mutta ominaisuuksia voi puuttua", places: ["home", "city", "library", "gearstore"], look: "partly" },
-  { heading: "Testattavissa, mutta ominaisuudet ja pelattavuus puutteelliset", places: ["camp"], look: "early" },
+  { heading: "Keskeneräiset kentät – näitä voi testata, mutta niiden kehitys on vasta alkamassa", places: ["home", "city", "library", "gearstore", "camp"], look: "partly" },
 ];
 
 // A finer picture for the menu than the one on a word's card: built again at double detail where it's made of round shapes, and
@@ -1250,8 +1366,8 @@ function menuPlaces() {
   const who = document.createElement("div");
   who.className = "who";
   const avatar = document.createElement("canvas");
-  avatar.width = FRAME_W;
-  avatar.height = FRAME_H;
+  avatar.width = FRAME_W * SHEET_DETAIL;
+  avatar.height = FRAME_H * SHEET_DETAIL;
   preview = avatar.getContext("2d");
   const name = document.createElement("span");
   name.textContent = loadName() || NAMES[look.gender];
@@ -1439,6 +1555,35 @@ function greet() {
   else sayHello(name);
 }
 
+// A slider running through the colours, with every shade between them. The name is of the nearest one.
+function colourSlider({ key, label, options }, order, ramps, changed) {
+  const holder = document.createElement("div");
+  holder.className = "eye-slider";
+  const slider = document.createElement("input");
+  slider.type = "range";
+  slider.min = 0;
+  slider.max = options.length - 1;
+  slider.step = 0.02;
+  slider.value = look[key];
+  slider.setAttribute("aria-label", label);
+  slider.style.background = `linear-gradient(to right, ${order.map((id) => hexColour(ramps[id][1])).join(", ")})`;
+  const name = document.createElement("span");
+  const show = () => {
+    look[key] = Number(slider.value);
+    const text = options[Math.round(look[key])][1];
+    name.textContent = text;
+    slider.setAttribute("aria-valuetext", text);
+    slider.style.setProperty("--eye", hexColour(rampAt(order, ramps, look[key])[1]));
+  };
+  slider.addEventListener("input", () => {
+    show();
+    changed();
+  });
+  show();
+  holder.append(slider, name);
+  return holder;
+}
+
 function showChooser() {
   document.body.classList.add("menu");
   promptEl.innerHTML = `<span>${TEXT.makeCharacter}</span>`;
@@ -1451,8 +1596,8 @@ function showChooser() {
   cardEl.innerHTML = "";
   const figure = document.createElement("figure");
   const canvasEl = document.createElement("canvas");
-  canvasEl.width = FRAME_W;
-  canvasEl.height = FRAME_H;
+  canvasEl.width = FRAME_W * SHEET_DETAIL;
+  canvasEl.height = FRAME_H * SHEET_DETAIL;
   const nameEl = document.createElement("figcaption");
   nameEl.lang = "se";
   figure.append(canvasEl, nameEl);
@@ -1470,25 +1615,24 @@ function showChooser() {
     const row = document.createElement("div");
     row.className = "choice";
     row.innerHTML = `<span class="note">${label}</span>`;
+    if (choice.slider) {
+      row.append(colourSlider(choice, key === "eyes" ? EYE_ORDER : HAIR_ORDER, key === "eyes" ? EYE_RAMPS : HAIR_RAMPS, refresh));
+      rows.append(row);
+      continue;
+    }
     const options = document.createElement("div");
     options.className = "options";
     row.append(options);
     for (const [value, text] of optionsFor(choice, look)) {
       const button = document.createElement("button");
       button.textContent = text;
-      if (key === "hair") {
-        const swatch = document.createElement("span");
-        swatch.className = "swatch";
-        swatch.style.background = HAIR_SWATCHES[value];
-        button.prepend(swatch);
-      }
       button.dataset.key = key;
       button.dataset.value = value;
       button.addEventListener("click", () => {
         look[key] = value;
         if (key === "gender") {
           // The list of styles changes with the gender, so the rows are drawn again.
-          if (!STYLES[value].some(([id]) => id === look.length)) look.length = DEFAULT_STYLE[value];
+          look.length = styleFor(value, look.length);
           showChooser();
           cardEl.querySelector(`button[data-key=gender][data-value=${value}]`).focus();
           return;
@@ -1518,8 +1662,7 @@ function showChooser() {
 function showStartCard() {
   paused = false;
   preview = null;
-  cardEl.className = "";
-  cardEl.innerHTML = `<div class="note">${theme?.desks ? TEXT.startClassroom : TEXT.start}</div>`;
+  showGuideBox(theme?.desks ? TEXT.startClassroom : TEXT.start);
   announce();
 }
 
@@ -1536,7 +1679,7 @@ function showCard(word, right, count = 1) {
   } else cardEl.innerHTML = `<div>
       <div class="note">${right ? TEXT.found : FAMILY.has(word.sprite) ? TEXT.thisIsPerson : TEXT.thisIs}</div>
       <div><span class="word" lang="se">${escapeText(count > 1 ? TEXT.enough(word) : word.lemma)}</span>
-        <span class="translation">= ${count > 1 ? `${count} × ` : ""}${escapeText(translation(word))}</span></div>
+        <span class="translation">= ${count > 1 ? `${count} × ` : ""}${escapeText(translation(word))}${word.sprite === "beana" && placeName === "forest" ? ` (${DOG_BREEDS[dogBreed]})` : ""}</span></div>
       ${plural && count === 1 ? `<div class="note">${TEXT.plural} <span lang="se">${escapeText(plural)}</span></div>` : ""}
     </div>`;
   const picture = document.createElement("canvas");
@@ -1630,7 +1773,6 @@ function touch(object, now) {
   stars++;
   if (isShop(placeName)) {
     pickOne(object.word);
-    if (object.word.place === "meat") cart.meatSpot = [object.x, object.y]; // what was taken doesn't come straight back
   }
   heardWords.push(object.word);
   targets.splice(targets.indexOf(object.word), 1);
@@ -1655,6 +1797,9 @@ function touch(object, now) {
 // In the forest the right animal reacts before it goes: most are patted, a cat purrs, a dog pants, a butterfly lands on a
 // raised hand, a bird flaps and flies off, and nobody pats a bear.
 const REACTIONS = {
+  gumpe: { pose: "cheer", ms: 800 },
+  geatki: { pose: "cheer", ms: 800 },
+  albbas: { pose: "cheer", ms: 800 },
   gahttu: { pose: "pat", sound: "purr", say: "*purrrr*", ms: 1500 },
   beana: { pose: "pat", sound: "pant", ms: 1500 },
   beaiveloddi: { pose: "raiseHand", lands: true, ms: 1300 },
@@ -1812,7 +1957,8 @@ function thingAtPoint(x, y) {
   const homeThings = objects.filter((o) => o.word.place === "home" && pointToBox(x, y, vehicleBox(o)) < 0.2);
   const area = (o) => HOME_THINGS[o.word.sprite][0] * HOME_THINGS[o.word.sprite][1];
   const onCounter = OPEN_SPOTS.meat?.some(([a, b]) => a === Math.floor(x) && b === Math.floor(y));
-  return homeThings.sort((p, q) => area(p) - area(q))[0] || objectAt(Math.floor(x), Math.floor(y)) || (onCounter && objects.find((o) => o.word.place === "meat"));
+  const inStock = objects.find((o) => o.tiles?.some(([a, b]) => a === Math.floor(x) && b === Math.floor(y)));
+  return homeThings.sort((p, q) => area(p) - area(q))[0] || inStock || objectAt(Math.floor(x), Math.floor(y)) || (onCounter && objects.find((o) => o.word.place === "meat"));
 }
 
 // ------------------------------------------------------------- free movement
@@ -1873,11 +2019,13 @@ function vehicleBox(o) {
   return { x0: cx - wide / 2, x1: cx + wide / 2, y0: cy - long / 2, y1: cy + long / 2 };
 }
 
+// Fridges, freezers and shelves are only open at the front, and the counter on the shop's side: from anywhere else nothing can be taken. A fruit table is open all round.
+const fromBehind = ({ word: { place }, tiles: [[a, b]] }, x, y) => (place === "meat" ? x < a + 1 : (place === "fridge" || place === "freezer" || place === "shelf") && y < b + 1);
 const pointToBox = (x, y, box) => Math.hypot(x - Math.max(box.x0, Math.min(box.x1, x)), y - Math.max(box.y0, Math.min(box.y1, y)));
 // How far a point is from a thing: from the edge of a parked vehicle, otherwise from the thing's centre.
-// All the plates on the butcher's counter are this round's one meat, so any of them will do.
+// What's for sale in the store fills several tiles in a row, and can be taken from any of them.
 const awayFrom = (o, x, y) => (boxed(o) ? pointToBox(x, y, vehicleBox(o))
-  : o.word.place === "meat" ? Math.min(...OPEN_SPOTS.meat.map(([a, b]) => Math.hypot(x - a - 0.5, y - b - 0.5)))
+  : o.tiles ? (fromBehind(o, x, y) ? Infinity : Math.min(...o.tiles.map(([a, b]) => Math.hypot(x - a - 0.5, y - b - 0.5))))
   : Math.hypot(x - o.x - 0.5, y - o.y - 0.5));
 
 function pushOutOfBox(box) {
@@ -1930,15 +2078,16 @@ function pushOutOfTile(tx, ty) {
 
 // Only trunks, things and water block, and being pushed out sideways is what makes the character slide.
 function collide() {
+  if (placeName === "store" && me.y < STORE_GATE.y - 0.3) cart.inside = true;
   for (let pass = 0; pass < 2; pass++) {
     const tx = Math.floor(me.x), ty = Math.floor(me.y);
     for (let b = -1; b <= 1; b++) for (let a = -1; a <= 1; a++) {
       const x = tx + a, y = ty + b;
-      if (SOLID_TILES.has(tileOr(x, y, "g"))) pushOutOfTile(x, y);
+      if (SOLID_TILES.has(tileOr(x, y, "g")) || gateShut(x, y)) pushOutOfTile(x, y);
       const tree = treesNear.get(`${x},${y}`);
-      if (tree && Math.hypot(me.x - tree.mx, me.y - tree.my) < MOVE.trunk + MOVE.radius) {
+      if (tree && Math.hypot(me.x - tree.mx, me.y - tree.my) < (tree.trunk ?? MOVE.trunk) + MOVE.radius) {
         me.hitTree = tree;
-        pushOutOfCircle(tree.mx, tree.my, MOVE.trunk + MOVE.radius);
+        pushOutOfCircle(tree.mx, tree.my, (tree.trunk ?? MOVE.trunk) + MOVE.radius);
       }
     }
     for (const chair of chairs) {
@@ -2001,12 +2150,12 @@ function blockedAt(x, y, goal, room = MOVE.radius - 0.02) { // standing right ag
   const tx = Math.floor(x), ty = Math.floor(y);
   for (let b = -1; b <= 1; b++) for (let a = -1; a <= 1; a++) {
     const cx = tx + a, cy = ty + b;
-    if (SOLID_TILES.has(tileOr(cx, cy, "g"))) {
+    if (SOLID_TILES.has(tileOr(cx, cy, "g")) || gateShut(cx, cy)) {
       const nx = Math.max(cx, Math.min(cx + 1, x)), ny = Math.max(cy, Math.min(cy + 1, y));
       if (Math.hypot(x - nx, y - ny) < room) return true;
     }
     const tree = treesNear.get(`${cx},${cy}`);
-    if (tree && Math.hypot(x - tree.mx, y - tree.my) < MOVE.trunk + room) return true;
+    if (tree && Math.hypot(x - tree.mx, y - tree.my) < (tree.trunk ?? MOVE.trunk) + room) return true;
   }
   if (chairs.some((chair) => Math.hypot(x - chair.x, y - chair.y) < SIT_CHAIR_SIZE + room)) return true;
   if (trolleySolid(x, y, room)) return true;
@@ -2114,6 +2263,7 @@ function enterPlace(name) {
     // In a fixture, the rest of its own row is no obstacle; things are drawn in front of it.
     shelf: SPOTS.shelf || [],
     fridge: SPOTS.fridge || [],
+    pallet: SPOTS.pallet || [],
     freezer: SPOTS.freezer || [],
     produce: SPOTS.produce || [],
     tools: SPOTS.tools || [],
@@ -2150,7 +2300,7 @@ function routeToPoint(goalX, goalY, closeEnough) {
   let closest = null;
   let closestAway = Infinity;
   const from = spreadOverGrid((cx, cy, x, y) => {
-    const away = me.goal && boxed(me.goal) ? pointToBox(x, y, vehicleBox(me.goal)) : Math.hypot(x - goalX, y - goalY);
+    const away = me.goal && boxed(me.goal) ? pointToBox(x, y, vehicleBox(me.goal)) : me.goal?.tiles ? awayFrom(me.goal, x, y) : Math.hypot(x - goalX, y - goalY);
     if (away < closestAway) {
       closestAway = away;
       closest = [cx, cy];
@@ -2782,11 +2932,82 @@ function endFlight(o, a, now) {
   a.aim = null;
 }
 
+// In the forest a mammal now and then sleeps. Someone walking or running nearby wakes it, and it runs off for a while; someone
+// creeping by doesn't. Returns whether that's all it does for now.
+const SLEEP = { most: 2, fromStartMs: 180000, onResting: 0.00004, leastMs: 25000, moreMs: 45000, wakesWalking: 3.4, wakesRunning: 6, fleeLeastMs: 5000, fleeMoreMs: 5000, flee: 0.0036, hop: 0.0042, fleeFrameMs: 95, spotFrom: 3, spotTo: 11 };
+const sleeps = (o) => (o.word.sprite === "beana" ? true : window.MAHTTE_ANIMALS?.[o.word.sprite]?.frames.includes(12));
+// Most stay awake: one or two in a round sleep from the start, and if it was one, another may doze off later.
+let sleepersThisRound = 0;
+function chooseSleepers() {
+  if (placeName !== "forest") return;
+  const chosen = shuffled(objects.filter(sleeps)).slice(0, 1 + Math.floor(Math.random() * SLEEP.most));
+  chosen.forEach((o) => { o.startsAsleep = true; });
+  sleepersThisRound = chosen.length;
+}
+
+function sleepOrFlee(o, a, way, dt, now) {
+  if (!sleeps(o)) return false;
+  a.sleepUntil ??= o.startsAsleep ? now + SLEEP.fromStartMs : 0;
+  if (now < a.sleepUntil) {
+    const away = Math.hypot(me.x - o.x - 0.5, me.y - o.y - 0.5);
+    const loud = me.moving && !crouching && me.knockedAt === null;
+    if (!loud || away >= (me.running ? SLEEP.wakesRunning : SLEEP.wakesWalking)) return true;
+    a.sleepUntil = 0;
+    if (o.word.sprite === "beana") return false;
+    a.fleeUntil = now + SLEEP.fleeLeastMs + Math.random() * SLEEP.fleeMoreMs;
+    a.aim = null;
+    if (o === me.goal) { // it's up and gone, so there's no use in walking on to where it was
+      me.goal = null;
+      me.route = [];
+    }
+  }
+  if (now < (a.fleeUntil ?? 0)) {
+    a.clock += dt;
+    if (!a.aim) a.aim = fleeSpot(o);
+    if (!a.aim) return true;
+    const dx = a.aim[0] - o.x, dy = a.aim[1] - o.y, left = Math.hypot(dx, dy);
+    const step = (way.hops ? SLEEP.hop : SLEEP.flee) * dt;
+    a.facing = facingTowards(dx, dy);
+    const nextX = left <= step ? a.aim[0] : o.x + (dx / left) * step, nextY = left <= step ? a.aim[1] : o.y + (dy / left) * step;
+    if (left <= step || blockedAt(nextX + 0.5, nextY + 0.5, o, 0.2)) a.aim = null;
+    if (!blockedAt(nextX + 0.5, nextY + 0.5, o, 0.2)) {
+      o.x = nextX;
+      o.y = nextY;
+    }
+    return true;
+  }
+  if (a.fleeUntil) { // it has settled where it got to
+    a.fleeUntil = 0;
+    a.aim = null;
+    a.homeX = o.x;
+    a.homeY = o.y;
+    a.restUntil = now + WANDER.restMs;
+    return true;
+  }
+  if (sleepersThisRound < SLEEP.most && !a.aim && now < a.restUntil && Math.random() < SLEEP.onResting * dt) {
+    sleepersThisRound++;
+    a.sleepUntil = now + SLEEP.leastMs + Math.random() * SLEEP.moreMs;
+  }
+  return false;
+}
+
+// Somewhere with a clear way there, further from the player than the animal is now.
+function fleeSpot(o) {
+  const from = Math.hypot(me.x - o.x - 0.5, me.y - o.y - 0.5);
+  return shuffled(OPEN_SPOTS.land).find(([x, y]) => {
+    const away = Math.hypot(x - o.x, y - o.y);
+    return away >= SLEEP.spotFrom && away <= SLEEP.spotTo
+      && Math.hypot(x + 0.5 - me.x, y + 0.5 - me.y) > from + 1
+      && clearLine(o.x + 0.5, o.y + 0.5, x + 0.5, y + 0.5, o);
+  }) || null;
+}
+
 function updateAnimals(dt, now) {
   for (const o of objects) {
     if (!ANIMALS.has(o.word.sprite) || o.reaction) continue;
     const a = o.animal ??= { homeX: o.x, homeY: o.y, facing: Math.floor(Math.random() * 4), restUntil: now + Math.random() * WANDER.moreRestMs, aim: null, clock: Math.random() * 1000, hopAt: null };
     const way = ANIMAL_WAYS[o.word.sprite];
+    if (placeName === "forest" && sleepOrFlee(o, a, way, dt, now)) continue;
     if ((way.looks || way.greets) && now - (a.lookedAt ?? -Infinity) > WANDER.lookEveryMs) {
       a.head = facingTowards(me.x - o.x - 0.5, me.y - o.y - 0.5);
       a.lookedAt = now;
@@ -2905,16 +3126,41 @@ async function buildAnimalsAhead() {
 // player: nobody bumps into them, nobody can touch them, and what they pick stays on the shelf.
 const SHOPPING = { least: 5, most: 7, startWith: 3, walk: 0.0015, stepMs: 170, wants: 5, pickMs: 900, browseMs: 3000, moreBrowseMs: 6000, unloadMs: 350, scanMs: 350, payMs: 1000, bagMs: 400, newAfter: 2500, moreNewAfter: 4500, fadeMs: 400, apart: 1.5, awayFromGoal: 2.5, buildRestMs: 100 };
 // Where things are, as tile positions like those of the words in the store.
-const TILL = {
-  door: [15, 19], outside: [15, 19.9], doorway: [15, 20], baskets: [12.3, 19.1], takeBasket: [13.3, 19], queue: [[3.2, 15], [2.2, 15], [2.2, 14], [2.2, 13], [2.2, 12], [2.2, 11]], unload: [6.2, 17], pay: [8.5, 17], zone: [5.3, 11, 16.5, 18.05, 18.95, 20], takeBag: [9.9, 17], usedBaskets: [10.3, 18], basketsFull: 5, startBaskets: 14, staffDoor: [1.5, 16], staffAtUsed: [10.3, 17], staffAtDoor: [12.3, 18],
+const ONE_TILL = {
+  door: [15, 19], outside: [15, 19.9], doorway: [15, 20], baskets: [12.3, 19.1], takeBasket: [13.3, 19], queue: [[3.2, 15], [2.2, 15], [2.2, 14], [2.2, 13], [2.2, 12], [2.2, 11]], unload: [6.2, 17], pay: [8.5, 17], zone: [5.3, 11, 16.5, 18.05, 18.95, 20], takeBag: [9.9, 17], usedBaskets: [10.3, 18], basketsFull: 5, startBaskets: 14, staffDoor: [1.5, 16], staffAtUsed: [10.3, 17], staffAtDoor: [12.3, 18], stockDoor: [3.4, 16],
   cashier: [8.1, 19.1], belt: [7.2, 18], beltTiles: [6], beltFrom: 5.9, beltTo: 7.9, goodsApart: 0.5, beltHolds: 5, beltSpeed: 0.002, register: [8.4, 18], registerReach: 0.6, bag: [9.3, 18], closed: 14, counterTop: 11,
 };
-const BASKET_TILES = new Set([TILL.baskets, TILL.usedBaskets].map(([x, y]) => `${Math.round(x)},${Math.round(y)}`)); // nobody walks through the stacks
+// The grocery store's two lanes, side by side and going the same way. Everyone goes through towards the door, and shares the baskets.
+const storeLane = (x) => ({
+  ...ONE_TILL, door: [37, 31], outside: [37, 31.9], doorway: [37, 32], baskets: [40.9, 25.9], takeBasket: [40.3, 25.5], staffDoor: [1.5, 25], stockDoor: [3.4, 25], staffAtUsed: [27.3, 29], staffAtDoor: [41.3, 25], usedBaskets: [27.3, 30], // fresh baskets just inside the gate, on its right
+  upright: true, faceTill: 1, cashierFacing: 3, // its belt runs along y, towards the door's side of the barrier, with the customer on the left
+  queue: [[x - 1, 23.2], [x - 1, 22.2], [x - 1, 21.2], [x - 1, 20.2], [x - 2, 20.2], [x - 3, 20.2]], unload: [x - 1, 24.2], pay: [x - 1, 26.5], takeBag: [x - 1, 27.9], zone: [23.3, 29, x - 1.5, x + 0.05],
+  cashier: [x + 1.1, 25.5], belt: [x, 25.2], beltTiles: [24], beltFrom: 23.9, beltTo: 25.9, register: [x, 26.4], bag: [x, 27.3],
+});
+const STORE_LANES = [storeLane(24), storeLane(20)];
+// The way into the store, at these tiles of the barrier: once inside there's no going back out through it. Must match tools/make_map.py.
+const STORE_GATE = { y: 27, x0: 39, x1: 41 };
+const gateShut = (x, y) => placeName === "store" && cart.inside && y === STORE_GATE.y && x >= STORE_GATE.x0 && x < STORE_GATE.x1;
+// Where along a lane's belt a thing is, and how far along it the character stands.
+const onBelt = (lane, along) => (lane.upright ? [lane.belt[0], along] : [along, lane.belt[1]]);
+let LANES = [ONE_TILL], TILL = ONE_TILL, laneNow = 0;
+let BASKET_TILES = new Set(); // nobody walks through the stacks
+function chooseLanes(place) {
+  LANES = place === "store" ? STORE_LANES : [ONE_TILL];
+  BASKET_TILES = new Set([LANES[0].baskets, LANES[0].usedBaskets].map(([x, y]) => `${Math.round(x)},${Math.round(y)}`));
+}
+// What's done at a till is done at the lane in hand. Between times that's the player's.
+function useLane(lane) {
+  laneNow = lane;
+  TILL = LANES[lane];
+  till = tills[lane];
+}
 // Each customer has a look for each kind of shop, with that shop's goods in the basket.
 const customerLooks = () => Object.keys(PERSON_LOOKS).filter((name) => !["cashier", "stocker", "butcher"].includes(name) && !/^(teacher|classmate|store_cashier|cashier_man)/.test(name) && name.startsWith("gear_") === (placeName === "gearstore"));
 const DISPLAY_TILES = new Set("SRZPOU");
 let shoppers = [];
-let till = { queue: [], current: null, goods: [], bag: null, scanning: false, usedBaskets: 0, baskets: TILL.startBaskets };
+const newLaneState = (stacks) => ({ queue: [], current: null, goods: [], bag: null, scanning: false, get usedBaskets() { return stacks.used; }, set usedBaskets(n) { stacks.used = n; }, get baskets() { return stacks.fresh; }, set baskets(n) { stacks.fresh = n; } });
+let tills = [newLaneState({ used: 0, fresh: 0 })], till = tills[0];
 let stocker = null;
 let wantedShoppers = 0, nextShopperIn = 0;
 
@@ -2930,6 +3176,8 @@ function shopperPath(fromX, fromY, toX, toY, roundTrolley = true) {
     if (`${here}` === `${goal}`) break;
     for (const [dx, dy] of MODEL_FACINGS) {
       const next = [here[0] + dx, here[1] + dy];
+      // Over the store's barrier, everyone goes in by the gate and out by a lane.
+      if (placeName === "store" && next[1] === STORE_GATE.y && next[1] !== here[1] && (next[1] < here[1]) !== (next[0] >= STORE_GATE.x0 && next[0] < STORE_GATE.x1)) continue;
       if (cameFrom.has(`${next}`) || SOLID_TILES.has(tileOr(next[0], next[1], "X")) || BASKET_TILES.has(`${next}`) || (roundTrolley && `${next}` === trolleyTile())) continue;
       cameFrom.set(`${next}`, here);
       open.push(next);
@@ -3007,29 +3255,14 @@ function newShopper(inside) {
 }
 
 // One picture at a time with a rest between, whoever it's for, so that drawing them doesn't hold up the game.
-let shopperBuilding = false;
-const shopperPictures = [];
-
-async function buildShopperAhead(s) {
-  for (const carrying of ["none", 0, 1, 2, 3, s.bag]) {
-    for (let facing = 0; facing < 4; facing++) {
-      for (let frame = 0; frame < 3; frame++) shopperPictures.push([s, facing, frame, carrying]);
-    }
-  }
-  if (shopperBuilding) return;
-  shopperBuilding = true;
-  while (shopperPictures.length) {
-    const [who, facing, frame, carrying] = shopperPictures.shift();
-    if (!shoppers.includes(who)) continue;
-    plainModelImage(`person_${who.look}`, facing, frame, facing, carrying);
-    await new Promise((resolve) => setTimeout(resolve, SHOPPING.buildRestMs));
-  }
-  shopperBuilding = false;
+// Everyone's pictures are made ahead, so it's only a matter of having them loaded before they're seen.
+function buildShopperAhead(s) {
+  bakedAnimal(`person_${s.look.replace("gear_", "")}`, 0, 0);
 }
 
 // The player's own basket: taken from the stack by the door. A fall drops it and spills what's in it, and the character
 // picks the basket up again on getting up. The shopping must be walked over to gather it back, quietly.
-const newCart = () => ({ cashier: Math.random() < 0.5 ? "biret" : "mahtte", greeted: false, has: false, bag: null, stage: "basket", goods: [], dropped: null, spilled: [], said: new Set(), scanIn: 0, total: 0, typed: "", want: new Map() });
+const newCart = () => ({ inside: false, lane: 0, cashier: Math.random() < 0.5 ? "biret" : "mahtte", has: false, bag: null, stage: "basket", goods: [], dropped: null, spilled: [], said: new Set(), scanIn: 0, total: 0, typed: "", want: new Map() });
 
 // What each thing costs, in whole euros: prices on s-kaupat.fi on 2026-11-04 (no shop chosen), rounded, at least 1.
 // Small packs, so that nothing costs more than 8: coffee 250 g, a small cake.
@@ -3039,6 +3272,7 @@ const SHOP_PRICES = {
   juice: 1, yoghurt: 1, flour: 1, rice: 2, tea: 3, chocolate: 4, candy: 3, cookie: 2, cake: 5, soda: 2, pizza: 4, mushroom: 2, lingonberry: 2, jam: 1,
   gum: 2, bun: 1, pancake: 2,
   reindeermeat: 2, // a 50 g plate, worked out from 15.89 for 400 g
+  crispbread: 3, ryebread: 3, toast: 2, smokedmeat: 4, // guessed, not from s-kaupat.fi: for the user to check
   steak: 5, mince: 4, pork: 3,
   cloudberry: 6, // no price found: an estimate
   // The general store's are play prices and not real ones: a whole list has to stay within what the cashier can say.
@@ -3053,6 +3287,9 @@ const MOST_OF_ONE = 5, MAX_TOTAL = 99; // the cashier has a spoken line for ever
 function pickOne(word) {
   cart.goods.push(word);
   cart.total += SHOP_PRICES[word.sprite];
+  // Taken from the shelf again, one of those on the floor isn't needed any more.
+  const fallen = cart.spilled.find((item) => item.word === word);
+  if (fallen) cart.spilled = cart.spilled.filter((item) => item !== fallen);
 }
 
 // Nobody buys three boats either. "platform" is where the big things stand.
@@ -3076,11 +3313,15 @@ const fallingDown = () => me.knockedAt !== null || me.slideAt !== null || me.res
 
 function spillBasket(now) {
   if ((!cart.has && !cart.bag) || cart.dropped) return;
+  // Only where the character can walk to, and with nothing in the way: what hits a fridge or a shelf falls back on this side of it,
+  // and nothing lands behind the butcher's counter.
+  const walkable = spreadOverGrid(() => false);
+  const fine = (x, y) => walkable.has(gridKey(Math.floor(x * GRID), Math.floor(y * GRID))) && clearLine(me.x, me.y, x, y);
   const lands = () => {
-    for (let i = 0; i < 12; i++) {
-      const angle = Math.random() * Math.PI * 2, far = CART.spillNear + Math.random() * (CART.spillFar - CART.spillNear);
+    for (let i = 0; i < 24; i++) {
+      const angle = Math.random() * Math.PI * 2, far = (CART.spillNear + Math.random() * (CART.spillFar - CART.spillNear)) * (1 - i / 32);
       const x = me.x + Math.cos(angle) * far, y = me.y + Math.sin(angle) * far;
-      if (!blockedAt(x, y) && !cart.spilled.some((item) => Math.hypot(item.x - x, item.y - y) < 0.5)) return [x, y];
+      if (fine(x, y) && !cart.spilled.some((item) => Math.hypot(item.x - x, item.y - y) < 0.5)) return [x, y];
     }
     return [me.x, me.y];
   };
@@ -3089,14 +3330,31 @@ function spillBasket(now) {
   for (const word of cart.goods) {
     const [x, y] = lands();
     cart.spilled.push({ word, x, y, fromX: me.x, fromY: me.y, born: now });
+    // Back on the list until it's picked up again, from the floor or from the shelf.
+    targets.push(word);
+    cart.total -= SHOP_PRICES[word.sprite];
+    stars = Math.max(0, stars - 1);
   }
+  if (cart.goods.length && cart.stage === "pay") cart.stage = "shop";
   cart.goods = [];
+  showPrompt();
 }
 
 const nearBaskets = () => Math.hypot(me.x - TILL.baskets[0] - 0.5, me.y - TILL.baskets[1] - 0.5) < CART.takeWithin;
 // Either side of the counter, all along it.
-const atBelt = () => me.x > TILL.zone[0] && me.x < TILL.zone[1] && ((me.y > TILL.zone[2] && me.y < TILL.zone[3]) || (me.y > TILL.zone[4] && me.y < TILL.zone[5]));
-const playerAtTill = () => cart.stage === "bag" || cart.stage === "price" || (cart.stage === "pay" && (atBelt() || till.goods.some((good) => good.word)));
+const inZone = ({ zone, upright }) => (upright ? me.y > zone[0] && me.y < zone[1] && me.x > zone[2] && me.x < zone[3]
+  : me.x > zone[0] && me.x < zone[1] && ((me.y > zone[2] && me.y < zone[3]) || (me.y > zone[4] && me.y < zone[5])));
+// Whichever lane the player comes to with their shopping is theirs, until something of theirs is on its belt.
+function atBelt() {
+  if (inZone(TILL)) return true;
+  if (LANES.length < 2 || cart.stage !== "pay" || laneNow !== cart.lane || till.goods.some((good) => good.word)) return false;
+  const lane = LANES.findIndex(inZone);
+  if (lane < 0) return false;
+  cart.lane = lane;
+  useLane(lane);
+  return true;
+}
+const playerAtTill = () => laneNow === cart.lane && (cart.stage === "bag" || cart.stage === "price" || (cart.stage === "pay" && (atBelt() || till.goods.some((good) => good.word))));
 const onDoorMat = () => Math.abs(me.x - TILL.door[0] - 0.5) < 1 && me.y > TILL.door[1] + 0.2;
 
 function takeBasket() {
@@ -3113,7 +3371,7 @@ function takeBasket() {
 function putOnBelt() {
   startAction("pick", performance.now());
   const room = TILL.beltTo - till.goods.length * TILL.goodsApart;
-  till.goods.push({ word: cart.goods.pop(), x: Math.max(TILL.beltFrom, Math.min(room, me.x - 0.5)) });
+  till.goods.push({ word: cart.goods.pop(), x: Math.max(TILL.beltFrom, Math.min(room, (TILL.upright ? me.y : me.x) - 0.5)) });
   cart.scanIn = SHOPPING.scanMs;
   playImpact("brush");
 }
@@ -3178,13 +3436,13 @@ function takeBag() {
 
 // Behind the meat counter.
 const BUTCHER = { at: [2.2, 5.1], board: [3, 5], cutMs: 420, crankMs: 160 };
-const GROUND_MEATS = new Set(["mince"]); // this goes through the grinder and isn't cut
 
 // Words in the bubbles. Machine made like the game's other sentences: for the user to check.
 const BELT_ITEM_PX = 11; // so that nothing on the belt hangs over its edges
 const STORE_PROMPTS = { pay: "storePay", price: "storePrice", bag: "storeBag", door: "storeDoor" };
 // The cashier is a woman or a man at random each round, and the voice goes with the look.
-const cashierVoice = () => cart.cashier;
+const otherCashier = () => (cart.cashier === "mahtte" ? "biret" : "mahtte");
+const cashierVoice = () => (cart.lane ? otherCashier() : cart.cashier); // each lane has its own
 const cashierRate = () => CASHIER_RATE;
 const CASHIER_RATE = 0.92; // a little lower and slower than the voice's own
 const STORE_HINTS = {
@@ -3297,8 +3555,9 @@ function updateHint() {
     }
   }
   if (hint) {
-    el.style.left = `${((isoX(me.x, me.y) - cam.x) / VIEW_W) * 100}%`;
-    el.style.bottom = `${((VIEW_H - (isoY(me.x, me.y) - cam.y) + HINT_ABOVE) / VIEW_H) * 100}%`;
+    // In whole pixels of the page, or the sign would shake as the view follows the character.
+    el.style.left = `${Math.round(((isoX(me.x, me.y) - cam.x) / VIEW_W) * canvas.clientWidth)}px`;
+    el.style.bottom = `${Math.round(((VIEW_H - (isoY(me.x, me.y) - cam.y) + HINT_ABOVE) / VIEW_H) * canvas.clientHeight)}px`;
   }
   // Each said once in a round, and never over a find being said.
   if (hint?.line && !cart.said.has(hint.line) && !rightSpeech) {
@@ -3307,23 +3566,10 @@ function updateHint() {
   }
 }
 
-// The cashier says welcome to the character by name as soon as the player first moves, in a bubble without a voice.
-const CASHIER_BUBBLE_MS = 3500;
-function cashierGreets() {
-  cart.greeted = true;
-  cart.bubble = { text: `Bures boahtin, ${CHARACTER_NAMES[VOICES[look.gender]]}!`, until: performance.now() + CASHIER_BUBBLE_MS };
-}
-
-function cashierBubble(scene) {
-  if (placeName !== "store" || !cart.bubble || performance.now() >= cart.bubble.until) return;
-  const [x, y] = TILL.cashier;
-  scene.push({ d: 1000, paint: () => lessonBubble(cart.bubble.text, isoX(x, y), isoY(x, y) - 44) });
-}
 const CHARACTER_NAMES = { biret: "Biret", mahtte: "Máhtte" };
 
 function updateCart(now) {
   if (!isShop(placeName)) return;
-  if (placeName === "store" && !cart.greeted && me.moving) cashierGreets();
   if (fallingDown()) return;
   cart.dropped = null;
   if (cart.stage === "door" && onDoorMat()) {
@@ -3335,8 +3581,14 @@ function updateCart(now) {
   const reached = cart.spilled.find((item) => now - item.born > CART.spillMs && Math.hypot(me.x - item.x, me.y - item.y) < CART.pickWithin);
   if (reached) {
     cart.spilled = cart.spilled.filter((item) => item !== reached);
-    cart.goods.push(reached.word);
+    pickOne(reached.word);
     playImpact("brush");
+    if (targets.includes(reached.word)) {
+      targets.splice(targets.indexOf(reached.word), 1);
+      stars++;
+    }
+    if (!targets.length && cart.stage === "shop") cart.stage = "pay";
+    showPrompt();
   }
 }
 
@@ -3353,7 +3605,11 @@ function basketSwing() {
 function setupShoppers() {
   cart = newCart();
   shoppers = [];
-  till = { queue: [], current: null, goods: [], bag: null, scanning: false, usedBaskets: 0, baskets: TILL.startBaskets };
+  chooseLanes(placeName);
+  cart.lane = 0;
+  const stacks = { used: 0, fresh: LANES[0].startBaskets };
+  tills = LANES.map(() => newLaneState(stacks));
+  useLane(0);
   stocker = null;
   wantedShoppers = 0;
   if (!isShop(placeName)) return;
@@ -3367,6 +3623,10 @@ function setupShoppers() {
 const shownGoods = (s) => Math.min(s.picked, 3);
 
 function joinQueue(s) {
+  // The shorter line, counting whoever is at the till, the player too.
+  const playerThere = (i) => (cart.lane === i && ["pay", "price", "bag"].includes(cart.stage) ? 1 : 0);
+  s.lane = tills.map((lane, i) => [lane.queue.length + (lane.current ? 1 : 0) + playerThere(i), i]).sort((a, b) => a[0] - b[0])[0][1];
+  useLane(s.lane);
   till.queue.push(s);
   s.doing = "queue";
   s.spot = null;
@@ -3374,12 +3634,14 @@ function joinQueue(s) {
 
 // Everyone moves up when someone goes to the till. Only one is at the till at a time, and none while the player is.
 function moveQueue() {
+  // While the player is at this lane's belt, the line keeps one place further back, out of their way.
+  const back = laneNow === cart.lane && (playerAtTill() || (cart.stage === "pay" && inZone(TILL))) ? 1 : 0;
   till.queue.forEach((s, i) => {
-    const spot = TILL.queue[Math.min(i, TILL.queue.length - 1)];
+    const spot = TILL.queue[Math.min(i + back, TILL.queue.length - 1)];
     if (s.spot === spot) return;
     s.spot = spot;
     walkShopper(s, spot[0], spot[1], () => {
-      s.facing = 0;
+      s.facing = TILL.upright ? 0 : TILL.faceTill ?? 0; // looking along the line, towards the till
     });
   });
   const next = till.queue[0];
@@ -3388,7 +3650,7 @@ function moveQueue() {
   till.current = next;
   next.doing = "toTill";
   walkShopper(next, TILL.unload[0], TILL.unload[1], () => {
-    next.facing = 0;
+    next.facing = TILL.faceTill ?? 0;
     next.doing = "unload";
     next.wait = SHOPPING.unloadMs;
   });
@@ -3449,7 +3711,7 @@ function updateShopper(s, dt) {
     if (s.picked <= 0) {
       s.doing = "toPay";
       walkShopper(s, TILL.pay[0], TILL.pay[1], () => {
-        s.facing = 0;
+        s.facing = TILL.faceTill ?? 0;
         s.doing = "scan";
         s.wait = SHOPPING.scanMs;
       });
@@ -3467,7 +3729,7 @@ function updateShopper(s, dt) {
     till.bag = s.bag;
     s.doing = "toBag";
     walkShopper(s, TILL.takeBag[0], TILL.takeBag[1], () => {
-      s.facing = 0;
+      s.facing = TILL.faceTill ?? 0;
       s.doing = "dropBasket";
       s.wait = SHOPPING.bagMs;
     });
@@ -3493,7 +3755,7 @@ function updateShopper(s, dt) {
 // gathered at the end of the counter they carry them to the stack by the door, then go back to the shelves. When the
 // boxes are empty they push the trolley through the staff door and come back with a full one.
 // The trolley only stands right beside a shelf in an aisle four tiles wide, so there's always a way past it.
-const STOCK = { least: 10, most: 20, itemMs: 2600, awayLeast: 10000, awayMore: 10000, atDoor: [3.4, 16], reachMs: 700, moveAfter: 18000, moreMoveAfter: 22000, nearest: 3, furthest: 9, glide: 0.002, solid: 0.45, playerClear: 2.5, itemClear: 2 };
+const STOCK = { least: 10, most: 20, itemMs: 2600, awayLeast: 10000, awayMore: 10000, reachMs: 700, moveAfter: 18000, moreMoveAfter: 22000, nearest: 3, furthest: 9, glide: 0.002, solid: 0.45, playerClear: 2.5, itemClear: 2 };
 
 // Beside a shelf, fridge or crate: where the worker stands, with the trolley on the next tile.
 function stockSpots() {
@@ -3534,7 +3796,7 @@ const boxesLeft = (stock) => Math.ceil(stock / (STOCK.most / 3));
 function fetchStock(s) {
   s.doing = "refill";
   s.pushing = true;
-  walkShopper(s, ...STOCK.atDoor, () => {
+  walkShopper(s, ...TILL.stockDoor, () => {
     s.facing = 3;
     s.leaving = true;
     s.wait = SHOPPING.fadeMs;
@@ -3546,7 +3808,7 @@ function fetchStock(s) {
         s.away = false;
         s.leaving = false;
         s.stock = stockLoad();
-        [s.x, s.y] = STOCK.atDoor;
+        [s.x, s.y] = TILL.stockDoor;
         s.cartX = s.x - 0.9;
         s.cartY = s.y;
         s.facing = 1;
@@ -3655,12 +3917,18 @@ function updateStocker(dt) {
 
 function updateShoppers(dt) {
   if (!isShop(placeName)) return;
-  moveQueue();
-  moveGoodsOnBelt(dt);
+  LANES.forEach((_, lane) => {
+    useLane(lane);
+    moveQueue();
+    moveGoodsOnBelt(dt);
+  });
+  useLane(cart.lane);
   scanForPlayer(dt);
   updateStocker(dt);
   for (const s of shoppers) {
+    useLane(s.lane ?? cart.lane);
     updateShopper(s, dt);
+    useLane(cart.lane);
     s.alpha = Math.max(0, Math.min(1, s.alpha + (dt / SHOPPING.fadeMs) * (s.leaving ? -1 : 1)));
   }
   shoppers = shoppers.filter((s) => !(s.leaving && s.alpha === 0));
@@ -3680,32 +3948,24 @@ function storeLife(now) {
   });
   // Drawn straight after the counter tile under the far end of them, or the next tile would cover them.
   const onCounter = (sprite, [x, y], reach = 0) => ({ sprite, x, y, facing: 0, frame: 0, lift: TILL.counterTop, d: Math.floor(x + 0.5 + reach) + y + 1.05 });
-  const tillAt = (offset) => [
-    onCounter("till_belt", [TILL.beltTiles[0] + offset, TILL.belt[1]]), onCounter("till_belt", [TILL.beltTiles[0] + 1 + offset, TILL.belt[1]]),
-    onCounter("till_belt_end", [TILL.beltTiles[0] + 2 + offset, TILL.belt[1]]), onCounter("till_register", [TILL.register[0] + offset, TILL.register[1]], TILL.registerReach),
+  const turned = (lane, sprite) => (lane.upright ? `${sprite}_up` : sprite);
+  const tillAt = (lane) => [
+    onCounter(turned(lane, "till_belt"), onBelt(lane, lane.beltTiles[0])), onCounter(turned(lane, "till_belt"), onBelt(lane, lane.beltTiles[0] + 1)),
+    onCounter(turned(lane, "till_belt_end"), onBelt(lane, lane.beltTiles[0] + 2)), onCounter(turned(lane, "till_register"), lane.register, lane.upright ? 0 : lane.registerReach),
   ];
+  const cashierCalled = (lane) => (lane ? otherCashier() : cart.cashier);
   const things = [
-    ...tillAt(0), ...(placeName === "gearstore" ? [] : tillAt(TILL.closed)), // the general store is small enough for one till
+    ...LANES.flatMap(tillAt),
     { sprite: "store_mat", x: TILL.door[0], y: TILL.door[1], facing: 0, frame: 0, order: -2 },
     { sprite: "store_door", x: TILL.doorway[0], y: TILL.doorway[1], facing: 0, frame: 0 },
     { sprite: "staff_door", x: TILL.staffDoor[0], y: TILL.staffDoor[1], facing: 0, frame: 0 },
-    { sprite: `person_${placeName === "store" ? "store_cashier" : "cashier"}${cart.cashier === "mahtte" ? "_man" : ""}`, x: TILL.cashier[0], y: TILL.cashier[1], facing: 2, frame: till.scanning ? 3 : 0, carrying: 0, shadow: true },
+    ...LANES.map((lane, i) => ({ sprite: `person_${placeName === "store" ? "store_cashier" : "cashier"}${cashierCalled(i) === "mahtte" ? "_man" : ""}`, x: lane.cashier[0], y: lane.cashier[1], facing: lane.cashierFacing ?? 2, frame: tills[i].scanning ? 3 : 0, carrying: 0, shadow: true })),
   ];
   if (placeName !== "store") return shopGoings(things, now, flying, onCounter);
   // The butcher, cutting the big piece.
   const cutting = Math.floor(now / BUTCHER.cutMs) % 2;
   things.push({ sprite: "person_butcher", x: BUTCHER.at[0], y: BUTCHER.at[1], facing: 1, frame: cutting ? 3 : 0, carrying: 0, shadow: true });
-  const grinding = GROUND_MEATS.has(counterMeat?.sprite);
-  things.push({
-    sprite: grinding ? "meat_grinder" : "meat_board", x: BUTCHER.board[0], y: BUTCHER.board[1], facing: 0,
-    frame: grinding ? Math.floor(now / BUTCHER.crankMs) % 4 : 0, lift: TILL.counterTop, d: BUTCHER.board[0] + BUTCHER.board[1] + 1.1,
-  });
-  // More of the same on the counter's other places, ready for other customers.
-  if (counterMeat) {
-    OPEN_SPOTS.meat.filter(([x, y]) => !cart.meatSpot || x !== cart.meatSpot[0] || y !== cart.meatSpot[1]).forEach(([x, y]) => {
-      if (!objects.some((o) => o.x === x && o.y === y)) things.push({ sprite: counterMeat.sprite, x, y, facing: 0, frame: 0, lift: TILL.counterTop, d: x + y + 2.2 });
-    });
-  }
+  things.push({ sprite: "meat_board", x: BUTCHER.board[0], y: BUTCHER.board[1], facing: 0, frame: 0, lift: TILL.counterTop, d: BUTCHER.board[0] + BUTCHER.board[1] + 1.1 });
   return shopGoings(things, now, flying, onCounter);
 }
 
@@ -3734,11 +3994,13 @@ function shopGoings(things, now, flying, onCounter) {
   for (const item of cart.spilled) {
     things.push({ picture: item.word, alpha: Math.floor(now / CART.blinkMs) % 2 ? 0.4 : 1, ...flying(item, Math.min(1, (now - item.born) / CART.spillMs)) });
   }
-  for (const good of till.goods) {
-    if (good.word) things.push({ ...onCounter(null, [good.x, TILL.belt[1]]), picture: good.word, scale: 0.45, fits: BELT_ITEM_PX });
-    else things.push(onCounter(`good_${good.kind}`, [good.x, TILL.belt[1]]));
-  }
-  if (till.bag) things.push({ ...onCounter("till_bag", TILL.bag), carrying: Number(till.bag.slice(3)) });
+  tills.forEach((lane, i) => {
+    for (const good of lane.goods) {
+      if (good.word) things.push({ ...onCounter(null, onBelt(LANES[i], good.x)), picture: good.word, scale: 0.45, fits: BELT_ITEM_PX });
+      else things.push(onCounter(`good_${good.kind}`, onBelt(LANES[i], good.x)));
+    }
+    if (lane.bag) things.push({ ...onCounter("till_bag", LANES[i].bag), carrying: Number(lane.bag.slice(3)) });
+  });
   for (const s of shoppers) {
     const walking = s.path.length > 0;
     const frame = walking ? 1 + (Math.floor(s.clock / SHOPPING.stepMs) % 2) : s.doing === "pick" || s.doing === "takeBasket" || s.doing === "dropBasket" ? 3 : s.doing === "pay" ? 4 : 0;
@@ -3758,6 +4020,16 @@ function animalPose(o, now) {
     if (o.reaction.lands) return { facing: a?.facing ?? 0, frame: Math.floor(now / WANDER.flutterMs) % 2, lift: Math.round(Math.min(1, along * 2) * LANDED_HIGH) };
     return { facing: a?.facing ?? 0, frame: 0, lift: 0 };
   }
+  if (a && now < (a.sleepUntil ?? 0)) return { facing: a.facing, frame: 12, lift: 0, asleep: true };
+  if (a && now < (a.fleeUntil ?? 0)) {
+    if (way.hops) {
+      const hop = (a.clock % WANDER.hopMs) / WANDER.hopMs;
+      return { facing: a.facing, frame: hop < 0.7 ? 1 : 0, lift: Math.round(Math.sin((hop / 0.7) * Math.PI) * 5 * (hop < 0.7)) };
+    }
+    return { facing: a.facing, frame: 10 + (Math.floor(a.clock / SLEEP.fleeFrameMs) % 2), lift: 0 };
+  }
+  // Now and then one that's standing has its head down, eating or sniffing at the ground.
+  if (a && !a.aim && placeName === "forest" && (o.word.sprite === "beana" || window.MAHTTE_ANIMALS?.[o.word.sprite]?.frames.includes(13)) && !a.greeting && (now + o.phase * 4) % 11000 < 4200) return { facing: a.facing, frame: 13, lift: 0 };
   if (a?.crossing && !way.flights) return { facing: a.facing, frame: 3 + (Math.floor(now / WANDER.beatMs) % 2), lift: Math.round(flightHeight(o, a)) };
   if (way?.acts) return { facing: o.facing ?? 0, frame: Math.floor((now + o.phase) / way.acts) % 2, lift: 0, head: way.head };
   if (!a) return { facing: o.facing ?? 0, frame: 0, lift: 0 };
@@ -3985,15 +4257,15 @@ function moveCharacter(dt, now) {
     if (!me.route.length) me.sitWhenThere = null;
   }
   const len = Math.hypot(mx, my);
-  const moving = len > 0 && !paused && !crouching;
+  const moving = len > 0 && !paused;
   // A tapped route to a thing slows to a walk on arriving, as a runner would only run into it and can't touch it.
   const arriving = !ix && !iy && me.goal && me.route.length && awayFrom(me.goal, me.x, me.y) < thingReach(me.goal) + SLIDE.lookAhead;
-  me.running = moving && runKey && !arriving;
+  me.running = moving && runKey && !arriving && !crouching;
   if (moving) {
     startClock(); // the first move of the round
     if (action) action = null; // moving ends a cheer or a jump at once
     const beforeX = me.x, beforeY = me.y;
-    const step = Math.min(MOVE.speed * (me.running ? RUN.speed : 1) * dt, 0.2);
+    const step = Math.min(MOVE.speed * (me.running ? RUN.speed : crouching ? CROUCH_SPEED : 1) * dt, 0.2);
     me.hitX = null;
     me.hitTree = null;
     me.x += (mx / len) * step;
@@ -4035,9 +4307,9 @@ function moveCharacter(dt, now) {
     me.moveX = X / size;
     me.moveY = Y / size;
     me.facing = facingOf(X, Y);
-    walkClock += dt * (me.running ? RUN.animation : 1);
+    walkClock += dt * (me.running ? RUN.animation : crouching ? CROUCH_SPEED : 1);
     const stepNumber = Math.floor(walkClock / STEP_EVERY_MS);
-    if (stepNumber !== me.lastStep && me.jumpedAt === null) stepOn(now, 5, me.running ? RUN.stepStrength : 1);
+    if (stepNumber !== me.lastStep && me.jumpedAt === null) stepOn(now, 5, me.running ? STEP_LOUDNESS.run : crouching ? STEP_LOUDNESS.crouch : STEP_LOUDNESS.walk);
     me.lastStep = stepNumber;
     // A tapped route gives up if something blocks it, instead of pushing forever.
     if (me.route.length && !ix && !iy) {
@@ -4077,9 +4349,12 @@ function playerFrame(now) {
 function drawPreview(now) {
   if (!preview) return;
   const sheet = sheetFor(look);
-  preview.clearRect(0, 0, FRAME_W, FRAME_H);
+  const w = FRAME_W * SHEET_DETAIL, h = FRAME_H * SHEET_DETAIL;
+  preview.clearRect(0, 0, w, h);
   if (sheet.complete) {
-    preview.drawImage(sheet, (Math.floor(now / 210) % 8) * FRAME_W, IDLE_ROW.down * FRAME_H, FRAME_W, FRAME_H, 0, 0, FRAME_W, FRAME_H);
+    const column = Math.floor(now / 210) % 8;
+    preview.drawImage(sheet, sheetX(column, IDLE_ROW.down), sheetY(IDLE_ROW.down), w, h, 0, 0, w, h);
+    paintTalkingMouth(preview, IDLE_ROW.down, column, 0, 0, false, SHEET_DETAIL, now);
   }
 }
 
@@ -4158,6 +4433,8 @@ document.addEventListener("keydown", (event) => {
     return;
   }
   if (event.key.toLowerCase() === "e") {
+    // In a lesson, the hand going up opens a text field at once, and the E itself mustn't be written into it.
+    if (theme?.lesson) event.preventDefault();
     useKey(event.repeat);
     return;
   }
@@ -4219,6 +4496,10 @@ for (const type of ["pointerup", "pointercancel", "pointerleave"]) {
     runKey = false;
   });
 }
+// The little sign over the character does what it says when it's clicked, the same as E.
+document.getElementById("hint").addEventListener("pointerdown", (event) => {
+  if (event.currentTarget.querySelector("kbd")) document.getElementById("use").dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, cancelable: true }));
+});
 document.getElementById("use").addEventListener("pointerdown", (event) => {
   event.preventDefault();
   useKey(false);

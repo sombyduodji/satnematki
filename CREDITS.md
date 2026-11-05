@@ -79,6 +79,26 @@ The characters' clothing is based on the article
 [Karasjok-kofta](https://snl.no/Karasjok-kofta) in Store norske leksikon. Only facts from it are used; no
 text or images are copied. See [art/mahtte/README.md](art/mahtte/README.md).
 
+## Forest trees
+
+The forest's tree species and where they grow follow a summary of northern Finland's trees given by the user, citing the
+[University of Oulu](https://www.oulu.fi/northnature/english/englanti/metsat2.html), [Tiedekeskus Pilke](https://expo.tiedekeskus-pilke.fi/en/northern-finland-tree-species/) and
+[Puuinfo](https://puuinfo.fi/puutieto/finnish-forests/species-of-trees/?lang=en). The birch and Scots pine shapes follow photographs the user gave as references, which are not in the project.
+
+## The church in the forest
+
+The church in the forest is a 3D model of Pielpajärvi's wilderness church near Inari, made for this game. Its shape follows the history at [lundui.fi](https://gtsvn.uit.no/freecorpus/orig/eng/facta/lundui.fi/historyofthepielpajarviwildernesschurch.html): a cross church with arms of nearly equal length, the belfry an extension of the western arm, and a stony churchyard inside a paling fence. The look follows two photographs the user gave as references, which are not in the project. The size and details are by eye and unchecked.
+
+## The grocery store and the classrooms
+
+The rooms, their furniture and what's for sale are 3D models made for this game. The white board's pens and the flags, books and backpacks in the small classroom use the Sámi flag's colours. The backpacks' pictures are drawn for this game, with no characters from any film or show. The letters on the store's sign and on the alphabet above the blackboard are drawn with DejaVu Sans Bold, and the blackboard's writing with Caveat.
+
+## Animals
+
+The forest's animals are 3D models made for this game, with the colours the game's earlier models had. The reindeer's follow a photograph by the user and the capercaillie cock's another. How a reindeer and a fox sleep follows [Cairngorm Reindeer](https://www.cairngormreindeer.co.uk/2023/01/06/sleeping-reindeer/) and general wildlife writing; the rest are from general knowledge, unchecked.
+
+The dog breeds, wolverine and lynx follow descriptions on Wikipedia ([Norrbottenspets](https://en.wikipedia.org/wiki/Norrbottenspets), [Karelian Bear Dog](https://en.wikipedia.org/wiki/Karelian_Bear_Dog), [Norwegian Elkhound](https://en.wikipedia.org/wiki/Norwegian_Elkhound), [Lapponian Herder](https://en.wikipedia.org/wiki/Lapponian_Herder), [Finnish Lapphund](https://en.wikipedia.org/wiki/Finnish_Lapphund), [wolverine](https://en.wikipedia.org/wiki/Wolverine), [Eurasian lynx](https://en.wikipedia.org/wiki/Eurasian_lynx)); the Finnish Spitz, husky, Labrador and wolf are from general knowledge. All are simple likenesses, unchecked.
+
 ## Handwriting font
 
 The shopping list is written in [Caveat](https://github.com/googlefonts/caveat) by The Caveat Project Authors (`art/fonts/`),

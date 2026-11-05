@@ -75,7 +75,7 @@ body.menu #game-title { display: block; }
   color: #20303a;
   cursor: pointer;
 }
-#view { position: relative; }
+#view { position: relative; contain: layout; }
 #hint { position: absolute; transform: translateX(-50%); padding: 3px 8px; border-radius: 10px; background: #f4f1e8; color: #14213d; font-size: 14px; white-space: nowrap; pointer-events: none; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3); }
 #hint[hidden] { display: none; }
 .paper-list {
@@ -160,11 +160,10 @@ body.menu #top-hint { display: none; }
   cursor: pointer;
 }
 #results button:first-child { color: #20303a; background: #ffd24a; }
+#world.crisp { image-rendering: pixelated; }
 #world {
   display: block;
   width: 100%;
-  image-rendering: pixelated;
-  border-radius: 6px;
   touch-action: none;
   cursor: pointer;
 }
@@ -199,7 +198,6 @@ body.menu #view, body.menu #pad, body.menu #in-game { display: none; }
 .menu-section { --frame: #f2c14e; margin-top: 14px; padding: 0 10px 10px; border: 3px solid var(--frame); border-radius: 10px; background: rgba(8, 20, 50, 0.35); }
 .menu-section.ready { --frame: #5cc26e; }
 .menu-section.partly { --frame: #ffc61e; }
-.menu-section.early { --frame: #e8604c; }
 .menu-section.group { --frame: #7fb6e6; }
 .menu-section h3 { margin: 0 -10px 10px; padding: 6px 12px; color: #14213d; background: var(--frame); border-radius: 6px 6px 0 0; font-size: 16px; font-weight: 700; }
 .menu-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
@@ -298,7 +296,12 @@ body.menu #view, body.menu #pad, body.menu #in-game { display: none; }
 .choices { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
 .choice { display: flex; flex-direction: column; gap: 4px; }
 #card .choice .note { color: #dbe6f5; }
-.options { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 6px; }
+.options { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 6px; }
+.eye-slider { display: grid; grid-template-columns: 1fr 76px; align-items: center; gap: 10px; min-height: 40px; }
+.eye-slider span { font-weight: 700; color: #fff; }
+.eye-slider input { appearance: none; -webkit-appearance: none; width: 100%; min-width: 0; height: 18px; margin: 0; border: 2px solid #fff; border-radius: 9px; cursor: pointer; }
+.eye-slider input::-webkit-slider-thumb { -webkit-appearance: none; width: 26px; height: 26px; background: var(--eye, #fff); border: 3px solid #fff; border-radius: 50%; box-shadow: 0 0 0 1px #14213d; }
+.eye-slider input::-moz-range-thumb { width: 22px; height: 22px; background: var(--eye, #fff); border: 3px solid #fff; border-radius: 50%; box-shadow: 0 0 0 1px #14213d; }
 #card .choice button {
   display: flex;
   align-items: center;
@@ -410,3 +413,135 @@ footer a { color: #cfe3ee; }
 #card.places button.has-map:hover .place-map { opacity: 0.7; }
 #card.places button.has-map:focus-visible .place-map { opacity: 0.55; }
 #card.places button.has-map .title, #card.places button.has-map .example, #card.places button.has-map small { text-shadow: 0 1px 3px #000c, 0 0 2px #000c; }
+
+/* While playing, the game fills the window and everything else floats on top of it: the list as a sticky note, what's asked at the top, messages at the bottom. */
+#guide-box {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 6;
+  box-sizing: border-box;
+  max-width: min(30%, 360px);
+  padding: 8px 34px 10px 12px;
+  border-radius: 8px;
+  background: rgba(20, 33, 45, 0.5);
+  color: #fff;
+  font-size: 15px;
+  line-height: 1.3;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
+}
+#guide-box[hidden] { display: none; }
+#zoom { position: absolute; top: 8px; right: 92px; z-index: 6; display: flex; gap: 2px; }
+#zoom[hidden] { display: none; }
+#zoom button {
+  min-width: 34px;
+  padding: 3px 6px;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 6px;
+  background: rgba(20, 33, 45, 0.5);
+  color: #fff;
+  font-size: 14px;
+  cursor: pointer;
+}
+#zoom button:hover { background: rgba(20, 33, 45, 0.75); }
+#zoom button[aria-pressed=true] { background: var(--sami-yellow); border-color: var(--sami-yellow); color: #14213d; font-weight: 700; }
+#guide-box button {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.16);
+  color: #fff;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+}
+#guide-box button:hover, #guide-box button:focus-visible { background: rgba(255, 255, 255, 0.34); }
+@media (min-width: 700px) {
+  body:not(.menu) main {
+    display: grid;
+    grid-template-columns: var(--game, 100%);
+    justify-content: center;
+    max-width: none;
+    gap: 10px;
+  }
+  body:not(.menu) #view, body:not(.menu) #prompt, body:not(.menu) #top-hint, body:not(.menu) #card { grid-area: 1 / 1; }
+  body:not(.menu) #prompt {
+    z-index: 5;
+    justify-self: center;
+    align-self: start;
+    box-sizing: border-box;
+    min-height: 0;
+    max-width: 38%;
+    margin-top: 8px;
+    padding: 4px 14px;
+    border-radius: 8px;
+    background: rgba(20, 33, 45, 0.78);
+    pointer-events: none;
+  }
+  body:not(.menu) #prompt:empty { display: none; }
+  body:not(.menu) #prompt button { pointer-events: auto; }
+  body:not(.menu) #prompt:has(.paper-list) { justify-self: end; max-width: none; margin: 42px 10px 0 0; padding: 0; background: none; }
+  body:not(.menu) .paper-list {
+    display: block;
+    margin: 0;
+    padding: 12px 16px 14px;
+    font-size: clamp(16px, 1.7vw, 23px);
+    line-height: 1.22;
+    white-space: nowrap;
+    background: linear-gradient(135deg, #fff08a, #ffe45c 75%, #f7d648);
+    border: 0;
+    border-radius: 2px 2px 14px 2px;
+    box-shadow: 2px 5px 10px rgba(0, 0, 0, 0.42);
+    transform: rotate(1.6deg);
+  }
+  body:not(.menu) .paper-list small { font-size: 0.75em; color: #7a6420; }
+  body:not(.menu) .paper-list .bought { color: #9a8a50; }
+  body:not(.menu) #top-hint { z-index: 5; justify-self: center; align-self: start; min-height: 0; margin: 58px 0 0; padding: 2px 10px; border-radius: 8px; background: rgba(20, 33, 45, 0.7); pointer-events: none; }
+  body:not(.menu) #card {
+    z-index: 5;
+    justify-self: center;
+    align-self: end;
+    box-sizing: border-box;
+    width: fit-content;
+    min-height: 0;
+    max-width: 76%;
+    margin-bottom: 10px;
+    background: rgba(45, 67, 80, 0.93);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.4);
+  }
+  body:not(.menu) #card:empty { display: none; }
+  body:not(.menu) #card.keypad.letters { width: min(640px, 92%); max-width: none; }
+}
+/* The controls float on the picture too, see-through, like a touch screen game's. */
+@media (min-width: 700px) {
+  body:not(.menu) #pad {
+    grid-area: 1 / 1;
+    z-index: 5;
+    align-self: end;
+    justify-self: stretch;
+    box-sizing: border-box;
+    padding: 10px;
+    grid-template-areas: ". up . . run jump" "left down right . use crouch";
+    grid-template-columns: repeat(3, 58px) 1fr repeat(2, 66px);
+    pointer-events: none;
+  }
+  body:not(.menu) #pad button { pointer-events: auto; background: rgba(20, 33, 45, 0.42); border: 1px solid rgba(255, 255, 255, 0.28); text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6); }
+  body:not(.menu) #pad button:active { background: rgba(255, 255, 255, 0.32); }
+  body:not(.menu) #hint:has(kbd) { pointer-events: auto; cursor: pointer; }
+  body:not(.menu) #pad.seated { justify-self: end; width: fit-content; padding: 0 10px 10px 0; }
+  body:not(.menu) #pad.seated #use { width: auto; min-height: 0; padding: 10px 20px; font-size: 18px; cursor: pointer; background: rgba(20, 33, 45, 0.55); }
+  body:not(.menu) #pad.seated #use:hover { background: rgba(20, 33, 45, 0.75); }
+}
+@media (min-width: 700px) and (hover: hover) {
+  body:not(.menu) #pad.seated #use::after { content: " · E"; opacity: 0.75; }
+}
+/* A phone has no room for it on the picture, so there it goes under it, with no empty card as well. */
+@media (max-width: 699px) {
+  #guide-box { position: relative; top: auto; left: auto; max-width: none; margin-top: 8px; background: #2d4350; text-shadow: none; }
+  body:not(.menu) #card:empty { display: none; }
+}

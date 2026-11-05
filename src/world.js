@@ -2,16 +2,16 @@
 // the rules and the movement are in game.js. The places come from tools/make_map.py.
 const TILE = 16;
 let placeName, MAP, START, SPOTS, WIDTH, HEIGHT, WORLD_W, WORLD_H, OX, forestAt, trees, treeMap;
-const SOLID_TILES = new Set("wBWXKSCMDRZPETVGHYJIOUNAo_"); // _ is nothing at all, beyond the walls of a room that isn't square
-const BLOCK_TILES = new Set("BWXKSCMDRZPETVGHYJIOUNo")
+const SOLID_TILES = new Set("vQewBWXKSCMDRZPETVGHYJIOUNAo_"); // _ is nothing at all, beyond the walls of a room that isn't square
+const BLOCK_TILES = new Set("vQeBWXKSCMDRZPETVGHYJIOUNo")
 // The places played as a trip to the shops: basket, list, till, bag and door.
 const SHOPS = new Set(["store", "gearstore"]);
 const isShop = (place) => SHOPS.has(place);;
 // Food stands in its fixture, this far above the floor.
-const RAISED = { meat: 11, shelf: 11, fridge: 8, freezer: 10, produce: 8, desk: 9, bookshelf: 13, table: 10, tools: 3, fishing: 3, clothes: 4, platform: 3 };
+const RAISED = { pallet: 15, meat: 11, shelf: 11, fridge: 8, freezer: 10, produce: 8, desk: 9, bookshelf: 13, table: 10, tools: 3, fishing: 3, clothes: 4, platform: 3 };
 const canvas = document.getElementById("world");
-const ctx = canvas.getContext("2d");
-const ANIMALS = new Set(["boazu", "beana", "njoammil", "loddi", "guovza", "rieban", "oarri", "sahpan", "gahttu", "savza", "gussa", "spiidni", "vuonccis", "cuoppu", "skuolfi", "beaiveloddi", "rievssat", "goahppil", "garanas", "njukca", "goaskin", "jievjaskuolfi", "beahceloddi"]);
+const ctx = canvas.getContext("2d", { alpha: false }); // nothing shows through it, and knowing that saves the browser work
+const ANIMALS = new Set(["gumpe", "geatki", "albbas", "boazu", "beana", "njoammil", "loddi", "guovza", "rieban", "oarri", "sahpan", "gahttu", "savza", "gussa", "spiidni", "vuonccis", "cuoppu", "skuolfi", "beaiveloddi", "rievssat", "goahppil", "garanas", "njukca", "goaskin", "jievjaskuolfi", "beahceloddi"]);
 const FLOATING = new Set(["guolli", "fanas"]);
 
 function noise(x, y) {
@@ -25,16 +25,28 @@ const pick = (list, value) => list[Math.floor(value * list.length) % list.length
 
 // Draws row by row, so a thing bends and squashes instead of sliding as one
 // picture: the bottom stays put, the top leans, and height changes with squash.
+const LEAN_BANDS = 5;
 function drawLiving(image, x, y, { lean = 0, squash = 0, flip = false } = {}) {
   const rows = image.height;
   // Row by row as always, each taken from the finer picture where the place is drawn finer.
   const source = viewDetail > 1 ? doubledImage(image) : image;
   const fine = source.width / image.width;
+  // A lean with nothing else is a few bands, each moved over a little more towards the top: plain copies, as a slanted picture
+  // cost the forest most of a frame.
+  if (!squash && !flip) {
+    const bands = Math.min(LEAN_BANDS, rows);
+    for (let band = 0; band < bands; band++) {
+      const from = Math.round((band * rows) / bands), to = Math.round(((band + 1) * rows) / bands);
+      const shift = Math.round(lean * (1 - (from + to) / 2 / rows) * CANVAS_DETAIL) / CANVAS_DETAIL;
+      ctx.drawImage(source, 0, from * fine, source.width, (to - from) * fine, x + shift, y + from, image.width, to - from);
+    }
+    return;
+  }
   let lastY = null;
   for (let row = rows - 1; row >= 0; row--) {
     const up = rows - 1 - row;
     const destY = y + rows - 1 - Math.round(up * (1 - squash));
-    const destX = Math.round(x + lean * (up / rows));
+    const destX = Math.round((x + lean * (up / rows)) * CANVAS_DETAIL) / CANVAS_DETAIL; // as finely as the canvas can show, so it bends and doesn't step
     if (destY === lastY) continue;
     lastY = destY;
     if (flip) {
@@ -49,7 +61,9 @@ function drawLiving(image, x, y, { lean = 0, squash = 0, flip = false } = {}) {
   }
 }
 
-const VIEW_W = 280, VIEW_H = 190;
+// How much of the world is in view, 16:10 unless the place shows as much as fits the window: see chooseCanvasDetail.
+const BASE_VIEW_W = 304, BASE_VIEW_H = 190;
+let VIEW_W = BASE_VIEW_W, VIEW_H = BASE_VIEW_H;
 const HW = 16, HH = 8, TOP_PAD = 60, WATER_DROP = 4, EDGE = 10, MARGIN = 80;
 canvas.width = VIEW_W;
 canvas.height = VIEW_H;
@@ -403,19 +417,84 @@ function blockImage(tile, seed) {
   return blockImages.get(key);
 }
 
+// The forest's trees come from tools/make_forest.py, one kind to each part of the map: width and height in the world's pixels.
+// Must match TREES there. The picture itself is fine, at FOREST_DETAIL, and the plain one only holds its size in the world.
+const FOREST_DETAIL = 4;
+const FOREST_TREES = { P: [[48, 88], [54, 102], [58, 116]], S: [[40, 66], [46, 80], [52, 94]], B: [[34, 70], [38, 84], [42, 98]], J: [[16, 24], [18, 30]], R: [[30, 40], [34, 46]] };
+const forestTreeImages = new Map();
+// A fine picture made ready at the canvas's own detail, so the forest's hundred trees aren't shrunk from four times over every frame.
+function fittedFine(image) {
+  const fine = image.fine, detail = CANVAS_DETAIL;
+  if (detail >= 4 || !fine.complete || !fine.naturalWidth) return fine;
+  if (image.fitted?.detail !== detail) {
+    const fitted = (image.fitted = { detail, ready: null });
+    fittedImage(fine, image.width * detail, image.height * detail).then((ready) => (fitted.ready = ready));
+  }
+  return image.fitted.ready ?? fine;
+}
+
+function forestTreeImage(kind, which) {
+  const key = `${kind}-${which}`;
+  if (!forestTreeImages.has(key)) {
+    const plain = document.createElement("canvas");
+    [plain.width, plain.height] = FOREST_TREES[kind][which];
+    plain.fine = new Image();
+    plain.fine.src = `art/forest/tree-${key}.png`;
+    forestTreeImages.set(key, plain);
+  }
+  return forestTreeImages.get(key);
+}
+
+// The old church in the forest, scenery from tools/make_forest.py. Its yard can be walked in, through the open gate, and the building
+// can't. It comes in two pictures, as the fence's near sides go in front of anyone in the yard. Its middle is at (x0 + x1) / 2, (y0 + y1) / 2;
+// ax and ay are where that lands in the picture. depth is between what stands behind it and in front. Must match CHURCH, CHURCH_SIZE and
+// CHURCH_ANCHOR there.
+const FOREST_CHURCH = { x0: 46, y0: 27, x1: 58, y1: 37, w: 360, h: 214, ax: 180, ay: 112, depth: 85 };
+let forestChurchImage = null, forestFenceImage = null;
+// The church and its fence at the size they're drawn: scaling such big pictures every frame cost several milliseconds.
+function churchPicture(entry, src) {
+  if (!entry || entry.detail !== CANVAS_DETAIL) {
+    entry = loadFitted(src, () => [FOREST_CHURCH.w * CANVAS_DETAIL, FOREST_CHURCH.h * CANVAS_DETAIL]);
+    entry.detail = CANVAS_DETAIL;
+  }
+  return entry;
+}
+
+const STORE_CELL = { width: 32, height: 64 }; // a tile's picture in the world's pixels
+// Where each place made ahead has its tiles, from tools/make_store.py and tools/make_classrooms.py.
+const madeTiles = () => (placeName === "store" ? window.MAHTTE_STORE : window.MAHTTE_CLASSROOMS?.[placeName]);
+const madeSheets = new Map();
+function madeSheet() {
+  const key = `${placeName}/${CANVAS_DETAIL}`;
+  if (!madeSheets.has(key)) {
+    const scale = CANVAS_DETAIL / 4;
+    madeSheets.set(key, loadFitted(`art/${placeName}/fixtures.webp`, (image) => [image.naturalWidth * scale, image.naturalHeight * scale]));
+  }
+  return madeSheets.get(key);
+}
 function placeThings() {
   const list = [];
+  const treeKinds = window.MAHTTE_MAPS[placeName].trees;
   for (let ty = 0; ty < HEIGHT; ty++) for (let tx = 0; tx < WIDTH; tx++) {
     const tile = MAP[ty][tx];
-    if (BLOCK_TILES.has(tile)) {
+    if (BLOCK_TILES.has(tile) && madeTiles()) {
+      // Some tiles have nothing to show, such as the far half of a wall.
+      const place = madeTiles()[`${tx},${ty}`];
+      if (place) list.push({ tx, ty, block: true, made: place, image: STORE_CELL, x: isoX(tx, ty), y: isoY(tx, ty) + 14, mx: tx + 0.5, my: ty + 0.5 });
+      // A sign over what's for sale, in the same way.
+      const sign = madeTiles()[`${tx},${ty}s`];
+      if (sign) list.push({ tx, ty, block: true, made: sign, image: STORE_CELL, x: isoX(tx, ty), y: isoY(tx, ty) + 14, mx: tx + 0.5, my: ty + 0.5 });
+    } else if (BLOCK_TILES.has(tile)) {
       list.push({ tx, ty, block: true, image: blockImage(tile, tx * 3 + ty), x: isoX(tx, ty), y: isoY(tx, ty) + 14, mx: tx + 0.5, my: ty + 0.5 });
     } else if (tile === "t") {
       const birch = forestAt[ty][tx] < 0.35 ? noise(tx * 2, ty) > 0.45 : noise(tx * 2, ty) > 0.86;
-      const choices = birch ? BIRCHES : PINES;
+      const choices = treeKinds ? FOREST_TREES[treeKinds[ty][tx]].map((_, which) => forestTreeImage(treeKinds[ty][tx], which)) : birch ? BIRCHES : PINES;
       const x = isoX(tx, ty) + Math.round((noise(tx, ty + 2) - 0.5) * 9);
       const y = isoY(tx, ty) + HH + Math.round((noise(tx + 2, ty) - 0.5) * 5);
       const a = (x - OX) / HW, b = (y - TOP_PAD) / HH;
-      list.push({ tx, ty, image: choices[Math.floor(noise(tx, ty * 3) * choices.length) % choices.length], x, y, mx: (a + b) / 2, my: (b - a) / 2 });
+      // How far a trunk keeps the character off: the forest's big pines, spruces and birches more than the small trees under them.
+      const trunk = treeKinds ? { P: 0.26, S: 0.24, B: 0.2 }[treeKinds[ty][tx]] : undefined;
+      list.push({ tx, ty, image: choices[Math.floor(noise(tx, ty * 3) * choices.length) % choices.length], x, y, mx: (a + b) / 2, my: (b - a) / 2, trunk });
     }
   }
   return list;
@@ -442,12 +521,34 @@ function loadPlace(name) {
 }
 
 // Sun from the upper left, so shadows fall long to the lower right.
+// A soft-edged patch of shade, made once for each size and then only copied: drawing it strip by strip was half the work of a frame.
+const shadowPictures = new Map();
 function castShadow(g, cx, cy, length, width) {
-  for (let i = 0; i < length; i++) {
-    const t = i / length;
-    const half = Math.max(1, Math.round(width * Math.sin(Math.min(1, t * 1.15 + 0.12) * Math.PI) ** 0.7));
-    g.fillRect(cx + i, Math.round(cy + i * 0.42 - half / 2), 1, half);
+  if (g !== ctx) { // for a picture of the world made once, on its own pixels
+    for (let i = 0; i < length; i++) {
+      const t = i / length;
+      const half = Math.max(1, Math.round(width * Math.sin(Math.min(1, t * 1.15 + 0.12) * Math.PI) ** 0.7));
+      g.fillRect(cx + i, Math.round(cy + i * 0.42 - half / 2), 1, half);
+    }
+    return;
   }
+  const key = `${length}/${width}/${g.fillStyle}/${CANVAS_DETAIL}`;
+  let picture = shadowPictures.get(key);
+  if (!picture) {
+    picture = document.createElement("canvas");
+    picture.width = (length + 1) * CANVAS_DETAIL;
+    picture.height = (Math.ceil(length * 0.42) + width + 2) * CANVAS_DETAIL;
+    const p = picture.getContext("2d");
+    p.fillStyle = g.fillStyle;
+    p.scale(CANVAS_DETAIL, CANVAS_DETAIL);
+    for (let i = 0; i < length; i++) {
+      const t = i / length;
+      const half = Math.max(1, Math.round(width * Math.sin(Math.min(1, t * 1.15 + 0.12) * Math.PI) ** 0.7));
+      p.fillRect(i, Math.round(width / 2 + 1 + i * 0.42 - half / 2), 1, half);
+    }
+    shadowPictures.set(key, picture);
+  }
+  g.drawImage(picture, cx, cy - width / 2 - 1, picture.width / CANVAS_DETAIL, picture.height / CANVAS_DETAIL);
 }
 
 // ------------------------------------------------------------- building the world
@@ -545,7 +646,6 @@ function buildWorld() {
   g.globalAlpha = 0.34;
   g.drawImage(layer, 0, 0);
   g.globalAlpha = 1;
-  if (placeName === "lesson") lessonSunlight(g);
   builtWorlds.set(placeName, image);
   return image;
 }
@@ -582,7 +682,14 @@ const CAMERA = { followMs: 260, ahead: 16, aheadMs: 420 };
 let worldImage = null;
 let lastDraw = null;
 
+// At a lesson nobody walks, so the view stays where the board and all the desks can be seen.
+const LESSON_VIEW = { x: 20, y: 101 };
 function placeCamera() {
+  if (placeName === "lesson") {
+    cam.x = OX + LESSON_VIEW.x - VIEW_W / 2;
+    cam.y = TOP_PAD + LESSON_VIEW.y - VIEW_H / 2;
+    return;
+  }
   cam.x = isoX(me.x, me.y) - VIEW_W / 2;
   cam.y = isoY(me.x, me.y) - 14 - VIEW_H / 2;
 }
@@ -972,21 +1079,185 @@ function drawModel(g, sprite, facing, frame, headFacing, colour, detail = 1) {
 
 const modelImages = new Map();
 // These places are drawn at double detail, so that things are easier to recognize.
-const DETAIL_PLACES = { home: 2, forest: 2, city: 2, library: 2, store: 2, gearstore: 2, camp: 2, classroom: 2, lesson: 2 };
+const DETAIL_PLACES = { home: 2, forest: FOREST_DETAIL, city: 2, library: 2, store: FOREST_DETAIL, gearstore: 2, camp: 2, classroom: FOREST_DETAIL, lesson: FOREST_DETAIL };
 let viewDetail = 1;
+// The characters are finer than the things around them, so the canvas has room for them, as far as the screen can show it.
+// More would only be work for the browser to shrink again.
+let CANVAS_DETAIL = 4;
+let mostDetail = 4; // comes down if this device can't keep up
+// With room for it, the game is sized in whole steps, so that each of its pixels is exactly one or two of the screen's and nothing is blurred:
+// how many screen pixels to each of the world's, largest first, and how fine the picture is drawn for that.
+const SCREEN_STEPS = [[4, 4], [3, 3], [2, 2], [1, 2]];
+let screenStep = 0;
+// In these places the window shows more of the world instead of a bigger picture of it: this many screen pixels to each of the world's.
+const WIDE_VIEW_PLACES = new Set(["store", "classroom", "forest"]);
+const ZOOMS = [1, 2, 3, 4];
+// The forest only close up: further out, its animals are too small to find.
+const PLACE_ZOOMS = { forest: [3, 4] };
+const zoomsIn = (place) => PLACE_ZOOMS[place] ?? ZOOMS;
+let viewPlace = null;
+const MOST_PIXELS = { x: 1920, y: 1080 }; // the game window is never larger than this, whatever the screen, and nothing beyond it is drawn
+// 3× to begin with, and then whatever was last chosen in that place.
+const ZOOM_FIRST = 3;
+let VIEW_ZOOM = ZOOM_FIRST;
+function keptZoom(place) {
+  try {
+    const kept = Number(localStorage.getItem(`mahtte.zoom.${place}`));
+    if (zoomsIn(place).includes(kept)) return kept;
+  } catch {
+    // Private windows may refuse; it just starts from the usual zoom.
+  }
+  return ZOOM_FIRST;
+}
+const zoomButtons = document.getElementById("zoom");
+function showZoom() {
+  for (const button of zoomButtons.children) {
+    button.setAttribute("aria-pressed", String(Number(button.dataset.zoom) === VIEW_ZOOM));
+    button.hidden = !zoomsIn(viewPlace).includes(Number(button.dataset.zoom));
+  }
+}
+showZoom();
+zoomButtons.addEventListener("click", (event) => {
+  const zoom = Number(event.target.dataset?.zoom);
+  if (!zoom || !zoomsIn(viewPlace).includes(zoom)) return;
+  VIEW_ZOOM = zoom;
+  mostDetail = 4; // a finer view may be just what this device can do, and a coarser one is measured again
+  try {
+    localStorage.setItem(`mahtte.zoom.${viewPlace}`, String(zoom));
+  } catch {
+    // It still holds for this visit.
+  }
+  showZoom();
+  fitCanvas();
+  placeCamera();
+  event.target.blur(); // so that the keys go on moving the character
+});
+function chooseCanvasDetail() {
+  const ratio = window.devicePixelRatio || 1;
+  VIEW_W = BASE_VIEW_W;
+  VIEW_H = BASE_VIEW_H;
+  if (window.innerWidth >= 700 && !document.body.classList.contains("menu")) {
+    // Room for the game and everything else on the page too, the links under it among them, so that nothing needs scrolling to.
+    const view = canvas.parentElement, page = view?.closest("main");
+    const around = page ? Math.max(24, Math.ceil(page.getBoundingClientRect().height - view.getBoundingClientRect().height)) : 24;
+    const roomX = Math.min(window.innerWidth - 32, MOST_PIXELS.x), roomY = Math.min(window.innerHeight - around, MOST_PIXELS.y);
+    let step, detail;
+    if (WIDE_VIEW_PLACES.has(viewPlace)) {
+      step = detail = VIEW_ZOOM;
+      VIEW_W = Math.floor(roomX / step);
+      VIEW_H = Math.floor(roomY / step);
+    } else {
+      [step, detail] = SCREEN_STEPS.find(([size]) => size <= Math.min(roomX / VIEW_W, roomY / VIEW_H)) ?? SCREEN_STEPS.at(-1);
+    }
+    screenStep = step;
+    zoomButtons.hidden = !WIDE_VIEW_PLACES.has(viewPlace);
+    document.documentElement.style.setProperty("--game", `${VIEW_W * step}px`);
+    CANVAS_DETAIL = Math.min(mostDetail, detail);
+  } else {
+    screenStep = 0;
+    zoomButtons.hidden = true;
+    document.documentElement.style.removeProperty("--game");
+    const wide = canvas.parentElement?.clientWidth || Math.min(window.innerWidth, 720);
+    CANVAS_DETAIL = Math.max(2, Math.min(mostDetail, Math.ceil((wide * ratio) / VIEW_W)));
+  }
+  canvas.classList.toggle("crisp", screenStep > CANVAS_DETAIL); // stretched to fit, so kept hard-edged rather than smeared
+}
+
+function fitCanvas() {
+  chooseCanvasDetail();
+  if (canvas.width !== VIEW_W * CANVAS_DETAIL || canvas.height !== VIEW_H * CANVAS_DETAIL) {
+    canvas.width = VIEW_W * CANVAS_DETAIL;
+    canvas.height = VIEW_H * CANVAS_DETAIL;
+  }
+}
+// Looked at with every frame rather than waiting to be told, so that the game never stays larger than the window.
+let fittedTo = "";
+function keepFitted() {
+  const size = `${window.innerWidth}x${window.innerHeight}`;
+  if (size === fittedTo) return;
+  fittedTo = size;
+  fitCanvas();
+}
+
+// A slow device gets a finer picture only as long as it can draw it smoothly: after a few seconds well under this rate, one step coarser, for the rest of the visit.
+const SMOOTH = { fps: 50, afterMs: 4000, gapMs: 250 }; // the aim is a steady 60
+let smoothFrom = 0, smoothFrames = 0, smoothLast = 0;
+function keepItSmooth(now) {
+  if (now - smoothLast > SMOOTH.gapMs) { // away from the tab, or something being loaded: that's no measure
+    smoothFrom = now;
+    smoothFrames = 0;
+  }
+  smoothLast = now;
+  smoothFrames++;
+  if (now - smoothFrom < SMOOTH.afterMs) return;
+  if (CANVAS_DETAIL > 2 && (smoothFrames * 1000) / (now - smoothFrom) < SMOOTH.fps) {
+    // Half the size if it divides evenly, as each pixel then is exactly two of the screen's.
+    mostDetail = screenStep && screenStep % 2 === 0 && CANVAS_DETAIL > screenStep / 2 ? screenStep / 2 : CANVAS_DETAIL === 3 ? 2 : Math.max(2, CANVAS_DETAIL - 1);
+    fitCanvas();
+  }
+  smoothFrom = now;
+  smoothFrames = 0;
+}
+
+// A picture decoded ahead of time at the size it'll be on the screen, so that it's only copied from then on: no scaling for every frame,
+// and no decoding in the middle of one.
+async function fittedImage(image, width, height) {
+  const w = Math.round(width), h = Math.round(height);
+  try {
+    const fitted = await createImageBitmap(image, { resizeWidth: w, resizeHeight: h, resizeQuality: "high" });
+    if (fitted.width === w && fitted.height === h) return fitted;
+    fitted.close();
+  } catch {
+    // Some browsers can't resize this way; a canvas does the same.
+  }
+  const c = document.createElement("canvas");
+  c.width = w;
+  c.height = h;
+  const g = c.getContext("2d");
+  g.imageSmoothingQuality = "high";
+  g.drawImage(image, 0, 0, w, h);
+  return c;
+}
+
+function loadFitted(src, size) {
+  // The plain picture is there to draw until the fitted one is.
+  const entry = { ready: null, plain: null };
+  const image = new Image();
+  image.onload = async () => {
+    entry.plain = image;
+    const [w, h] = size(image);
+    entry.ready = await fittedImage(image, w, h);
+    entry.plain = null;
+  };
+  image.src = src;
+  return entry;
+}
 
 function setViewDetail(place) {
+  viewPlace = place;
+  VIEW_ZOOM = keptZoom(place);
+  showZoom();
   viewDetail = DETAIL_PLACES[place] ?? 1;
-  canvas.width = VIEW_W * viewDetail;
-  canvas.height = VIEW_H * viewDetail;
+  chooseCanvasDetail();
+  canvas.width = VIEW_W * CANVAS_DETAIL;
+  canvas.height = VIEW_H * CANVAS_DETAIL;
   fineQueue.length = 0;
   fineQueued.clear();
+}
+
+// What a made-ahead person has with them, to draw over them. Drawn the first time it's wanted, a little at a time.
+function carriedImage(sprite, facing, frame, carrying) {
+  if (!sprite?.startsWith("person_") || !window.MAHTTE_ANIMALS?.[sprite.replace("person_gear_", "person_")] || carrying === "none" || carrying === undefined) return null;
+  const name = `carried_${sprite.slice(7)}`;
+  const hand = frame === 3 || frame === 4 ? 3 : 0;
+  if (!window.MAHTTE_ANIMALS[`${name}-${carrying}`] && (!MODELS[name] || !MODELS[name](hand, carrying).length)) return null;
+  return modelImage(name, facing, hand, facing, carrying);
 }
 
 // Draws a picture at its size in the world, however finely it was made.
 function paintImage(image, x, y) {
   const detail = image.detail ?? 1;
-  ctx.drawImage(image, x, y, image.width / detail, image.height / detail);
+  ctx.drawImage(image, x + (image.offsetX ?? 0), y + (image.offsetY ?? 0), image.width / detail, image.height / detail);
 }
 
 function makeModelImage(sprite, facing, frame, headFacing, colour, detail) {
@@ -1047,12 +1318,69 @@ function pumpFinePictures() {
   else finePumping = false;
 }
 
+// Animals made ahead by tools/make_animals.py. They're sharp from the start, and the game needn't draw them.
+const BAKED_DETAIL = 4;
+const bakedSheets = new Map();
+// One breed of dog to a round. They're all simply the word for dog, and the card only names the breed once it's found.
+const DOG_BREEDS = { lapinkoira: "suomenlapinkoira", lapinporokoira: "lapinporokoira", pystykorva: "suomenpystykorva", pohjanpystykorva: "pohjanpystykorva", hirvikoira: "norjanhirvikoira", karhukoira: "karjalankarhukoira", husky: "siperianhusky", labradori: "labradorinnoutaja" };
+let dogBreed = "lapinkoira";
+const chooseDogBreed = () => { const breeds = Object.keys(DOG_BREEDS); dogBreed = breeds[Math.floor(Math.random() * breeds.length)]; };
+function bakedAnimal(sprite, facing, frame) {
+  if (!bakedSheets.has(sprite)) bakedSheets.set(sprite, Object.assign(new Image(), { src: `art/animals/${sprite}.png` }));
+  const sheet = bakedSheets.get(sprite);
+  if (!sheet.complete || !sheet.naturalWidth) return null;
+  const { frames, rows, x, y, w, h } = window.MAHTTE_ANIMALS[sprite];
+  const column = Math.max(0, frames.indexOf(frame));
+  const key = `baked/${sprite}/${facing}/${frames[column]}/${CANVAS_DETAIL}`;
+  if (!modelImages.has(key)) {
+    const c = document.createElement("canvas");
+    // People come in many pictures, so each only as big as it needs to be. Others are looked at by where they are in the whole picture.
+    const tight = sprite.startsWith("person_") || sprite.startsWith("carried_");
+    // Only as fine as the screen will show, so that it's copied rather than scaled every time it's drawn.
+    const scale = CANVAS_DETAIL / BAKED_DETAIL;
+    c.width = tight ? Math.ceil(w * scale) : 120 * CANVAS_DETAIL;
+    c.height = tight ? Math.ceil(h * scale) : 90 * CANVAS_DETAIL;
+    c.detail = CANVAS_DETAIL;
+    if (tight) {
+      c.offsetX = Math.round((x / BAKED_DETAIL) * CANVAS_DETAIL) / CANVAS_DETAIL;
+      c.offsetY = Math.round((y / BAKED_DETAIL) * CANVAS_DETAIL) / CANVAS_DETAIL;
+    }
+    const g = c.getContext("2d");
+    g.imageSmoothingQuality = "high";
+    g.drawImage(sheet, column * w, (facing % rows) * h, w, h, tight ? 0 : Math.round(x * scale), tight ? 0 : Math.round(y * scale), Math.ceil(w * scale), Math.ceil(h * scale));
+    modelImages.set(key, c);
+  }
+  return modelImages.get(key);
+}
+// Standing, a tail swishes now and then: a few pictures back and forth, each animal keeping its own time.
+const SWISH_MS = 170, SWISH_EVERY = 34;
+// The game asks for a step or a wingbeat as one of two pictures. Where the sheet has more, they run through in their order, and big birds beat slower.
+const STEP_FRAME_MS = 95, BEAT_FRAME_MS = 62, BIG_BEAT_FRAME_MS = 105, FLUTTER_FRAME_MS = 58;
+const BIG_BIRDS = new Set(["goaskin", "njukca", "beahceloddi", "goahppil"]);
+function swishFrame(sprite, frame) {
+  const { frames } = window.MAHTTE_ANIMALS[sprite] ?? window.MAHTTE_ANIMALS[`beana-${dogBreed}`];
+  const time = performance.now() + sprite.length * 47;
+  if (frames.includes(40)) return 40 + Math.floor(time / FLUTTER_FRAME_MS) % 6;
+  if (frames.includes(30) && (frame === 3 || frame === 4)) return 30 + Math.floor(time / (BIG_BIRDS.has(sprite) ? BIG_BEAT_FRAME_MS : BEAT_FRAME_MS)) % 4;
+  if (frames.includes(20) && (frame === 1 || frame === 2)) return 20 + Math.floor(time / STEP_FRAME_MS) % 4;
+  const [one, other] = frames.includes(8) ? [8, 9] : frames.includes(6) ? [5, 6] : [];
+  if (frame !== 0 || !one) return frame;
+  const beat = Math.floor((performance.now() + sprite.charCodeAt(0) * 907 + sprite.length * 311) / SWISH_MS) % SWISH_EVERY;
+  return beat === 0 || beat === 4 ? one : beat === 2 || beat === 6 ? other : frame;
+}
+
+// In a place made ahead, what's on its way stays away for the moment it takes to load, rather than being drawn the old way first.
+const NOTHING_YET = Object.assign(document.createElement("canvas"), { width: 1, height: 1 });
 function modelImage(sprite, facing, frame, headFacing = facing, colour) {
+  // An owl's body is near enough round, so that turning all of it does for its head turning to look.
+  // A thing that comes in several kinds has a picture for each, named after the kind.
+  const baked = sprite === "beana" ? `beana-${dogBreed}` : window.MAHTTE_ANIMALS?.[`${sprite}-${colour}`] ? `${sprite}-${colour}` : sprite.replace("person_gear_", "person_");
+  if (window.MAHTTE_ANIMALS?.[baked]) return bakedAnimal(baked, sprite === "jievjaskuolfi" ? headFacing : facing, swishFrame(baked, frame)) ?? (madeTiles() ? NOTHING_YET : plainModelImage(sprite === "gumpe" || sprite === "geatki" || sprite === "albbas" ? "beana" : sprite, facing, frame, headFacing, colour));
   if (viewDetail === 1) return plainModelImage(sprite, facing, frame, headFacing, colour);
   const key = `${sprite}/${facing}/${frame}/${headFacing}/${colour}/${viewDetail}`;
   if (!modelImages.has(key)) {
     // Home is full of round furniture, too much to make in one go as the place opens.
-    if (sprite.startsWith("person_") || ANIMALS.has(sprite) || sprite === "laphund" || placeName === "home") {
+    if (sprite.startsWith("person_") || sprite.startsWith("carried_") || ANIMALS.has(sprite) || sprite === "laphund" || placeName === "home") {
       queueFinePicture(key, sprite, facing, frame, headFacing, colour);
       return modelImages.get(key) ?? plainModelImage(sprite, facing, frame, headFacing, colour);
     }
@@ -1063,7 +1391,7 @@ function modelImage(sprite, facing, frame, headFacing = facing, colour) {
 
 // Twice the size with Scale2x, which rounds off stair-steps and keeps a picture's drawing and colours exactly.
 function doubledImage(image) {
-  if (image.fine) return image.fine;
+  if (image.fine) return fittedFine(image);
   const w = image.width, h = image.height;
   const from = new Uint32Array(image.getContext("2d").getImageData(0, 0, w, h).data.buffer);
   const c = document.createElement("canvas");
@@ -1120,7 +1448,16 @@ const chairPoint = (chair, a, b, up) => {
 // Birch wood with a dark edge: it has to stand out from the blue of the gákti in front of it.
 const CHAIR_LOOK = { size: 0.3, seat: 6, backBottom: 3, backTop: 18, edge: "#3a2a1c", wood: "#dcb880", light: "#ecd2a0", shade: "#b89058", leg: "#6a4a2c" };
 
+// The classrooms' chair, from tools/make_classrooms.py, in the same two parts. Must match CHAIR_W, CHAIR_H and CHAIR_FOOT there.
+const CHAIR_PICTURE = { w: 28, h: 36, foot: 22 };
+const chairPictures = {};
+function drawMadeChair(chair, part) {
+  chairPictures[part] ??= Object.assign(new Image(), { src: `art/classroom/chair-${part}.png` });
+  if (chairPictures[part].complete) ctx.drawImage(chairPictures[part], isoX(chair.x, chair.y) - CHAIR_PICTURE.w / 2, isoY(chair.x, chair.y) - CHAIR_PICTURE.foot, CHAIR_PICTURE.w, CHAIR_PICTURE.h);
+}
+
 function drawChairSeat(chair) {
+  if (madeTiles()) return drawMadeChair(chair, "seat");
   const { size, seat, edge, wood, leg } = CHAIR_LOOK;
   const point = (a, b, up) => chairPoint(chair, a, b, up);
   const corners = [[-size, -size], [size, -size], [size, size], [-size, size]];
@@ -1138,6 +1475,7 @@ function drawChairSeat(chair) {
 }
 
 function drawChairBack(chair) {
+  if (madeTiles()) return drawMadeChair(chair, "back");
   const { size, backBottom, backTop, edge, wood, light, shade } = CHAIR_LOOK;
   const point = (a, b, up) => chairPoint(chair, a, b, up);
   // One solid panel, as wide as the seat, that hides the lower back of whoever sits there.
@@ -1193,8 +1531,88 @@ function paintCarried(cx, cy, [dx, dy]) {
   ctx.restore();
 }
 
+// The forest's ground, in pieces from tools/make_forest.py that load as they come near. Only the river and a little grass move, gently.
+const FOREST_CHUNK = 512 / FOREST_DETAIL; // in the world's pixels
+const MADE_GROUNDS = { forest: { folder: "art/forest", back: "#14302a" }, store: { folder: "art/store", back: "#191614" }, classroom: { folder: "art/classroom", back: "#191614" }, lesson: { folder: "art/lesson", back: "#191614" } };
+const forestChunks = new Map();
+function forestChunk(folder, column, row) {
+  const key = `${folder}/ground-${column}-${row}.webp`;
+  let chunk = forestChunks.get(key);
+  if (!chunk || chunk.detail !== CANVAS_DETAIL) {
+    chunk = loadFitted(key, () => [FOREST_CHUNK * CANVAS_DETAIL, FOREST_CHUNK * CANVAS_DETAIL]);
+    chunk.detail = CANVAS_DETAIL;
+    forestChunks.set(key, chunk);
+  }
+  return chunk;
+}
+
+function paintMadeGround(camX, camY, { folder, back }) {
+  ctx.fillStyle = back;
+  ctx.fillRect(camX, camY, VIEW_W, VIEW_H);
+  const columns = Math.ceil(WORLD_W / FOREST_CHUNK), rows = Math.ceil(WORLD_H / FOREST_CHUNK);
+  const c0 = Math.floor(camX / FOREST_CHUNK), r0 = Math.floor(camY / FOREST_CHUNK);
+  const c1 = Math.floor((camX + VIEW_W) / FOREST_CHUNK), r1 = Math.floor((camY + VIEW_H) / FOREST_CHUNK);
+  // One piece further round is fetched ahead of being needed.
+  for (let r = Math.max(0, r0 - 1); r <= Math.min(rows - 1, r1 + 1); r++) for (let c = Math.max(0, c0 - 1); c <= Math.min(columns - 1, c1 + 1); c++) {
+    const chunk = forestChunk(folder, c, r), image = chunk.ready ?? chunk.plain;
+    if (c >= c0 && c <= c1 && r >= r0 && r <= r1 && image) ctx.drawImage(image, c * FOREST_CHUNK, r * FOREST_CHUNK, FOREST_CHUNK, FOREST_CHUNK);
+  }
+}
+
+function paintForestLife(now, seen) {
+  for (let ty = 0; ty < HEIGHT; ty++) for (let tx = 0; tx < WIDTH; tx++) {
+    const tile = MAP[ty][tx];
+    const cx = isoX(tx, ty), cy = isoY(tx, ty);
+    if (!seen(cx, cy)) continue;
+    if (tile === "w") {
+      // Long soft glints drifting along the flow, fading in and out.
+      for (let i = 0; i < 2; i++) {
+        const s = noise(tx + i * 7, ty);
+        const along = ((now / (2600 + s * 1800) + s) % 1);
+        const glint = Math.sin(along * Math.PI) * 0.34;
+        ctx.fillStyle = `rgba(190, 228, 248, ${glint})`;
+        ctx.fillRect(cx - 12 + along * 18 + s * 6, cy + 5 + along * 9 + i * 3 + s * 3, 3 + s * 3, 0.5);
+      }
+    } else if (tile === "g" && noise(tx, ty + 30) > 0.62) {
+      // A few blades leaning in the same slow wind as the trees.
+      const lean = Math.sin(now / 2200 + tx * 1.7 + ty * 0.9) * 0.9;
+      const x = cx - 4 + noise(tx, ty + 31) * 9, y = cy + 5 + noise(tx + 31, ty) * 5;
+      ctx.fillStyle = "#4a8f49";
+      ctx.fillRect(x, y - 1.5, 0.5, 2);
+      ctx.fillStyle = "#a4d67a";
+      ctx.fillRect(x + lean * 0.5, y - 3, 0.5, 1.75);
+    }
+  }
+}
+
+// With #fps on the address, how many pictures a second are being drawn, for trying out how fast the game runs.
+const frameTimes = [];
+function paintFrameRate(now, camX, camY) {
+  frameTimes.push(now);
+  while (frameTimes.length && now - frameTimes[0] > 1000) frameTimes.shift();
+  ctx.font = "bold 8px sans-serif";
+  ctx.textAlign = "left";
+  ctx.fillStyle = "#000";
+  ctx.fillRect(camX + 3, camY + 3, 62, 11);
+  ctx.fillStyle = "#7fff7f";
+  ctx.fillText(`${frameTimes.length} fps, ${CANVAS_DETAIL}x`, camX + 5, camY + 11);
+}
+
+// A few z's rising from whoever is asleep, so that a child can see it from afar.
+function paintSleepZ(cx, cy, now, phase) {
+  ctx.save();
+  ctx.textAlign = "center";
+  for (let i = 0; i < 2; i++) {
+    const along = ((now + phase) / 2600 + i / 2) % 1;
+    ctx.font = `bold ${4 + along * 3}px sans-serif`;
+    ctx.fillStyle = `rgba(255, 255, 255, ${Math.sin(along * Math.PI) * 0.85})`;
+    ctx.fillText("z", cx + 3 + along * 5, cy - 8 - along * 12);
+  }
+  ctx.restore();
+}
+
 function draw(now) {
-  if (!worldImage) worldImage = buildWorld();
+  if (!worldImage && !MADE_GROUNDS[placeName]) worldImage = buildWorld();
   const dt = lastDraw === null ? 16 : Math.max(0, Math.min(now - lastDraw, 100));
   lastDraw = now;
   const moveX = me.moveX, moveY = me.moveY;
@@ -1204,22 +1622,31 @@ function draw(now) {
   cam.lookX += (moveX * CAMERA.ahead - cam.lookX) * ahead;
   cam.lookY += (moveY * CAMERA.ahead - cam.lookY) * ahead;
   const follow = 1 - Math.exp(-dt / CAMERA.followMs);
-  cam.x += (isoX(me.x, me.y) + cam.lookX - VIEW_W / 2 - cam.x) * follow;
-  cam.y += (isoY(me.x, me.y) - 14 + cam.lookY - (theme?.lesson ? 26 : 0) - VIEW_H / 2 - cam.y) * follow; // at a lesson, up towards the board
-  cam.x = Math.max(0, Math.min(WORLD_W - VIEW_W, cam.x));
-  cam.y = Math.max(0, Math.min(WORLD_H - VIEW_H, cam.y));
-  const camX = Math.round(cam.x), camY = Math.round(cam.y);
+  if (placeName === "lesson") placeCamera();
+  else {
+    cam.x += (isoX(me.x, me.y) + cam.lookX - VIEW_W / 2 - cam.x) * follow;
+    cam.y += (isoY(me.x, me.y) - 14 + cam.lookY - VIEW_H / 2 - cam.y) * follow;
+  }
+  // A place smaller than the view stays in the middle of it.
+  cam.x = WORLD_W <= VIEW_W ? (WORLD_W - VIEW_W) / 2 : Math.max(0, Math.min(WORLD_W - VIEW_W, cam.x));
+  cam.y = WORLD_H <= VIEW_H ? (WORLD_H - VIEW_H) / 2 : Math.max(0, Math.min(WORLD_H - VIEW_H, cam.y));
+  keepFitted();
+  // On the screen's pixels rather than the world's, so that the view glides instead of stepping three pixels at a time.
+  const camX = Math.round(cam.x * CANVAS_DETAIL) / CANVAS_DETAIL, camY = Math.round(cam.y * CANVAS_DETAIL) / CANVAS_DETAIL;
   const seen = (x, y, pad = 60) => x > camX - pad && x < camX + VIEW_W + pad && y > camY - pad && y < camY + VIEW_H + pad;
 
   ctx.save();
-  ctx.scale(viewDetail, viewDetail);
-  ctx.imageSmoothingEnabled = false;
+  ctx.scale(CANVAS_DETAIL, CANVAS_DETAIL);
+  const shrinking = CANVAS_DETAIL < 4; // the fine pictures come out even when they're smoothed down to fit
+  ctx.imageSmoothingEnabled = shrinking && !!MADE_GROUNDS[placeName];
   ctx.translate(-camX, -camY);
-  if (viewDetail > 1) ctx.drawImage(doubledImage(worldImage), camX * 2, camY * 2, VIEW_W * 2, VIEW_H * 2, camX, camY, VIEW_W, VIEW_H);
+  if (MADE_GROUNDS[placeName]) paintMadeGround(camX, camY, MADE_GROUNDS[placeName]);
+  else if (viewDetail > 1) ctx.drawImage(doubledImage(worldImage), camX * 2, camY * 2, VIEW_W * 2, VIEW_H * 2, camX, camY, VIEW_W, VIEW_H);
   else ctx.drawImage(worldImage, camX, camY, VIEW_W, VIEW_H, camX, camY, VIEW_W, VIEW_H);
 
+  if (placeName === "forest") paintForestLife(now, seen);
   // River glints along the flow, and grass moving in the wind.
-  for (let ty = 0; ty < HEIGHT; ty++) for (let tx = 0; tx < WIDTH; tx++) {
+  if (!MADE_GROUNDS[placeName]) for (let ty = 0; ty < HEIGHT; ty++) for (let tx = 0; tx < WIDTH; tx++) {
     const tile = MAP[ty][tx];
     const cx = isoX(tx, ty), cy = isoY(tx, ty);
     if (!seen(cx, cy)) continue;
@@ -1237,30 +1664,71 @@ function draw(now) {
     }
   }
 
-  const scene = [];
-  const footX = Math.round(isoX(me.x, me.y)), footY = Math.round(isoY(me.x, me.y));
+  const scene = [], madeTilesNow = [];
+  const onScreen = (value) => Math.round(value * CANVAS_DETAIL) / CANVAS_DETAIL;
+  const footX = onScreen(isoX(me.x, me.y)), footY = onScreen(isoY(me.x, me.y));
   for (const chair of chairs) {
-    scene.push({ d: chair.x + chair.y - 0.01, paint: () => drawChairSeat(chair) });
+    const chairBox = [isoX(chair.x, chair.y) - 14, isoY(chair.x, chair.y) - 22, isoX(chair.x, chair.y) + 14, isoY(chair.x, chair.y) + 14];
+    scene.push({ d: chair.x + chair.y - 0.01, box: chairBox, paint: () => drawChairSeat(chair) });
     // Whoever sits leans against the back, so it goes behind them; otherwise it stands in front of the seat.
-    scene.push({ d: chair.x + chair.y + (chair === me.sittingOn ? -0.005 : 0.01), paint: () => drawChairBack(chair) });
+    scene.push({ d: chair.x + chair.y + (chair === me.sittingOn ? -0.005 : 0.01), box: chairBox, paint: () => drawChairBack(chair) });
   }
   for (const t of treeMap) {
-    if (!seen(t.x, t.y, 70)) continue;
+    // Only what can reach the view, with room for its lean. Tall trees were too many of those to draw just in case.
+    if (t.block ? !seen(t.x, t.y, 70) : t.x + t.image.width / 2 + 3 < camX || t.x - t.image.width / 2 - 3 > camX + VIEW_W || t.y + 4 < camY || t.y - t.image.height > camY + VIEW_H) continue;
     // In front of the character and covering them, a tree turns see-through.
-    const left = t.x - t.image.width / 2, top = t.y + 2 - t.image.height;
-    const covers = !"CM".includes(MAP[t.ty]?.[t.tx]) && t.mx + t.my > me.x + me.y && footX + 8 > left && footX - 8 < left + t.image.width && footY > top && footY - 30 < t.y;
-    scene.push({ d: t.mx + t.my, paint: () => {
-      if (covers) ctx.globalAlpha = 0.5;
-      if (t.block) {
+    const left = t.x - t.image.width / 2, top = t.y + 2 - t.image.height + (t.made ? t.made[5] / 4 : 0);
+    const covers = !"CMETHXZ".includes(MAP[t.ty]?.[t.tx]) && t.mx + t.my > me.x + me.y && footX + 8 > left && footX - 8 < left + t.image.width && footY > top && footY - 30 < t.y;
+    // In the forest, an animal behind a tree shows through it too, as there it's what's being looked for.
+    const hidesThing = placeName === "forest" && !t.block && objects.some((o) => {
+      if (o.x + 0.5 + o.y + 0.5 >= t.mx + t.my) return false;
+      const ox = isoX(o.x + 0.5, o.y + 0.5), oy = isoY(o.x + 0.5, o.y + 0.5);
+      return ox + 8 > left && ox - 8 < left + t.image.width && oy > top && oy - 16 < t.y;
+    });
+    if (t.image.fine && !t.image.fine.complete) continue;
+    const madeBox = t.made && [t.x - 16 + t.made[4] / 4, t.y - 62 + t.made[5] / 4, t.x - 16 + (t.made[4] + t.made[2]) / 4, t.y - 62 + (t.made[5] + t.made[3]) / 4];
+    (t.made ? madeTilesNow : scene).push({ d: t.mx + t.my, box: madeBox, paint: () => {
+      if (covers || hidesThing) ctx.globalAlpha = placeName === "forest" ? 0.1 : placeName === "store" ? 0.3 : 0.5;
+      if (t.made) {
+        const { ready, plain } = madeSheet(), sheet = ready ?? plain, scale = ready ? CANVAS_DETAIL / 4 : 1;
+        const [sx, sy, w, h, ox, oy] = t.made;
+        if (sheet) ctx.drawImage(sheet, sx * scale, sy * scale, w * scale, h * scale, t.x - 16 + ox / 4, t.y + 2 - 64 + oy / 4, w / 4, h / 4);
+      } else if (t.block) {
         if (viewDetail > 1) paintImage(doubledImage(t.image), t.x - 16, t.y + 2 - t.image.height);
         else ctx.drawImage(t.image, t.x - 16, t.y + 2 - t.image.height);
       } else {
-        const wind = Math.sin(now / 1300 + t.tx * 2 + t.ty) + Math.sin(now / 470 + t.tx) * 0.4;
-        drawLiving(t.image, t.x - Math.floor(t.image.width / 2), t.y + 2 - t.image.height, { lean: wind * 1.4 });
+        // In the forest the wind is slow and each tree keeps to its own time: lively, but not enough to make anyone queasy.
+        const wind = placeName === "forest"
+          ? (Math.sin(now / 2600 + t.tx * 2 + t.ty) + Math.sin(now / 1100 + t.tx) * 0.25) * 0.8
+          : (Math.sin(now / 1300 + t.tx * 2 + t.ty) + Math.sin(now / 470 + t.tx) * 0.4) * 1.4;
+        drawLiving(t.image, t.x - Math.floor(t.image.width / 2), t.y + 2 - t.image.height, { lean: wind });
         if (placeName === "camp") campRim(t.image, 0, 0, t.image.width, t.image.height, t.x - Math.floor(t.image.width / 2), t.y + 2 - t.image.height, t.image.width, t.image.height, t.mx, t.my);
       }
       ctx.globalAlpha = 1;
     }});
+  }
+  if (placeName === "forest") {
+    const church = FOREST_CHURCH;
+    forestChurchImage = churchPicture(forestChurchImage, "art/forest/church.png");
+    const churchNow = forestChurchImage.ready ?? forestChurchImage.plain;
+    const middleX = (church.x0 + church.x1) / 2, middleY = (church.y0 + church.y1) / 2;
+    const left = isoX(middleX, middleY) - church.ax, top = isoY(middleX, middleY) - church.ay;
+    if (churchNow && seen(left + church.w / 2, top + church.h / 2, 240)) {
+      forestFenceImage = churchPicture(forestFenceImage, "art/forest/church-fence.png");
+      const fenceNow = forestFenceImage.ready ?? forestFenceImage.plain;
+      const inYard = me.x < church.x1 && me.y < church.y1;
+      // In the open part of the yard, by the gable and in the corner between the arms, the character is in front of the church.
+      const behind = inYard && !(me.x >= 56 || (me.x >= 54 && me.y >= 33));
+      const near = footX > left && footX < left + church.w && footY > top && footY - 30 < top + church.h;
+      const mine = me.x + me.y;
+      scene.push({ d: behind ? Math.max(church.depth, mine + 0.02) : Math.min(church.depth, mine - 0.02), paint: () => {
+        // Whoever walks round behind it can still be seen.
+        if (behind && near) ctx.globalAlpha = 0.72;
+        ctx.drawImage(churchNow, left, top, church.w, church.h);
+        ctx.globalAlpha = 1;
+      } });
+      if (fenceNow) scene.push({ d: mine + (inYard ? 0.03 : -0.03), paint: () => ctx.drawImage(fenceNow, left, top, church.w, church.h) });
+    }
   }
   for (const o of objects) {
     if (o.word.place === "bay") {
@@ -1305,8 +1773,9 @@ function draw(now) {
     const cx = isoX(o.x, o.y), onWater = o.word.place === "water";
     const cy = isoY(o.x, o.y) + HH + (onWater ? WATER_DROP : 0) - raised;
     if (!seen(cx, cy)) continue;
+    if (o.tiles) continue; // on its shelf already, as part of the store's pictures
     // Something in a fixture is drawn after the fixtures beside it, or they would cover it.
-    scene.push({ d: o.x + o.y + (raised ? 2.2 : 1), paint: () => {
+    scene.push({ d: o.x + o.y + (raised ? 2.2 : 1), box: [cx - 16, cy - 40, cx + 16, cy + 8], paint: () => {
       ctx.fillStyle = SHADOW;
       ctx.globalAlpha = 0.34;
       if (raised) ctx.globalAlpha = 0;
@@ -1324,6 +1793,7 @@ function draw(now) {
         const bob = onWater ? Math.round(Math.sin((now + o.phase) / 520)) : 0;
         ctx.globalAlpha = o.fade ?? 1;
         paintImage(modelImage(o.word.sprite, pose.facing, pose.frame, pose.head, o.word.colour), Math.round(cx) - MODEL_ANCHOR.x, Math.round(cy) - MODEL_ANCHOR.y - pose.lift - bob);
+        if (pose.asleep) paintSleepZ(cx, cy, now, o.phase);
         ctx.globalAlpha = 1;
         return;
       }
@@ -1337,9 +1807,9 @@ function draw(now) {
     }});
   }
   for (const thing of storeLife(now)) {
-    const cx = Math.round(isoX(thing.x, thing.y)), cy = Math.round(isoY(thing.x, thing.y) + HH - (thing.lift || 0));
+    const cx = onScreen(isoX(thing.x, thing.y)), cy = onScreen(isoY(thing.x, thing.y) + HH - (thing.lift || 0));
     if (!seen(cx, cy)) continue;
-    scene.push({ d: thing.d ?? thing.x + thing.y + 1 + (thing.order || 0), paint: () => {
+    scene.push({ d: thing.d ?? thing.x + thing.y + 1 + (thing.order || 0), box: [cx - 22, cy - 60, cx + 22, cy + 10], paint: () => {
       ctx.globalAlpha = (thing.alpha ?? 1) * 0.34;
       if (thing.shadow) {
         ctx.fillStyle = SHADOW;
@@ -1361,12 +1831,13 @@ function draw(now) {
         return;
       }
       paintImage(modelImage(thing.sprite, thing.facing, thing.frame, thing.facing, thing.carrying), cx - MODEL_ANCHOR.x, cy - MODEL_ANCHOR.y);
+      const carried = carriedImage(thing.sprite, thing.facing, thing.frame, thing.carrying);
+      if (carried) paintImage(carried, cx - MODEL_ANCHOR.x, cy - MODEL_ANCHOR.y);
       ctx.globalAlpha = 1;
     }});
   }
   if (placeName === "camp") campScene(scene, now, seen);
   if (placeName === "lesson") lessonScene(scene, now, seen);
-  cashierBubble(scene);
   // Eight directions: the game's own sheet for straight ones, the diagonal sheet for the rest.
   const facingName = me.facing;
   const mirrored = facingName === "W" || facingName === "SW" || facingName === "NW";
@@ -1378,7 +1849,7 @@ function draw(now) {
   const knocked = me.knockedAt === null ? null : now - me.knockedAt;
   if (me.sittingOn) {
     const since = now - me.sitAt;
-    sheet = sheetFor(look, viewDetail > 1);
+    sheet = sheetFor(look);
     row = SIT_ROW;
     flip = false;
     const hand = theme?.lesson ? lessonSeatFrame(now) : null;
@@ -1392,17 +1863,17 @@ function draw(now) {
     else if (since < SIT.downMs || since > SIT.downMs + SIT.lookMs) frameCol = 0;
     else frameCol = 1 + Math.floor((since - SIT.downMs) / SIT.swingMs) % 6; // the legs swing from the seat's edge
   } else if (me.slideAt !== null) {
-    sheet = sheetFor(look, viewDetail > 1);
+    sheet = sheetFor(look);
     row = SLIDE_ROW;
     frameCol = now - me.slideAt < 50 ? 0 : 1 + Math.floor((now - me.slideAt) / 70) % 3;
     flip = me.slideLeft;
   } else if (me.restAt !== null) {
-    sheet = sheetFor(look, viewDetail > 1);
+    sheet = sheetFor(look);
     row = SLIDE_ROW;
     frameCol = now - me.restAt < SLIDE.restMs * 0.7 ? 4 : 5;
     flip = me.slideLeft;
   } else if (knocked !== null) {
-    sheet = sheetFor(look, viewDetail > 1);
+    sheet = sheetFor(look);
     flip = false;
     if (knocked < KNOCK.sitAt) {
       row = FALL_ROW;
@@ -1422,27 +1893,30 @@ function draw(now) {
       }
     }
   } else if (me.running) {
-    sheet = sheetFor(look, viewDetail > 1);
+    sheet = sheetFor(look);
     row = RUN_ROWS + RUN_FACING[facingName] * RUN_SWAYS + sway + 3;
   } else if (me.jumpedAt !== null) {
     const t = (now - me.jumpedAt) / JUMP.ms;
-    sheet = sheetFor(look, viewDetail > 1);
+    sheet = sheetFor(look);
     row = JUMP_ROWS[facingName];
     frameCol = t < 0.35 ? 0 : t < 0.65 ? 1 : 2;
+  } else if (crouching && me.moving && !action) {
+    sheet = sheetFor(look);
+    row = CROUCH_WALK_ROWS + RUN_FACING[facingName];
   } else if (action || crouching) {
-    sheet = sheetFor(look, viewDetail > 1);
+    sheet = sheetFor(look);
     [row, frameCol] = playerFrame(now);
     flip = !!action?.flip;
   } else if (straight) {
-    sheet = sheetFor(look, viewDetail > 1);
+    sheet = sheetFor(look);
     row = !me.moving && sway === 0 && straight in LIFT_ROW && Math.abs(cloth.y) > CLOTH.liftAt
       ? LIFT_ROW[straight]
       : poseRow(me.moving, straight, sway);
   } else {
-    sheet = sheetFor(look, viewDetail > 1);
+    sheet = sheetFor(look);
     row = DIAGONAL_ROWS + ((me.moving ? 2 : 0) + (facingName.startsWith("N") ? 1 : 0)) * 5 + sway + 2;
   }
-  if (!me.hidden) scene.push({ d: me.x + me.y, paint: () => {
+  if (!me.hidden) scene.push({ d: me.x + me.y, box: [footX - 20, footY - 46, footX + 20, footY + 10], paint: () => {
     // Sitting, the drawing already has them at seat height; it moves forward off the chair's back.
     const cx = footX + (me.sittingOn ? SIT.forward : 0), ground = footY, cy = footY - Math.round(me.height);
     ctx.fillStyle = SHADOW;
@@ -1453,25 +1927,40 @@ function draw(now) {
     if (!sheet.complete) return;
     const carried = carriedBasket();
     if (carried && !carried[2]) paintCarried(cx, cy, carried);
+    ctx.imageSmoothingEnabled = shrinking;
     if (flip) {
       ctx.save();
       ctx.translate(cx + 12, cy + 4 - FRAME_H);
       ctx.scale(-1, 1);
-      ctx.drawImage(sheet, frameCol * FRAME_W * viewDetail, row * FRAME_H * viewDetail, FRAME_W * viewDetail, FRAME_H * viewDetail, 0, 0, FRAME_W, FRAME_H);
+      ctx.drawImage(sheet, sheetX(frameCol, row), sheetY(row), FRAME_W * SHEET_DETAIL, FRAME_H * SHEET_DETAIL, 0, 0, FRAME_W, FRAME_H);
       ctx.restore();
     } else {
-      ctx.drawImage(sheet, frameCol * FRAME_W * viewDetail, row * FRAME_H * viewDetail, FRAME_W * viewDetail, FRAME_H * viewDetail, cx - 12, cy + 4 - FRAME_H, FRAME_W, FRAME_H);
+      ctx.drawImage(sheet, sheetX(frameCol, row), sheetY(row), FRAME_W * SHEET_DETAIL, FRAME_H * SHEET_DETAIL, cx - 12, cy + 4 - FRAME_H, FRAME_W, FRAME_H);
     }
+    ctx.imageSmoothingEnabled = shrinking && !!MADE_GROUNDS[placeName];
+    paintTalkingMouth(ctx, row, frameCol, cx - 12, cy + 4 - FRAME_H, flip, 1, now);
     if (carried && carried[2]) paintCarried(cx, cy, carried);
     if (placeName === "camp") {
       campFireShadow(me.x, me.y, 22);
-      campRim(sheet, frameCol * FRAME_W * viewDetail, row * FRAME_H * viewDetail, FRAME_W * viewDetail, FRAME_H * viewDetail, cx - 12, cy + 4 - FRAME_H, FRAME_W, FRAME_H, me.x, me.y, flip);
+      campRim(sheet, sheetX(frameCol, row), sheetY(row), FRAME_W * SHEET_DETAIL, FRAME_H * SHEET_DETAIL, cx - 12, cy + 4 - FRAME_H, FRAME_W, FRAME_H, me.x, me.y, flip);
       campPaintHeld(cx, cy, now, flip);
     }
   }});
   // Foot dust lies on the ground where the foot landed, so someone walking towards the viewer leaves it behind them.
   for (const puff of puffs) {
-    if (isFootDust(puff)) scene.push({ d: puff.x + puff.y - 0.01, paint: () => paintPuff(puff, now) });
+    if (isFootDust(puff)) scene.push({ d: puff.x + puff.y - 0.01, box: [isoX(puff.x, puff.y) - 16, isoY(puff.x, puff.y) - 16, isoX(puff.x, puff.y) + 16, isoY(puff.x, puff.y) + 16], paint: () => paintPuff(puff, now) });
+  }
+  // A tile made into the floor's pictures is there already, and is only drawn again to cover what's behind it. Without a box a thing could be anywhere.
+  const before = scene.length;
+  for (const tile of madeTilesNow) {
+    const [x0, y0, x1, y1] = tile.box;
+    for (let i = 0; i < before; i++) {
+      const { d, box } = scene[i];
+      if (d < tile.d && (!box || (box[0] < x1 && box[2] > x0 && box[1] < y1 && box[3] > y0))) {
+        scene.push(tile);
+        break;
+      }
+    }
   }
   scene.sort((a, b) => a.d - b.d);
   for (const item of scene) item.paint();
@@ -1512,13 +2001,17 @@ function draw(now) {
   }
 
   // Drifting specks of light, for the open air of the forest only.
-  for (let i = 0; i < (placeName === "forest" ? 14 : 0); i++) {
-    const x = (noise(i, 4) * 360 + now / (60 + i * 7)) % (VIEW_W + 20);
-    const y = (noise(i, 8) * 240 + Math.sin(now / 900 + i) * 6 + now / (160 + i * 11)) % VIEW_H;
-    ctx.fillStyle = i % 3 ? "rgba(255, 250, 215, 0.55)" : "rgba(255, 255, 255, 0.8)";
-    ctx.fillRect(camX + Math.round(x) - 10, camY + Math.round(y), 1, 1);
+  for (let i = 0; i < (placeName === "forest" ? 8 : 0); i++) {
+    // Fixed in the world and not on the screen, so that they don't swim against the ground as the camera moves.
+    const wrap = (value, size) => ((value % size) + size) % size;
+    const x = wrap(noise(i, 4) * 1200 + now / (160 + i * 16) + Math.sin(now / 2400 + i) * 5 - camX, VIEW_W + 40);
+    const y = wrap(noise(i, 8) * 900 + Math.sin(now / 1900 + i * 2) * 5 + now / (420 + i * 30) - camY, VIEW_H + 40);
+    ctx.fillStyle = i % 3 ? "rgba(255, 250, 215, 0.42)" : "rgba(255, 255, 255, 0.6)";
+    ctx.fillRect(camX + x - 20, camY + y - 20, 0.6, 0.6);
   }
   if (placeName === "camp") paintCampNight(now, camX, camY);
+  if (location.hash === "#fps") paintFrameRate(now, camX, camY);
+  if (MADE_GROUNDS[placeName]) keepItSmooth(now);
   if (placeName === "lesson") paintLessonWarmth(camX, camY);
   ctx.restore();
   // Home has a warm light over everything.

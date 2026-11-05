@@ -941,7 +941,7 @@ function campRim(image, sx, sy, sw, sh, dx, dy, dw, dh, worldX, worldY, flip = f
   if (strength < 0.02) return;
   const screenX = isoX(light.x, light.y) - isoX(worldX, worldY), screenY = isoY(light.x, light.y) - isoY(worldX, worldY) + dh * 0.35;
   const size = Math.hypot(screenX, screenY) || 1;
-  const w = Math.ceil(dw * viewDetail), h = Math.ceil(dh * viewDetail);
+  const w = Math.ceil(dw * CANVAS_DETAIL), h = Math.ceil(dh * CANVAS_DETAIL);
   if (live || sx || sy || flip) {
     if (campRimCanvas.width < w) campRimCanvas.width = w;
     if (campRimCanvas.height < h) campRimCanvas.height = h;
@@ -1127,7 +1127,7 @@ function campScene(scene, now, seen) {
   // By the door, the pad and the bag, and whoever is asleep in it.
   const [ix, iy] = campAt("bed");
   model("sleepingpad", ix, iy, 0, undefined, -0.4);
-  model("sleepingbag", ix, iy, camp.sleeping ? 1 : 0, HAIR_SWATCHES[look.hair], -0.2);
+  model("sleepingbag", ix, iy, camp.sleeping ? 1 : 0, hexColour(hairRamp(look.hair)[1]), -0.2);
   // The arrow at what's next, when help is on.
   if (helpRound && (CAMP_STAGES[camp.stage] || camp.out)) {
     const at = camp.out ? campAt("bed") : campStageAt();

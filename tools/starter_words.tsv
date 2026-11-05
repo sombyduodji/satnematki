@@ -20,6 +20,9 @@ beana	N	koira	hund	beana	land	animal
 loddi	N	lintu	fugl	loddi	land	later
 njoammil	N	jänis	hare	njoammil	land	animal
 guovža	N	karhu	bjørn	guovza	land	animal
+gumpe	N	susi	ulv	gumpe	land	animal
+geatki	N	ahma	jerv	geatki	land	animal
+albbas	N	ilves	gaupe	albbas	land	animal
 rieban	N	kettu	rev	rieban	land	animal
 oarri	N	orava	ekorn	oarri	land	animal
 skuolfi	N	pöllö	ugle	skuolfi	land	later
@@ -44,17 +47,20 @@ tráktor	N	traktori	traktor	tractor	bay	vehicle
 eappel	N	omena	eple	apple	produce	food
 banána	N	banaani	banan	banana	produce	food
 láibi	N	leipä	brød	bread	shelf	food
+garraláibi	N	näkkileipä	knekkebrød	crispbread	shelf	food
+rohkaláibi	N	ruisleipä	rugbrød	ryebread	shelf	food
+goarddaláibi	N	paahtoleipä		toast	shelf	food
 mielki	N	maito	melk	milk	fridge	food
 vuostá	N	juusto	ost	cheese	fridge	food
-monni	N	muna	egg	egg	fridge	food
+monni	N	muna	egg	egg	pallet	food
 buđet	N	peruna	potet	potato	produce	food
 rušpi	N	porkkana	gulrot	carrot	produce	food
 vuodja	N	voi	smør	butter	fridge	food
 márfi	N	makkara	pølse	sausage	fridge	food
-muorji	N	marja	bær	berries	produce	food
 lákcajiekŋa	N	jäätelö	iskrem	icecream	freezer	food
 guolli	N	kala	fisk	guolli	freezer	food
 gáffe	N	kahvi	kaffe	coffee	shelf	food
+deadja	N	tee	te	tea	shelf	food
 tomáhtta	N	tomaatti	tomat	tomato	produce	food
 gurká	N	kurkku	agurk	cucumber	produce	food
 lávki	N	ruokasipuli	løk	onion	produce	food
@@ -66,8 +72,9 @@ eanamuorji	N	mansikka	jordbær	strawberry	produce	food
 viidnemuorji	N	viinirypäle	drue	grapes	produce	food
 sákta	N	mehu	saft	juice	fridge	food
 bohccobiergu	N	poronliha	reinkjøtt	reindeermeat	meat	food
+suovasbiergu	N	savuliha	røykekjøtt	smokedmeat	meat	food
 biffa	N	pihvi	biff	steak	meat	food
-biergodáigi	N	jauheliha	kjøttdeig	mince	meat	food
+biergodáigi	N	jauheliha	kjøttdeig	mince	fridge	food
 spiinnebiergu	N	sianliha	svinekjøtt	pork	meat	food
 šuhkoláda	N	suklaa	sjokolade	chocolate	shelf	food
 njálggus	N	karkki	slikkeri	candy	shelf	food
@@ -77,7 +84,7 @@ bruvsa	N	limsa	brus	soda	shelf	food
 pizza	N	pizza	pizza	pizza	freezer	food
 guoppar	N	sieni	sopp	mushroom	produce	food
 jokŋa	N	puolukka	tyttebær	lingonberry	freezer	food
-luomi	N	lakka	molte	cloudberry	freezer	food
+luomi	N	hilla	molte	cloudberry	freezer	food
 muorjemeastu	N	hillo	syltetøy	jam	shelf	food
 bullá	N	pulla		bun	shelf	food
 bánnogáhkku	N	pannukakku	pannekake	pancake	fridge	food
@@ -162,7 +169,6 @@ jalŋŋis	N	kanto	stubbe	stump	camp	camp
 niestelávka	N	eväsreppu	nistesekk	backpack	camp	camp
 oađđinseahkka	N	makuupussi	sovepose	sleepingbag	camp	camp
 gievdni	N	kahvipannu	kjel	kettle	camp	camp
-deadja	N	tee	te	tea	camp	camp
 kakáo	N	kaakao	kakao	cocoa	camp	camp
 čáhci	N	vesi	vann	water	camp	camp
 lihtti	N	kulho	beholder	bowl	camp	camp
