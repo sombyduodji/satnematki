@@ -2600,6 +2600,32 @@ window.MAHTTE_MAPS = {
    ]
   }
  },
+ "lesson": {
+  "rows": [
+   "YYYYYYYYYYYYHH",
+   "YYYYYYYYYYYYHH",
+   "YYFFFFFFFFFFHH",
+   "YJFFFFFFFFFFHH",
+   "YJFFFFTTTTFFHH",
+   "YYFFFFFFFFFFHH",
+   "YYFFFEFFFEFFHH",
+   "YJFFFFFFFFFFHH",
+   "YJFFFFFFFFFFHH",
+   "YYFFFEFFFEFFHH",
+   "YYFFFFFFFFFFHH",
+   "YYFFFFFFFFFFHH",
+   "HHHHHHHHHHHHHH",
+   "HHHHHHHHHHHHHH"
+  ],
+  "start": {
+   "x": 9,
+   "y": 7
+  },
+  "spots": {
+   "land": [],
+   "water": []
+  }
+ },
  "city": {
   "rows": [
    "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBXXX",

@@ -711,13 +711,23 @@ def diagonal_head_upper(p, cx, y):
     p.r(cx - 4, y + 7, cx + 3, y + 7, h[0])
     p.r(cx + 3, y + 3, cx + 4, y + 6, SKIN[1])  # the cheek shows, turned away to the right
 
-def diagonal_frame(facing, up=0, left=(0, 0), right=(0, 0), swing=0, blink=False, sway=0, flare=0, lift=0):
+def diagonal_frame(facing, up=0, left=(0, 0), right=(0, 0), swing=0, blink=False, sway=0, flare=0, lift=0, seated=False, kick=0, hand_up=0):
+    """seated: on a chair, seen from behind and turned to the desk, as at a lesson. kick swings the shins, and hand_up raises the
+    far arm, 1 being on its way and 2 and 3 up."""
     p = Px()
-    g = GROUND; body = g - 9 - up; y = body - 9; head = y - 8; cx = CX
+    g = GROUND; body = g - 9 - up + (1 if seated else 0); y = body - 9; head = y - 8; cx = CX
     girl = is_girl()
     h = hair()
-    sprite_leg(p, cx + 1, g - 1, right[0], right[1], near=False, toe=1 if facing == "se" else 0)
-    sprite_arm(p, cx + 4, y + 2, -swing, light=False)
+    if seated:
+        leg = (BLUE[0], BLUE[0], BLUE[1]) if girl else LEATHER
+        p.r(cx + 1, g - 7, cx + 6, g - 6, leg[1])
+        for x, shift, light in ((cx + 7, kick, False), (cx + 5, -kick, True)):
+            p.r(x + shift, g - 5, x + shift + 1, g - 3, leg[1 if light else 0])
+            p.r(x + shift, g - 2, x + shift + 2, g - 1, FUR[1 if light else 0])
+    else:
+        sprite_leg(p, cx + 1, g - 1, right[0], right[1], near=False, toe=1 if facing == "se" else 0)
+    if not hand_up:
+        sprite_arm(p, cx + 4, y + 2, -swing, light=False)
     p.r(cx - 5, y + 2, cx + 3, y + 8, BLUE[1])
     p.r(cx - 5, y + 2, cx - 4, y + 8, BLUE[2])
     if facing == "se":
@@ -736,8 +746,9 @@ def diagonal_frame(facing, up=0, left=(0, 0), right=(0, 0), swing=0, blink=False
         for x in (cx - 3, cx + 1):
             p.r(x, y + 5, x, y + 8, RED[1])
         p.r(cx - 3, y, cx + 2, y + 1, SKIN[1] if girl else RED[1])
-    sprite_leg(p, cx - 4, g, left[0], left[1], near=True, toe=1 if facing == "se" else 0)
-    sprite_skirt(p, cx, body, "down", sway, flare=flare, lift=lift, floor=g)
+    if not seated:
+        sprite_leg(p, cx - 4, g, left[0], left[1], near=True, toe=1 if facing == "se" else 0)
+    sprite_skirt(p, cx, body, "down", sway, flare=flare, lift=lift, floor=g - 2 if seated else g)
     sprite_arm(p, cx - 7, y + 2, swing, light=True)
     if facing == "se":
         diagonal_head_lower(p, cx, head, blink)
@@ -752,6 +763,8 @@ def diagonal_frame(facing, up=0, left=(0, 0), right=(0, 0), swing=0, blink=False
         sprite_long_hair(p, cx, head, "up", sway)
         diagonal_head_upper(p, cx, head)
     sprite_short_hair_flick(p, cx, head, "down" if facing == "se" else "up", sway)
+    if hand_up:
+        sprite_reaching_arm(p, cx + 3, y + 2, cx + 4 + hand_up, y + (1 if hand_up == 1 else -13))
     return add_outline(p.img)
 
 DIAGONAL_STEPS = [((0, 2), (0, -2), 2, 0), ((0, 1), (1, -1), 2, 1), ((0, 0), (2, 0), 1, 1), ((0, -1), (1, 1), 0, 0),
@@ -1023,6 +1036,9 @@ def main():
         rows += run_rows() + [[slide_frame(stage) for stage in range(6)]]
         rows += [[frame("right", squat=3, flare=1)] + [sit_frame(swing) for swing in (0, 1, 2, 1, 0, -1)]]
         rows += pat_rows() + work_rows()
+        # At a lesson, from behind: a hand going up, and then sitting, with the legs swinging after the first picture.
+        rows += [[diagonal_frame("ne", seated=True, hand_up=hand) for hand in (1, 2, 3)]]
+        rows += [[diagonal_frame("ne", seated=True, kick=kick) for kick in (0, 1, 1, 0, 0, -1, -1)]]
         sheet = Image.new("RGBA", (FW * 8, FH * len(rows)), (0, 0, 0, 0))
         for y, row in enumerate(rows):
             for x, fr in enumerate(row):

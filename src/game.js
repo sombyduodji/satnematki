@@ -132,6 +132,8 @@ const TEXT = {
   best: "Paras:",
   back: "← Takaisin",
   chooseLevel: "valitse taso",
+  chooseActivity: "valitse tehtävä",
+  activityNotes: { "Opettele numerot": "Perustaso", "Kirjoita numerot": "Keskivaikea", "Kirjoita sanalla": "Vaikea" },
   level: "Taso",
   levels: (count) => `${count} tasoa`,
 };
@@ -268,9 +270,11 @@ const THEMES = [
   { id: "gearstore", title: "Rautakauppa", level: "helppo", example: "veažir", place: "gearstore", sprite: "hammer", ordered: true, words: () => gearWords(5 + Math.floor(Math.random() * 2), 6) },
   { id: "gearstore-count", title: "Rautakauppa", level: "vaikeampi", example: "3 × vuokka", place: "gearstore", sprite: "boat", ordered: true, counts: true, words: () => gearWords(5 + Math.floor(Math.random() * 2), 6) },
   { id: "camp", title: "Laavu", place: "camp", sprite: "lavvu", camp: true, words: () => ({ find: [], extra: [] }) },
-  { id: "numbers-10", title: "Luokka", level: "0–10", place: "classroom", number: 7, desks: true, words: () => numberWords(10, 7, 4) },
-  { id: "numbers-20", title: "Luokka", level: "0–20", place: "classroom", number: 15, desks: true, words: () => numberWords(20, 10, 8) },
-  { id: "numbers-100", title: "Luokka", level: "0–100", place: "classroom", number: 64, desks: true, words: () => numberWords(100, 10, 8) },
+  { id: "numbers-10", title: "Luokka", section: "Numerot", activity: "Opettele numerot", level: "0–10", place: "classroom", number: 7, desks: true, words: () => numberWords(10, 7, 4) },
+  { id: "numbers-20", title: "Luokka", section: "Numerot", activity: "Opettele numerot", level: "0–20", place: "classroom", number: 15, desks: true, words: () => numberWords(20, 10, 8) },
+  { id: "numbers-100", title: "Luokka", section: "Numerot", activity: "Opettele numerot", level: "0–100", place: "classroom", number: 64, desks: true, words: () => numberWords(100, 10, 8) },
+  { id: "lesson-100", title: "Luokka", section: "Numerot", activity: "Kirjoita numerot", level: "0–100", place: "lesson", menuPlace: "classroom", number: 42, lesson: true, most: 100, words: () => ({ find: [], extra: [] }) },
+  ...[[9, 6], [20, 14], [100, 86]].map(([most, number]) => ({ id: `lesson-words-${most}`, title: "Luokka", section: "Numerot", activity: "Kirjoita sanalla", level: `0–${most}`, place: "lesson", menuPlace: "classroom", number, lesson: true, inWords: true, most, words: () => ({ find: [], extra: [] }) })),
 ];
 let theme = null;
 let shoppingList = [];
@@ -333,6 +337,7 @@ const RUN_SWAYS = 7;
 const RUN_FACING = { S: 0, N: 1, E: 2, W: 2, SE: 3, SW: 3, NE: 4, NW: 4 };
 const SLIDE_ROW = 97;
 const SIT_ROW = 98;
+const LESSON_HAND_ROW = 104, LESSON_SIT_ROW = 105;
 // lookAhead: a straight run into something within this many tiles dives in time. pathWidth: how close to the runner's
 // centre line it must be. contact: how much of a step being pushed back by anything counts as hitting it, so only
 // a shallow brush along something is run past.
@@ -573,7 +578,7 @@ function showResults(times, place) {
     results.querySelector("ol").append(row);
   });
   document.body.append(results);
-  results.querySelector("#again").addEventListener("click", newRound);
+  results.querySelector("#again").addEventListener("click", () => (theme.lesson ? enterTheme(theme) : newRound()));
   results.querySelector("#places").addEventListener("click", showPlaces);
   results.querySelector("#again").focus();
 }
@@ -602,13 +607,16 @@ function enterTheme(chosenTheme) {
   newRound();
   if (theme.camp) setupCamp();
   else camp = null;
+  if (theme.lesson) setupLesson();
+  else lesson = null;
   showPrompt();
   showGuide();
 }
 
 // In the classroom the on-screen pad's crouch button sits at a chair.
 function setPadForTheme() {
-  document.getElementById("use").textContent = theme?.desks ? TEXT.sit : "Ota";
+  document.getElementById("use").textContent = theme?.lesson ? LESSON_TEXT.raise : theme?.desks ? TEXT.sit : "Ota";
+  document.getElementById("pad").classList.toggle("seated", !!theme?.lesson);
   for (const id of ["camp-pack", "camp-drop"]) document.getElementById(id).hidden = !theme?.camp;
 }
 
@@ -621,11 +629,13 @@ function showGuide() {
   const inClassroom = theme.place === "classroom";
   const lines = [
     ...(audioOnly ? [guide.listen] : []),
-    ...(theme.camp ? [CAMP_TEXT.guide, CAMP_TEXT.keys] : audioOnly && !inClassroom ? [] : [guide.goal[inClassroom ? "classroom" : theme.id]]),
-    guide.move,
-    guide.run,
-    guide.jump[theme.place] || guide.jump.indoors,
-    inClassroom ? guide.crouchClassroom : guide.crouch,
+    ...(theme.lesson ? [theme.inWords ? LESSON_TEXT.guideWords : audioOnly ? LESSON_TEXT.guideAudio : LESSON_TEXT.guide] : [
+      ...(theme.camp ? [CAMP_TEXT.guide, CAMP_TEXT.keys] : audioOnly && !inClassroom ? [] : [guide.goal[inClassroom ? "classroom" : theme.id]]),
+      guide.move,
+      guide.run,
+      guide.jump[theme.place] || guide.jump.indoors,
+      inClassroom ? guide.crouchClassroom : guide.crouch,
+    ]),
   ];
   const level = theme.level ? ` (${theme.level})` : "";
   closeResults();
@@ -645,6 +655,10 @@ function showGuide() {
     paused = false;
     if (theme.camp) {
       if (!campDogName()) campAskDogName();
+      return;
+    }
+    if (theme.lesson) {
+      lessonBegin();
       return;
     }
     announce();
@@ -755,6 +769,10 @@ function escapeText(text) {
 function showPrompt() {
   if (theme?.camp) {
     promptEl.replaceChildren(campList());
+    return;
+  }
+  if (theme?.lesson) {
+    lessonPrompt();
     return;
   }
   const starRow = "★".repeat(stars) + "☆".repeat(roundSize - stars);
@@ -875,7 +893,9 @@ function wordLine(word, id = VOICES[look.gender]) {
 }
 
 async function playNextLine() {
-  const src = voiceQueue.shift();
+  const line = voiceQueue.shift();
+  // A line can come with a speed, which also raises its pitch: that's how classmates get voices of their own.
+  const src = line?.src ?? line, rate = line?.rate ?? 1;
   if (!src) {
     voiceBusy = false;
     duckAmbience(false);
@@ -905,6 +925,7 @@ async function playNextLine() {
   if (buffer) {
     const source = sound.createBufferSource();
     source.buffer = buffer;
+    source.playbackRate.value = rate;
     const gain = sound.createGain();
     source.connect(gain).connect(sound.destination);
     source.onended = next;
@@ -915,6 +936,8 @@ async function playNextLine() {
   }
   voice.onended = voice.onerror = next;
   voice.src = src;
+  voice.preservesPitch = rate === 1;
+  voice.playbackRate = rate;
   voice.play().catch(next);
 }
 
@@ -1122,11 +1145,11 @@ function showPlaces() {
 // The start page's picture of each place, showing faintly behind its button in the menu. With the mouse over the button, its clip
 // plays instead; it loads only then, and phones and anyone who has asked for less motion keep the picture.
 const CLIPS_ON_HOVER = matchMedia("(hover: hover) and (prefers-reduced-motion: no-preference)").matches;
-const PLACE_MAPS = { home: "koti", forest: "elaimet", city: "parkkipaikka", library: "kirjasto", store: "kauppa", gearstore: "rautakauppa", camp: "laavu", classroom: "luokka" };
+const PLACE_MAPS = { home: "koti", forest: "elaimet", city: "parkkipaikka", library: "kirjasto", store: "kauppa", gearstore: "rautakauppa", camp: "laavu", classroom: "luokka", lesson: "luokka" };
 // The menu's sections, by how far along the places are. A new place has to be added to one of them to show.
 const MENU_SECTIONS = [
-  { heading: "Pelattava demo", places: ["forest", "store"], look: "ready" },
-  { heading: "Pelattava, mutta ominaisuuksia voi puuttua", places: ["home", "city", "library", "classroom", "gearstore"], look: "partly" },
+  { heading: "Pelattava demo", places: ["forest", "store", "classroom"], look: "ready" },
+  { heading: "Pelattava, mutta ominaisuuksia voi puuttua", places: ["home", "city", "library", "gearstore"], look: "partly" },
   { heading: "Testattavissa, mutta ominaisuudet ja pelattavuus puutteelliset", places: ["camp"], look: "early" },
 ];
 
@@ -1282,14 +1305,14 @@ function menuPlaces() {
     const grid = document.createElement("div");
     grid.className = "menu-grid";
     for (const place of places) {
-      const levels = THEMES.filter((option) => option.place === place);
+      const levels = THEMES.filter((option) => (option.menuPlace ?? option.place) === place);
       const played = levels.filter(bestOf).length;
       grid.append(menuButton({
         look: themeLook(levels[0]),
         title: levels[0].title,
         small: levels.length > 1 ? `${"●".repeat(played)}${"○".repeat(levels.length - played)} ${TEXT.levels(levels.length)}` : bestText(levels[0]),
         map: PLACE_MAPS[place],
-        onClick: () => (levels.length > 1 ? menuLevels(levels[0].title, levels) : enterTheme(levels[0])),
+        onClick: () => (levels[0].activity ? menuActivities(levels[0].title, levels) : levels.length > 1 ? menuLevels(levels[0].title, levels) : enterTheme(levels[0])),
       }));
     }
     section.append(title, grid);
@@ -1298,8 +1321,9 @@ function menuPlaces() {
   cardEl.querySelector("button.continue, .menu-grid button").focus();
 }
 
-function menuLevels(title, levels) {
-  promptEl.innerHTML = `<span>${escapeText(title)}: ${TEXT.chooseLevel}</span>`;
+// A place with different things to do asks which first, and then how hard.
+function menuActivities(title, levels) {
+  promptEl.innerHTML = `<span>${escapeText(title)}: ${TEXT.chooseActivity}</span>`;
   preview = null;
   cardEl.className = "places";
   cardEl.innerHTML = "";
@@ -1307,6 +1331,42 @@ function menuLevels(title, levels) {
   back.id = "menu-back";
   back.textContent = TEXT.back;
   back.addEventListener("click", menuPlaces);
+  cardEl.append(back);
+  // In sections of their own, so that what's added later stays with its kind.
+  for (const heading of new Set(levels.map((option) => option.section))) {
+    const section = document.createElement("section");
+    section.className = "menu-section group";
+    const titleEl = document.createElement("h3");
+    titleEl.textContent = heading;
+    const grid = document.createElement("div");
+    grid.className = "menu-grid levels";
+    const inSection = levels.filter((option) => option.section === heading);
+    for (const activity of new Set(inSection.map((option) => option.activity))) {
+      const own = inSection.filter((option) => option.activity === activity);
+      const played = own.filter(bestOf).length;
+      grid.append(menuButton({
+        look: themeLook(own[0]),
+        title: activity,
+        small: [TEXT.activityNotes[activity], own.length > 1 ? `${"●".repeat(played)}${"○".repeat(own.length - played)} ${TEXT.levels(own.length)}` : bestText(own[0])].filter(Boolean).join(" · "),
+        map: PLACE_MAPS[own[0].place],
+        onClick: () => (own.length > 1 ? menuLevels(activity, own, () => menuActivities(title, levels)) : enterTheme(own[0])),
+      }));
+    }
+    section.append(titleEl, grid);
+    cardEl.append(section);
+  }
+  cardEl.querySelector(".menu-grid button").focus();
+}
+
+function menuLevels(title, levels, goBack = menuPlaces) {
+  promptEl.innerHTML = `<span>${escapeText(title)}: ${TEXT.chooseLevel}</span>`;
+  preview = null;
+  cardEl.className = "places";
+  cardEl.innerHTML = "";
+  const back = document.createElement("button");
+  back.id = "menu-back";
+  back.textContent = TEXT.back;
+  back.addEventListener("click", () => goBack());
   const grid = document.createElement("div");
   grid.className = "menu-grid levels";
   levels.forEach((option, index) => {
@@ -2177,7 +2237,7 @@ const AMBIENCE_STOP = 0.25; // seconds to fall silent on leaving a place
 const AMBIENCE_NOISE_SECONDS = 41;
 const AMBIENCE_SPEAKING = 0.5;
 // How loud each place is overall, so that all of them are heard at about the same level.
-const AMBIENCE_LEVEL = { forest: 1, city: 1, home: 1, store: 1, gearstore: 1, library: 1, classroom: 1 };
+const AMBIENCE_LEVEL = { forest: 1, city: 1, home: 1, store: 1, gearstore: 1, library: 1, classroom: 1, lesson: 1 };
 let ambiencePlace = null;
 const AMBIENCE_SAME_AS = { camp: "forest" }; // the camp is in the same woods, and the file need not be there twice
 let ambienceRun = null; // what is playing: its output, its endless sounds and its timers
@@ -2414,6 +2474,9 @@ const AMBIENCE = {
   gearstore(run) {
     AMBIENCE.store(run);
   },
+  lesson(run) {
+    AMBIENCE.classroom(run);
+  },
   library(run) {
     endlessHum(run, 110, 0.002); // keeps the sound channel open between the small noises
     nowAndThen(run, 5, 16, (at) => pageTurn(run.output, at));
@@ -2431,7 +2494,7 @@ function duckAmbience(speaking) {
 }
 
 // Recordings where there are good ones, with how loud each should end up on average, in decibels below full scale.
-const AMBIENCE_TRACKS = { forest: 40, city: 40, home: 45, library: 47, classroom: 45, store: 43, gearstore: 43 };
+const AMBIENCE_TRACKS = { forest: 40, city: 40, home: 45, library: 47, classroom: 45, store: 43, gearstore: 43, lesson: 47 };
 // Places whose recording has a hiss, and the pitch above which it's softened.
 const AMBIENCE_SOFTEN = { city: 5000 };
 const AMBIENCE_BLEND = 5; // seconds of a track's end blended into its start, so its loop has no join
@@ -2845,7 +2908,7 @@ const TILL = {
 };
 const BASKET_TILES = new Set([TILL.baskets, TILL.usedBaskets].map(([x, y]) => `${Math.round(x)},${Math.round(y)}`)); // nobody walks through the stacks
 // Each customer has a look for each kind of shop, with that shop's goods in the basket.
-const customerLooks = () => Object.keys(PERSON_LOOKS).filter((name) => !["cashier", "stocker", "butcher"].includes(name) && name.startsWith("gear_") === (placeName === "gearstore"));
+const customerLooks = () => Object.keys(PERSON_LOOKS).filter((name) => !["cashier", "stocker", "butcher"].includes(name) && !/^(teacher|classmate|store_cashier|cashier_man)/.test(name) && name.startsWith("gear_") === (placeName === "gearstore"));
 const DISPLAY_TILES = new Set("SRZPOU");
 let shoppers = [];
 let till = { queue: [], current: null, goods: [], bag: null, scanning: false, usedBaskets: 0, baskets: TILL.startBaskets };
@@ -2963,7 +3026,7 @@ async function buildShopperAhead(s) {
 
 // The player's own basket: taken from the stack by the door. A fall drops it and spills what's in it, and the character
 // picks the basket up again on getting up. The shopping must be walked over to gather it back, quietly.
-const newCart = () => ({ has: false, bag: null, stage: "basket", goods: [], dropped: null, spilled: [], said: new Set(), scanIn: 0, total: 0, typed: "", want: new Map() });
+const newCart = () => ({ cashier: Math.random() < 0.5 ? "biret" : "mahtte", greeted: false, has: false, bag: null, stage: "basket", goods: [], dropped: null, spilled: [], said: new Set(), scanIn: 0, total: 0, typed: "", want: new Map() });
 
 // What each thing costs, in whole euros: prices on s-kaupat.fi on 2026-11-04 (no shop chosen), rounded, at least 1.
 // Small packs, so that nothing costs more than 8: coffee 250 g, a small cake.
@@ -3053,7 +3116,7 @@ function putOnBelt() {
 }
 
 function sayPrice(remind = false) {
-  playVoice(`audio/store-price-${cart.total}-${cashierVoice()}.wav`, ...(remind ? [`audio/${STORE_HINTS.pay.line}-${VOICES[look.gender]}.wav`] : []));
+  playVoice({ src: `audio/store-price-${cart.total}-${cashierVoice()}.wav`, rate: cashierRate() }, ...(remind ? [`audio/${STORE_HINTS.pay.line}-${VOICES[look.gender]}.wav`] : []));
 }
 
 // The harder level: the price the cashier said goes into a calculator.
@@ -3117,8 +3180,10 @@ const GROUND_MEATS = new Set(["mince"]); // this goes through the grinder and is
 // Words in the bubbles. Machine made like the game's other sentences: for the user to check.
 const BELT_ITEM_PX = 11; // so that nothing on the belt hangs over its edges
 const STORE_PROMPTS = { pay: "storePay", price: "storePrice", bag: "storeBag", door: "storeDoor" };
-// The cashier speaks in the voice the player's character doesn't have.
-const cashierVoice = () => (VOICES[look.gender] === "biret" ? "mahtte" : "biret");
+// The cashier is a woman or a man at random each round, and the voice goes with the look.
+const cashierVoice = () => cart.cashier;
+const cashierRate = () => CASHIER_RATE;
+const CASHIER_RATE = 0.92; // a little lower and slower than the voice's own
 const STORE_HINTS = {
   basket: { line: "store-basket", sme: "Váldde márssu", fi: "Ota kori", act: takeBasket },
   till: { line: "store-till", sme: "Mana kássii", fi: "Mene kassalle" },
@@ -3213,7 +3278,7 @@ let hintShown = null;
 function updateHint() {
   const el = document.getElementById("hint");
   if (!el) return;
-  const canUse = theme && !paused && !me.sittingOn
+  const canUse = theme?.lesson ? (!paused && !lesson?.typing && lesson?.current && !lesson.current.answered ? { key: true, fi: LESSON_TEXT.raise } : null) : theme && !paused && !me.sittingOn
     ? storeHint() ?? (thingInReach() ? { key: true, fi: TEXT.useIt } : theme.desks && chairNearMe() ? { key: true, fi: TEXT.sit } : null)
     : null;
   showTopHint(canUse);
@@ -3239,8 +3304,24 @@ function updateHint() {
   }
 }
 
+// The cashier says welcome to the character by name as soon as the player first moves, in a bubble without a voice.
+const CASHIER_BUBBLE_MS = 3500;
+function cashierGreets() {
+  cart.greeted = true;
+  cart.bubble = { text: `Bures boahtin, ${CHARACTER_NAMES[VOICES[look.gender]]}!`, until: performance.now() + CASHIER_BUBBLE_MS };
+}
+
+function cashierBubble(scene) {
+  if (placeName !== "store" || !cart.bubble || performance.now() >= cart.bubble.until) return;
+  const [x, y] = TILL.cashier;
+  scene.push({ d: 1000, paint: () => lessonBubble(cart.bubble.text, isoX(x, y), isoY(x, y) - 44) });
+}
+const CHARACTER_NAMES = { biret: "Biret", mahtte: "Máhtte" };
+
 function updateCart(now) {
-  if (!isShop(placeName) || fallingDown()) return;
+  if (!isShop(placeName)) return;
+  if (placeName === "store" && !cart.greeted && me.moving) cashierGreets();
+  if (fallingDown()) return;
   cart.dropped = null;
   if (cart.stage === "door" && onDoorMat()) {
     cart.stage = "out";
@@ -3605,7 +3686,7 @@ function storeLife(now) {
     { sprite: "store_mat", x: TILL.door[0], y: TILL.door[1], facing: 0, frame: 0, order: -2 },
     { sprite: "store_door", x: TILL.doorway[0], y: TILL.doorway[1], facing: 0, frame: 0 },
     { sprite: "staff_door", x: TILL.staffDoor[0], y: TILL.staffDoor[1], facing: 0, frame: 0 },
-    { sprite: "person_cashier", x: TILL.cashier[0], y: TILL.cashier[1], facing: 2, frame: till.scanning ? 3 : 0, carrying: 0, shadow: true },
+    { sprite: `person_${placeName === "store" ? "store_cashier" : "cashier"}${cart.cashier === "mahtte" ? "_man" : ""}`, x: TILL.cashier[0], y: TILL.cashier[1], facing: 2, frame: till.scanning ? 3 : 0, carrying: 0, shadow: true },
   ];
   if (placeName !== "store") return shopGoings(things, now, flying, onCounter);
   // The butcher, cutting the big piece.
@@ -3739,7 +3820,7 @@ function sitAtChair(chair, repeat) {
 
 // The C key: sits at a chair in the classroom, or else crouches.
 function sitOrCrouch(repeat) {
-  if (paused) return;
+  if (paused || theme?.lesson) return;
   const chair = theme?.desks && chairNearMe();
   if (chair) sitAtChair(chair, repeat);
   else crouching = true;
@@ -3748,6 +3829,10 @@ function sitOrCrouch(repeat) {
 // The E key, or the Ota or Istu button: the default action, on what's at hand. Q is kept for putting things away later.
 function useKey(repeat) {
   if (paused || repeat) return;
+  if (theme?.lesson) {
+    lessonRaise(performance.now());
+    return;
+  }
   const chair = theme?.desks && chairNearMe();
   if (chair) sitAtChair(chair, repeat);
   else activate(performance.now());
@@ -3831,7 +3916,7 @@ function moveCharacter(dt, now) {
     me.moving = false;
     me.moveX = me.moveY = 0;
     tapped = null;
-    moveSitting(now);
+    if (!theme?.lesson) moveSitting(now); // at a lesson nobody gets up
     return;
   }
   if (me.slideAt !== null || me.restAt !== null) {
@@ -4003,6 +4088,7 @@ function frame(now) {
   if (!crouching) crouchClock = 0;
   moveCharacter(dt, now);
   if (theme?.camp) updateCamp(paused ? 0 : dt, now);
+  if (theme?.lesson) updateLesson(dt, now);
   if (!paused) {
     updateAnimals(dt, now);
     updateShoppers(dt);
@@ -4041,6 +4127,18 @@ document.addEventListener("keydown", (event) => {
     return;
   }
   if (paused) return;
+  if (theme?.lesson && lesson?.typing) {
+    if (event.target.tagName === "INPUT") { // it takes the letters itself
+      if (event.key === "Enter") lessonTypeKey("OK");
+      if (event.key === "Escape") lessonCloseKeypad();
+      return;
+    }
+    if (theme.inWords ? /^\p{L}$/u.test(event.key) : /^[0-9]$/.test(event.key)) return lessonTypeKey(event.key.toLowerCase());
+    if (event.key === "Backspace") return lessonTypeKey("⌫");
+    if (event.key === "Enter") return lessonTypeKey("OK");
+    if (event.key === "Escape") return lessonCloseKeypad();
+    return;
+  }
   if (cart.stage === "price" && theme?.counts) {
     if (/^[0-9]$/.test(event.key)) return typeKey(event.key);
     if (event.key === "Backspace") return typeKey("⌫");
@@ -4095,6 +4193,7 @@ canvas.addEventListener("pointerdown", (event) => {
   const box = canvas.getBoundingClientRect();
   const a = (((event.clientX - box.left) / box.width) * VIEW_W + Math.round(cam.x) - OX) / HW;
   const b = (((event.clientY - box.top) / box.height) * VIEW_H + Math.round(cam.y) - TOP_PAD) / HH;
+  if (theme?.lesson) return;
   // Tapping a desk or its chair walks to the chair and sits down.
   const mapX = (a + b) / 2, mapY = (b - a) / 2;
   const chair = theme?.desks && chairs.find((c) => (Math.floor(mapX) === c.deskX && Math.floor(mapY) === c.deskY) || Math.hypot(mapX - c.x, mapY - c.y) < 0.4);

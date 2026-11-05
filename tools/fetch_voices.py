@@ -34,6 +34,7 @@ LINES = {
     "store-notonlist-plural": "Dat eai leat mu listtus.",
     "store-full": "Vuordde.",
     # The lávvu camp. Drafts, machine made like the game's other sentences: for the user to check. Must match CHORES in src/camp.js.
+    "is-it-so": "Leago nu?",  # after a number's own line: "Dát lea vihtta. Leago nu?"
     "camp-axe": "Váldde ákšu.",
     "camp-fell": "Čuohpa muora.",
     "camp-saw": "Váldde sahá.",
@@ -101,6 +102,24 @@ PLURAL_ONLY = {"trousers"}
 def accusative(word):
     forms = word["forms"].get("Pl+Acc" if word["sprite"] in PLURAL_ONLY else "Sg+Acc")
     return forms[0] if forms else word["lemma"]
+
+
+# The classroom's teacher speaks with a voice of her own, one that no player character has.
+TEACHER = "sunna"
+TEACHER_LINES = {
+    "teacher-hello": "Bures, mánát!",
+    "teacher-it-is": "Dát lea",  # before a number on its own, as in "Buorre! Dát lea vihtta."
+    "teacher-wrong": "Ii dat lean.",
+    "teacher-end": "Giitu, mánát!",
+    "teacher-which-digit": "Mii nummir dát lea?",  # for writing numbers: 0 to 9, Finnish numero
+    "teacher-which-number": "Mii lohku dát lea?",  # and from 10 up, Finnish luku
+}
+
+
+def teacher_lines():
+    """The teacher's lines, as (file name, text): what she says, and every number on its own."""
+    numbers = json.loads(re.search(r"=\s*(\[.*\])", (OUT.parent / "data/numbers.js").read_text(encoding="utf-8"), re.S).group(1))
+    return [*TEACHER_LINES.items(), *((f"teacher-praise-{i}", text) for i, text in enumerate(line for line in PRAISE if line != "Gávdnet dan!")), *((f"teacher-number-{n}", f"{word[0].upper()}{word[1:]}.") for n, word in enumerate(numbers))]
 
 
 def wanted_lines():
@@ -171,6 +190,10 @@ def main():
             path = OUT / f"{line}-{voice}.wav"
             if not path.exists():
                 jobs.append((path, voice, text.replace("{name}", name)))
+    for line, text in teacher_lines():
+        path = OUT / f"{line}.wav"
+        if not path.exists():
+            jobs.append((path, TEACHER, text))
     # Whole places first: home, then other plain names, before the many colour phrases and numbers.
     home = {word["sprite"] for word in load_words() if word["theme"] == "home"}
     def order(job):

@@ -545,6 +545,7 @@ function buildWorld() {
   g.globalAlpha = 0.34;
   g.drawImage(layer, 0, 0);
   g.globalAlpha = 1;
+  if (placeName === "lesson") lessonSunlight(g);
   builtWorlds.set(placeName, image);
   return image;
 }
@@ -971,7 +972,7 @@ function drawModel(g, sprite, facing, frame, headFacing, colour, detail = 1) {
 
 const modelImages = new Map();
 // These places are drawn at double detail, so that things are easier to recognize.
-const DETAIL_PLACES = { home: 2, forest: 2, city: 2, library: 2, store: 2, gearstore: 2, camp: 2, classroom: 2 };
+const DETAIL_PLACES = { home: 2, forest: 2, city: 2, library: 2, store: 2, gearstore: 2, camp: 2, classroom: 2, lesson: 2 };
 let viewDetail = 1;
 
 function setViewDetail(place) {
@@ -1204,7 +1205,7 @@ function draw(now) {
   cam.lookY += (moveY * CAMERA.ahead - cam.lookY) * ahead;
   const follow = 1 - Math.exp(-dt / CAMERA.followMs);
   cam.x += (isoX(me.x, me.y) + cam.lookX - VIEW_W / 2 - cam.x) * follow;
-  cam.y += (isoY(me.x, me.y) - 14 + cam.lookY - VIEW_H / 2 - cam.y) * follow;
+  cam.y += (isoY(me.x, me.y) - 14 + cam.lookY - (theme?.lesson ? 26 : 0) - VIEW_H / 2 - cam.y) * follow; // at a lesson, up towards the board
   cam.x = Math.max(0, Math.min(WORLD_W - VIEW_W, cam.x));
   cam.y = Math.max(0, Math.min(WORLD_H - VIEW_H, cam.y));
   const camX = Math.round(cam.x), camY = Math.round(cam.y);
@@ -1364,6 +1365,8 @@ function draw(now) {
     }});
   }
   if (placeName === "camp") campScene(scene, now, seen);
+  if (placeName === "lesson") lessonScene(scene, now, seen);
+  cashierBubble(scene);
   // Eight directions: the game's own sheet for straight ones, the diagonal sheet for the rest.
   const facingName = me.facing;
   const mirrored = facingName === "W" || facingName === "SW" || facingName === "NW";
@@ -1378,7 +1381,15 @@ function draw(now) {
     sheet = sheetFor(look, viewDetail > 1);
     row = SIT_ROW;
     flip = false;
-    if (since < SIT.downMs || since > SIT.downMs + SIT.lookMs) frameCol = 0;
+    const hand = theme?.lesson ? lessonSeatFrame(now) : null;
+    if (hand !== null) {
+      row = LESSON_HAND_ROW;
+      frameCol = hand;
+    } else if (theme?.lesson) {
+      row = LESSON_SIT_ROW;
+      frameCol = lesson ? lessonSeatColumn(now) : 0;
+    }
+    else if (since < SIT.downMs || since > SIT.downMs + SIT.lookMs) frameCol = 0;
     else frameCol = 1 + Math.floor((since - SIT.downMs) / SIT.swingMs) % 6; // the legs swing from the seat's edge
   } else if (me.slideAt !== null) {
     sheet = sheetFor(look, viewDetail > 1);
@@ -1508,6 +1519,7 @@ function draw(now) {
     ctx.fillRect(camX + Math.round(x) - 10, camY + Math.round(y), 1, 1);
   }
   if (placeName === "camp") paintCampNight(now, camX, camY);
+  if (placeName === "lesson") paintLessonWarmth(camX, camY);
   ctx.restore();
   // Home has a warm light over everything.
   if (placeName === "home") {

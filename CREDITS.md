@@ -47,7 +47,7 @@ The gradation groups and series in the word list follow the
 ## Pronunciation
 
 The characters speak with the speech synthesis of Divvun and Giellatekno (UiT The Arctic University of
-Norway), voices **Máhtte and Biret**, from `api-giellalt.uit.no`. The question, the greeting, the right and wrong
+Norway), voices **Máhtte and Biret**, and **Sunná** for the classroom's teacher, from `api-giellalt.uit.no`. The question, the greeting, the right and wrong
 answers, the names of things and the numbers are generated once and included in [`audio/`](audio/) by
 [`tools/fetch_voices.py`](tools/fetch_voices.py). The game itself makes no requests.
 
@@ -68,6 +68,7 @@ Shortened by [`tools/make_ambience.py`](tools/make_ambience.py), from Freesound'
 | Library | [Quiet library ambience](https://freesound.org/people/xkeril/sounds/620683/) | xkeril |
 | Classroom | [classroom_ambiance](https://freesound.org/people/joedeshon/sounds/258094/) | joedeshon |
 | Store | [Grocery store ambience](https://freesound.org/people/thaighaudio/sounds/350488/) | thaighaudio |
+| Lesson in the small classroom | [Classroom Ambience](https://freesound.org/people/Tallis0410/sounds/707510/) | Tallis0410 |
 | General store | [Home Depot ambience](https://freesound.org/people/kyles/sounds/452506/) | kyles |
 
 If a recording can't load, the game makes its own sounds instead.

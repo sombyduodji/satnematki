@@ -95,6 +95,16 @@ body.menu #top-hint { display: none; }
 #card.keypad .sum { font-size: 28px; font-weight: bold; margin-bottom: 6px; }
 #card.keypad .keys { display: grid; grid-template-columns: repeat(3, 64px); gap: 6px; justify-content: center; margin-bottom: 8px; }
 #card.keypad .keys button { min-height: 44px; font-size: 20px; }
+#card.keypad.letters .sum { display: block; box-sizing: border-box; width: 100%; font-size: 22px; min-height: 40px; padding: 4px 10px; text-align: center; color: #fff; background: #1f2c3a; border: 2px solid #5b7186; border-radius: 8px; }
+#card.keypad.letters .sum:focus { outline: none; border-color: #ffd25a; }
+/* Rows stepped sideways as on a real keyboard, with every key the same width: a thirteenth of the board less the gap. */
+#card.keypad.letters .keys { display: block; width: 100%; max-width: 600px; margin: 0 auto 8px; }
+#card.keypad.letters .key-row { display: flex; margin-bottom: 4px; }
+#card.keypad.letters .key-row button { flex: 0 0 calc(100% / 13 - 3px); margin-right: 3px; min-width: 0; min-height: 42px; font-size: 18px; padding: 0; text-transform: uppercase; }
+#card.keypad.letters .key-row:nth-child(1) { transform: translateX(calc(100% / 13 * 0.5)); }
+#card.keypad.letters .key-row:nth-child(2) { transform: translateX(calc(100% / 13 * 0.75)); }
+#card.keypad.letters .key-row:nth-child(3) { transform: translateX(calc(100% / 13 * 0.25)); }
+#card.keypad.letters .key-row button[data-key="⌫"], #card.keypad.letters .key-row button[data-key="OK"] { flex-basis: calc(100% / 13 * 2 - 3px); }
 #hint::after { content: ""; position: absolute; left: 50%; bottom: -5px; margin-left: -5px; border: 5px solid transparent; border-bottom: 0; border-top-color: #f4f1e8; }
 #hint kbd { padding: 0 5px; border-radius: 4px; background: #14213d; color: #ffd25a; font: bold 13px sans-serif; }
 #hint small { color: #5a6670; }
@@ -187,6 +197,7 @@ body.menu #view, body.menu #pad, body.menu #in-game { display: none; }
 .menu-section.ready { --frame: #5cc26e; }
 .menu-section.partly { --frame: #ffc61e; }
 .menu-section.early { --frame: #e8604c; }
+.menu-section.group { --frame: #7fb6e6; }
 .menu-section h3 { margin: 0 -10px 10px; padding: 6px 12px; color: #14213d; background: var(--frame); border-radius: 6px 6px 0 0; font-size: 16px; font-weight: 700; }
 .menu-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
 .menu-grid.levels { grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); }
@@ -371,6 +382,11 @@ body.menu #view, body.menu #pad, body.menu #in-game { display: none; }
   border-radius: 10px;
   touch-action: none;
 }
+#pad.seated button:not(#use) { display: none; }
+#pad.seated { display: block; }
+#pad.seated.typing { display: none; }
+#pad.seated #use { width: 100%; min-height: 84px; font-size: 1.4em; }
+.lesson-mine { font-size: 1.5em; color: #ffd25a; }
 #pad [data-dir=up] { grid-area: up; }
 #pad [data-dir=left] { grid-area: left; }
 #pad [data-dir=down] { grid-area: down; }

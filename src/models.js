@@ -741,8 +741,14 @@ Object.assign(MODELS, {
     ...rounded(-23, 23, -17, 17, 0, 0.9, 0.3, "#a8483a"),
     paint: ([, y]) => ["#a8483a", "#e6c15a", "#a8483a", "#3f6c9a", "#f0e6cf", "#3f6c9a", "#a8483a", "#e6c15a", "#a8483a"][Math.min(8, Math.floor((y + 17) / 3.78))],
   }],
-  flower: () => [
-    tube([0, 0, 0.5], [0, 0, 6], 2.8, 3.8, "#c0683c"),
+  // A big leafy plant in a pot, for the classroom.
+  lesson_plant: () => [
+    { ...tube([0, 0, 0.5], [0, 0, 8], 4, 5.2, "#b86a42"), paint: ([, , z]) => (z > 6.6 ? "#c97a50" : "#b86a42") },
+    ball(0, 0, 8.2, 4.7, 4.7, 0.6, "#3e2a1a"),
+    tube([0, 0, 8], [0.4, 0, 15], 0.5, 0.4, "#55703a"),
+    ...[[6, 0, 15, 5], [-6, 1, 15, 5], [1, 6, 16, 5], [0, -6, 16, 5], [4, 4, 20, 4.4], [-4, -4, 20, 4.4], [-4, 4, 21, 4], [4, -3, 21, 4], [0, 0, 24, 4.4]].map(([x, y, z, size], i) => ball(x, y, z, size, size, size * 0.6, i % 2 ? "#3f8a48" : "#57a556")),
+  ],
+  flower: () => [    tube([0, 0, 0.5], [0, 0, 6], 2.8, 3.8, "#c0683c"),
     ball(0, 0, 6.3, 3.5, 3.5, 0.5, "#3e2a1a"),
     tube([0, 0, 6], [0.5, 0, 14], 0.45, 0.4, "#3e8e41"),
     ball(3, 0.5, 10, 3, 1.2, 0.5, "#3e8e41"),
@@ -921,6 +927,19 @@ const PERSON_LOOKS = {
   teen: { k: 0.86, w: 0.84, legs: "#3a3a48", top: "#6a4aa0", hair: "beanie", hairColour: "#3e8a4e", basket: "#c84a3a", goods: ["orange", "bread", "apple"], pace: 1.15 },
   girl: { k: 0.66, w: 0.82, legs: "#b5533f", top: "#d8588a", hair: "braids", hairColour: "#8a5a2c", basket: "#3e74c9", goods: ["apple", "orange", "bread"], pace: 1.2 },
   boy: { k: 0.6, w: 0.8, legs: "#3f5a84", top: "#e6a93a", hair: "cap", hairColour: "#d13a30", basket: "#3e8a4e", goods: ["orange", "apple", "cheese"], pace: 1.2 },
+  // The classroom's teacher: a shirt with bands of colour and a risku at the neck, not a gákti. Generic, for the user to check.
+  teacher: { k: 1, w: 1, legs: "#3a3f52", top: "#f4efe2", long: "#2b3a5c", bands: ["#c8372d", "#f2c14e", "#2f5fa8"], risku: true, hair: "bun", hairColour: "#5a3a22" },
+  teacher_blue: { k: 1, w: 1, legs: "#3a3f52", top: "#2f4a6b", long: "#23262f", bands: ["#c8372d", "#f2c14e", "#2f5fa8"], risku: true, hair: "bun", hairColour: "#5a3a22" },
+  teacher_red: { k: 1, w: 1, legs: "#3a3f52", top: "#8c2f33", long: "#23262f", bands: ["#f2c14e", "#2f5fa8", "#f4efe2"], risku: true, hair: "bun", hairColour: "#5a3a22" },
+  // Classmates: one in a gákti, the others dressed for the north. Generic, for the user to check.
+  classmate_gakti: { k: 0.66, w: 0.82, legs: "#2557a8", top: "#2557a8", long: "#2557a8", bands: ["#c8372d", "#f2c14e", "#c8372d"], hair: "braids", hairColour: "#6a4326" },
+  classmate_anorak: { k: 0.62, w: 0.86, legs: "#3f4656", top: "#3f6f5a", stripe: "#e8d4ae", hair: "beanie", hairColour: "#c8372d" },
+  classmate_wool: { k: 0.64, w: 0.86, legs: "#39424f", top: "#d9d2c2", stripe: "#2f5fa8", hair: "short", hairColour: "#2e2620" },
+  classmate_parka: { k: 0.6, w: 0.86, legs: "#2c3340", top: "#b5533f", stripe: "#f2c14e", hair: "beanie", hairColour: "#2f5fa8" },
+  // The grocery store's own uniform: the brand's blue and gold, in two cuts to go with the two voices.
+  store_cashier: { k: 1, w: 0.96, legs: "#2b3a5c", top: "#f4f1e8", apron: "#2f5fa8", stripe: "#f2c14e", badge: "#f2c14e", skirt: "#2f5fa8", hair: "bun", hairColour: "#5a3a22" },
+  store_cashier_man: { k: 1.04, w: 1.04, legs: "#2b3a5c", top: "#f4f1e8", apron: "#2f5fa8", stripe: "#f2c14e", badge: "#f2c14e", hair: "cap", hairColour: "#2f5fa8" },
+  cashier_man: { k: 1.04, w: 1.04, legs: "#30384a", top: "#f4f1e8", apron: "#2f5fa8", badge: "#f2c14e", hair: "short", hairColour: "#4a3424" },
   cashier: { k: 1, w: 1, legs: "#30384a", top: "#f4f1e8", apron: "#2f5fa8", badge: "#f2c14e", hair: "bun", hairColour: "#5a3a22" },
   butcher: { k: 1.1, w: 1.12, legs: "#30384a", top: "#f4f1e8", apron: "#c9ccd2", stripe: "#7a2f3a", hair: "cap", hairColour: "#f4f1e8", beard: "#5a3a22", knife: true },
   stocker: { k: 1.08, w: 1.02, legs: "#30384a", top: "#f4f1e8", apron: "#2f5fa8", badge: "#f2c14e", hair: "short", hairColour: "#2e2620", beard: "#2e2620", pace: 1.2 },
@@ -943,20 +962,43 @@ const shifted = (shape, dx, dy, dz) => {
 function personModel(p) {
   return (frame, carrying) => {
     const k = p.k, w = p.w;
-    const leg = 11 * k, body = 7.6 * k, r = 3.6 * (0.8 + 0.2 * k);
+    const seated = frame >= 5 && frame <= 8; // on a chair, facing +y: 6 has a hand up, and 7 and 8 swing the legs
+    const swing = frame === 7 ? 1.5 : frame === 8 ? -1.5 : 0;
+    const leg = seated ? 7 : 11 * k, body = 7.6 * k, r = 3.6 * (0.8 + 0.2 * k);
     const top = leg + body, z = top + r + 0.6;
     const stride = frame === 1 ? 1.7 * k : frame === 2 ? -1.7 * k : 0;
     const hand = [3.7 * w + 0.5, 0.6, leg + 0.6];
     const parts = [
-      ...sides((s) => [
+      ...(seated ? sides((s) => [
+        tube([s * 1.6 * w, 0, leg], [s * 1.6 * w, 8 * k, leg], 1.5 * w, 1.3, p.legs),
+        tube([s * 1.6 * w, 8 * k, leg], [s * 1.6 * w, 8.4 * k + s * swing, 1.8], 1.3 * w, 1.1, p.legs),
+        ball(s * 1.6 * w, 9 * k + s * swing, 1.1, 1.2, 1.8, 0.9, "#2c2c36"),
+      ]).flat() : sides((s) => [
         tube([s * 1.6 * w, 0, leg], [s * 1.6 * w, s * stride, 1.6], 1.75 * w * (0.7 + 0.3 * k), 1.35 * (0.7 + 0.3 * k), p.legs),
         ball(s * 1.6 * w, s * stride + 0.8, 0.9, 1.3, 2, 0.9, "#2c2c36"),
-      ]).flat(),
+      ]).flat()),
       tube([0, p.stoop ? 0.6 : 0, leg - 0.4], [0, p.stoop ? 1.6 : 0, top], 3.8 * w, 3.2 * w, p.top),
       tube([-3.7 * w, 0, top], [-hand[0], hand[1], hand[2]], 1.1, 0.95, p.top),
       ball(-hand[0], hand[1], hand[2], 0.9, 0.9, 0.9, SKIN),
     ];
     if (p.skirt) parts.push(tube([0, 0, leg - 3 * k], [0, 0, leg + 1], 3.9 * w + 0.8, 3.6 * w, p.skirt));
+    // A long skirt falls to the floor, or sitting, lies over the lap and hangs from the knees.
+    if (p.long && seated) parts.push(tube([0, 0, leg + 0.2], [0, 8 * k, leg + 0.2], 3.4 * w, 3.3 * w, p.long), tube([0, 8.3 * k, leg], [0, 8.6 * k, 2.6], 3.3 * w, 3 * w, p.long));
+    else if (p.long) parts.push(tube([0, 0, 1.4], [0, 0, leg + 0.6], 4.4 * w, 3.7 * w, p.long));
+    if (p.bands) {
+      // Narrow bands at the collar and cuffs, and a ribbon down the front, with the same at the skirt's hem.
+      p.bands.forEach((colour, i) => {
+        parts.push(tube([0, 0, top - 0.7 - i * 0.45], [0, 0, top - 0.3 - i * 0.45], 3.85 * w, 3.25 * w, colour));
+        if (p.long && seated) parts.push(tube([0, 8.3 * k, 2.8 + i * 0.5], [0, 8.6 * k, 3.25 + i * 0.5], 3.35 * w, 3.05 * w, colour));
+        else if (p.long) parts.push(tube([0, 0, 2.2 + i * 0.5], [0, 0, 2.65 + i * 0.5], 4.45 * w, 4.05 * w, colour));
+      });
+      parts.push(...sides((s) => ball(s * (hand[0] - 0.05), hand[1], hand[2] + 1.2, 1.15, 1.05, 0.38, p.bands[0])));
+    }
+    if (p.risku) {
+      // A round silver brooch at the neck with small discs hanging from it.
+      parts.push(ball(0, 3.55 * w, top - 2.3, 1.5, 0.4, 1.5, "#c4cace"), ball(0, 3.85 * w, top - 2.3, 0.7, 0.25, 0.7, "#f4f6f7"));
+      for (const x of [-1.05, 0, 1.05]) parts.push(ball(x, 3.6 * w, top - 4.1 + Math.abs(x) * 0.4, 0.5, 0.16, 0.5, "#b4babf"));
+    }
     if (p.stripe) parts.push(tube([0, 0, leg + body * 0.5], [0, 0, leg + body * 0.5 + 1.4], 3.75 * w, 3.5 * w, p.stripe));
     if (p.apron) parts.push(rounded(-3 * w, 3 * w, 2.5 * w, 3.5 * w, leg - 3, top - 0.8, 0.3, p.apron));
     if (p.badge) parts.push(ball(1.6 * w, 3.6 * w, top - 1.6, 0.6, 0.2, 0.4, p.badge));
@@ -968,6 +1010,9 @@ function personModel(p) {
       if (p.knife) parts.push(rounded(out[0] - 0.25, out[0] + 0.25, out[1], out[1] + 3.6, out[2] - 0.5, out[2] + 0.4, 0.05, "#c9ccd2"));
       if (frame === 4) parts.push(rounded(out[0] - 0.8, out[0] + 0.8, out[1], out[1] + 1.8, out[2] + 0.3, out[2] + 0.6, 0.05, "#2f5fa8"));
       else if (p.goods && typeof carrying === "number") parts.push(SMALL_FOOD[p.goods[Math.min(carrying, 2)]](out[0], out[1] + 1, out[2] - 1));
+    } else if (frame === 6) {
+      const up = [4 * w, 0.8, z + r + 3.5];
+      parts.push(tube([3.7 * w, 0, top], up, 1.1, 0.9, p.top), ball(...up, 1, 1, 1, SKIN));
     } else {
       parts.push(tube([3.7 * w, 0, top], hand, 1.1, 0.95, p.top), ball(...hand, 0.9, 0.9, 0.9, SKIN));
     }
