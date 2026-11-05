@@ -1148,7 +1148,7 @@ function showPlaces() {
 // The start page's picture of each place, showing faintly behind its button in the menu. With the mouse over the button, its clip
 // plays instead; it loads only then, and phones and anyone who has asked for less motion keep the picture.
 const CLIPS_ON_HOVER = matchMedia("(hover: hover) and (prefers-reduced-motion: no-preference)").matches;
-const PLACE_MAPS = { home: "koti", forest: "elaimet", city: "parkkipaikka", library: "kirjasto", store: "kauppa", gearstore: "rautakauppa", camp: "laavu", classroom: "luokka", lesson: "luokka" };
+const PLACE_MAPS = { home: "koti", forest: "elaimet", city: "parkkipaikka", library: "kirjasto", store: "kauppa", gearstore: "rautakauppa", camp: "laavu", classroom: "luokka", lesson: "oppitunti" };
 // The menu's sections, by how far along the places are. A new place has to be added to one of them to show.
 const MENU_SECTIONS = [
   { heading: "Pelattava demo", places: ["forest", "store", "classroom"], look: "ready" },
