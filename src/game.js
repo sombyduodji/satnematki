@@ -267,11 +267,11 @@ const THEMES = [
   { id: "gearstore", title: "Rautakauppa", level: "helppo", example: "veažir", place: "gearstore", sprite: "hammer", ordered: true, words: () => gearWords(5 + Math.floor(Math.random() * 2), 6) },
   { id: "gearstore-count", title: "Rautakauppa", level: "vaikeampi", example: "3 × vuokka", place: "gearstore", sprite: "boat", ordered: true, counts: true, words: () => gearWords(5 + Math.floor(Math.random() * 2), 6) },
   { id: "camp", title: "Laavu", place: "camp", sprite: "lavvu", camp: true, words: () => ({ find: [], extra: [] }) },
-  { id: "numbers-10", title: "Luokka", section: "Numerot", activity: "Opettele numerot", level: "0–10", place: "classroom", number: 7, desks: true, words: () => numberWords(10, 7, 4) },
-  { id: "numbers-20", title: "Luokka", section: "Numerot", activity: "Opettele numerot", level: "0–20", place: "classroom", number: 15, desks: true, words: () => numberWords(20, 10, 8) },
-  { id: "numbers-100", title: "Luokka", section: "Numerot", activity: "Opettele numerot", level: "0–100", place: "classroom", number: 64, desks: true, words: () => numberWords(100, 10, 8) },
-  ...[[9, 4], [20, 16], [100, 42]].map(([most, number]) => ({ id: `lesson-${most}`, title: "Luokka", section: "Numerot", activity: "Kirjoita numerot", level: `0–${most}`, place: "lesson", menuPlace: "classroom", number, lesson: true, most, words: () => ({ find: [], extra: [] }) })),
-  ...[[9, 6], [20, 14], [100, 86]].map(([most, number]) => ({ id: `lesson-words-${most}`, title: "Luokka", section: "Numerot", activity: "Kirjoita sanalla", level: `0–${most}`, place: "lesson", menuPlace: "classroom", number, lesson: true, inWords: true, most, words: () => ({ find: [], extra: [] }) })),
+  { id: "numbers-10", title: "Koulu", section: "Numerot", activity: "Opettele numerot", level: "0–10", place: "classroom", number: 7, desks: true, words: () => numberWords(10, 7, 4) },
+  { id: "numbers-20", title: "Koulu", section: "Numerot", activity: "Opettele numerot", level: "0–20", place: "classroom", number: 15, desks: true, words: () => numberWords(20, 10, 8) },
+  { id: "numbers-100", title: "Koulu", section: "Numerot", activity: "Opettele numerot", level: "0–100", place: "classroom", number: 64, desks: true, words: () => numberWords(100, 10, 8) },
+  ...[[9, 4], [20, 16], [100, 42]].map(([most, number]) => ({ id: `lesson-${most}`, title: "Koulu", section: "Numerot", activity: "Kirjoita numerot", level: `0–${most}`, place: "lesson", menuPlace: "classroom", number, lesson: true, most, words: () => ({ find: [], extra: [] }) })),
+  ...[[9, 6], [20, 14], [100, 86]].map(([most, number]) => ({ id: `lesson-words-${most}`, title: "Koulu", section: "Numerot", activity: "Kirjoita sanalla", level: `0–${most}`, place: "lesson", menuPlace: "classroom", number, lesson: true, inWords: true, most, words: () => ({ find: [], extra: [] }) })),
 ];
 let theme = null;
 let shoppingList = [];
@@ -1266,7 +1266,7 @@ function showPlaces() {
 const PLACE_MAPS = { home: "koti", forest: "elaimet", city: "parkkipaikka", library: "kirjasto", store: "kauppa", gearstore: "rautakauppa", camp: "laavu", classroom: "luokka", lesson: "oppitunti" };
 // The menu's sections, by how far along the places are. A new place has to be added to one of them to show.
 const MENU_SECTIONS = [
-  { heading: "Pelattava demo", places: ["forest", "store", "classroom"], look: "ready" },
+  { heading: "Pelattava demo", places: ["classroom", "forest", "store"], look: "ready" },
   { heading: "Keskeneräiset kentät – näitä voi testata, mutta niiden kehitys on vasta alkamassa", places: ["home", "city", "library", "gearstore", "camp"], look: "partly" },
 ];
 
