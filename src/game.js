@@ -1126,8 +1126,8 @@ const PLACE_MAPS = { home: "koti", forest: "elaimet", city: "parkkipaikka", libr
 // The menu's sections, by how far along the places are. A new place has to be added to one of them to show.
 const MENU_SECTIONS = [
   { heading: "Pelattava demo", places: ["forest", "store"], look: "ready" },
-  { heading: "Pelattava, mutta tärkeitä osia puuttuu", places: ["home", "city", "library", "classroom", "gearstore"], look: "partly" },
-  { heading: "Varhainen testaus, ei ehkä edes käynnisty", places: ["camp"], look: "early" },
+  { heading: "Pelattava, mutta ominaisuuksia voi puuttua", places: ["home", "city", "library", "classroom", "gearstore"], look: "partly" },
+  { heading: "Testattavissa, mutta ominaisuudet ja pelattavuus puutteelliset", places: ["camp"], look: "early" },
 ];
 
 // A finer picture for the menu than the one on a word's card: built again at double detail where it's made of round shapes, and
