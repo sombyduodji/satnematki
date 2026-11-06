@@ -99,6 +99,7 @@ const TEXT = {
   needBasket: "Ota ensin kori oven vierestä.",
   enough: (word) => `Doarvái ${word.forms[UNCOUNTED_FOODS.has(word.sprite) ? "Sg+Acc" : "Pl+Acc"][0]}`,
   notOnList: "Tämä ei ole ostoslistallani.",
+  taken: (word) => (PLURAL_ONLY[word.sprite] ? "Nämä ovat jo korissani." : "Tämä on jo korissani."),
   notOnListFi: (word) => (PLURAL_ONLY[word.sprite] ? `Ei, ${PLURAL_ONLY[word.sprite].fi.toLowerCase().slice(0, -1)}, eivätkä ne ole ostoslistallani.` : `Ei, tämä on ${word.fi}, eikä se ole ostoslistallani.`),
   shoppingList: "Ostoslista",
   pickFallen: "Kerää vielä putonneet ostokset.",
@@ -701,7 +702,7 @@ function enterTheme(chosenTheme) {
   theme = chosenTheme;
   document.body.classList.remove("menu");
   setAmbience(theme.place);
-  stopAnnouncement(); // and the next one is a while away
+  stopLoudspeaker();
   try {
     localStorage.setItem("mahtte.last", theme.id);
   } catch {
@@ -781,6 +782,7 @@ function newRound() {
   timerEl.hidden = !!theme.camp;
   paused = false;
   me.sittingOn = null;
+  loudspeaker.wait = null; // till the basket is taken; one already speaking goes on
   const { find, extra } = theme.words();
   const picked = [...find, ...extra];
   for (let attempt = 0; attempt < PLACING_TRIES; attempt++) {
@@ -1255,7 +1257,7 @@ function showPlaces() {
   showPrompt();
   document.body.classList.add("menu");
   stopVoice();
-  stopAnnouncement();
+  stopLoudspeaker();
   setAmbience(null);
   menuPlaces();
   buildPlacesAhead();
@@ -1715,6 +1717,15 @@ function touch(object, now) {
     cardEl.innerHTML = `<div class="note">${TEXT.needBasket}</div>`;
     return;
   }
+  // What's in the basket already stays on its shelf, and touching it again only says so.
+  if (!right && object.taken) {
+    const id = VOICES[look.gender], plural = PLURAL_ONLY[object.word.sprite] ? "-plural" : "";
+    cardEl.className = "";
+    cardEl.innerHTML = audioOnly ? `<div class="note">${TEXT.taken(object.word)}</div>`
+      : `<div><span lang="se">${plural ? "Dat leat" : "Dat lea"} juo mu márssus.</span><div class="note">${TEXT.taken(object.word)}</div></div>`;
+    if (!rightSpeech) playVoice(`audio/store-taken${plural}-${id}.wav`);
+    return;
+  }
   // In the store only what's on the list can be taken; anything else stays where it is, and is said what it is.
   if (!right && isShop(placeName)) {
     const id = VOICES[look.gender];
@@ -1763,6 +1774,7 @@ function touch(object, now) {
   if (placeName === "forest" && ANIMALS.has(object.word.sprite)) startReaction(object, now);
   else {
     if (object.word.place === "home") object.done = true;
+    else if (object.tiles) object.taken = true; // in Ruokakauppa its place on the shelf stays and says it's taken; dropped from the basket, it's on the list again
     else objects = objects.filter((o) => o !== object);
     sparkles.push({ x: object.x, y: object.y, born: now });
     if (!me.sittingOn) startAction("cheer", now);
@@ -2602,10 +2614,7 @@ const AMBIENCE = {
       running = !running;
       compressor.gain.setTargetAtTime(running ? 0.008 : 0.001, at, 1.2);
     });
-    nowAndThen(run, 3, 12, (at) => { // the till, sometimes more than one item at a time
-      const count = 1 + Math.floor(Math.random() * 3);
-      for (let i = 0; i < count; i++) softBeep(run.output, at + i * (0.35 + Math.random() * 0.5), 1760, 0.005, 95);
-    });
+    // The tills beep when something is scanned, not here: see tillBeep().
   },
   gearstore(run) {
     AMBIENCE.store(run);
@@ -2854,6 +2863,13 @@ function impactSound(context, noise, kind, at) {
   } else {
     noiseBurst(context, output, noise, at, { type: "bandpass", frequency: 1800, level: 0.035, ms: 60 });
   }
+}
+
+// The till's beep for each thing scanned, at either till and for anyone's shopping: quiet, as heard from across the store.
+const TILL_BEEP = { frequency: 1760, level: 0.012, ms: 95 };
+function tillBeep() {
+  if (!sound || sound.state !== "running") return;
+  softBeep(sound.destination, sound.currentTime + SOUND_AHEAD, TILL_BEEP.frequency, TILL_BEEP.level, TILL_BEEP.ms);
 }
 
 function playImpact(kind, delay = 0) {
@@ -3344,6 +3360,7 @@ function takeBasket() {
   startAction("pick", performance.now());
   cart.has = true;
   timer.running = true; // a store round starts with taking the basket
+  if (placeName === "store" && loudspeaker.wait === null) loudspeaker.wait = loudspeakerWait(); // the loudspeaker's first wait starts now
   till.baskets = Math.max(0, till.baskets - 1);
   cart.stage = targets.length ? "shop" : "pay";
   playImpact("brush");
@@ -3465,6 +3482,7 @@ function scanForPlayer(dt) {
     cart.scanIn -= dt;
     if (cart.scanIn <= 0) {
       till.goods.shift();
+      tillBeep();
       cart.scanIn = SHOPPING.scanMs;
     }
   }
@@ -3701,7 +3719,7 @@ function updateShopper(s, dt) {
     }
   } else if (s.doing === "scan") {
     till.scanning = till.goods.length > 0;
-    till.goods.shift();
+    if (till.goods.shift()) tillBeep();
     s.wait = SHOPPING.scanMs;
     if (!till.goods.length) {
       s.doing = "pay";
@@ -3898,52 +3916,54 @@ function updateStocker(dt) {
   }
 }
 
-// Announcements over Ruokakauppa's loudspeaker, in Sunná's voice, now and then: 45 to 120 seconds apart, so some rounds hear none and some two,
-// and never the same one twice running. They're made in tools/store3d/make_announcements.py. They go over whoever is speaking, as a real one
-// would, and nothing done in the game cuts one off; only leaving the store does.
-const ANNOUNCEMENTS = ["pa-staff-till", "pa-staff-bottles", "pa-car-lights", "pa-licence"];
-const ANNOUNCER = { fromS: 45, toS: 120, level: 0.6, fadeS: 0.4 };
-const announcer = { wait: 0, last: null, playing: null };
-const nextAnnouncement = () => (ANNOUNCER.fromS + Math.random() * (ANNOUNCER.toS - ANNOUNCER.fromS)) * 1000;
+// Announcements over Ruokakauppa's loudspeaker, in Sunná's voice, now and then: the first 45 to 90 seconds after the basket is taken and each
+// next one as long after the last, so some rounds hear none and some two, and never the same one twice running. They're made in
+// tools/store3d/make_announcements.py. They go over whoever is speaking, as a real one would, and nothing done in the game cuts one off; only
+// leaving the store does. Named apart from announce(), which shows what to find.
+const LOUDSPEAKER_LINES = ["pa-staff-till", "pa-staff-bottles", "pa-car-lights", "pa-licence"];
+const LOUDSPEAKER = { fromS: 45, toS: 90, level: 0.6, fadeS: 0.4 };
+const loudspeaker = { wait: null, last: null, playing: null }; // no waiting until the basket is taken
+const loudspeakerWait = () => (LOUDSPEAKER.fromS + Math.random() * (LOUDSPEAKER.toS - LOUDSPEAKER.fromS)) * 1000;
 
-async function announce() {
-  const choices = ANNOUNCEMENTS.filter((name) => name !== announcer.last);
-  announcer.last = choices[Math.floor(Math.random() * choices.length)];
-  announcer.playing = true; // until it ends, or it couldn't play
-  const buffer = sound && await lineBuffer(`audio/${announcer.last}.wav`);
-  if (!buffer || placeName !== "store" || announcer.playing !== true) {
-    announcer.playing = null;
+async function playLoudspeaker() {
+  const choices = LOUDSPEAKER_LINES.filter((name) => name !== loudspeaker.last);
+  loudspeaker.last = choices[Math.floor(Math.random() * choices.length)];
+  loudspeaker.playing = true; // until it ends, or it couldn't play
+  const buffer = sound && await lineBuffer(`audio/${loudspeaker.last}.wav`);
+  if (!buffer || placeName !== "store" || loudspeaker.playing !== true) {
+    loudspeaker.playing = null;
     return;
   }
   const source = sound.createBufferSource();
   source.buffer = buffer;
   const gain = sound.createGain();
-  gain.gain.value = ANNOUNCER.level;
+  gain.gain.value = LOUDSPEAKER.level;
   source.connect(gain).connect(sound.destination);
   source.onended = () => {
-    if (announcer.playing?.source === source) announcer.playing = null;
+    if (loudspeaker.playing?.source === source) loudspeaker.playing = null;
   };
   source.start(sound.currentTime + SOUND_AHEAD);
-  announcer.playing = { source, gain };
+  loudspeaker.playing = { source, gain };
 }
 
-function updateAnnouncer(dt) {
-  if (placeName !== "store" || !theme || announcer.playing) return; // only called while the game isn't paused
-  announcer.wait -= dt;
-  if (announcer.wait <= 0) {
-    announcer.wait = nextAnnouncement();
-    announce();
+function updateLoudspeaker(dt) {
+  if (placeName !== "store" || !theme || loudspeaker.wait === null || loudspeaker.playing) return; // only called while the game isn't paused
+  loudspeaker.wait -= dt;
+  if (loudspeaker.wait <= 0) {
+    loudspeaker.wait = loudspeakerWait();
+    playLoudspeaker();
   }
 }
 
-function stopAnnouncement() {
-  announcer.wait = nextAnnouncement();
-  const playing = announcer.playing;
-  announcer.playing = null;
+// Leaving the store, or a new round: quiet until the basket is taken again.
+function stopLoudspeaker() {
+  loudspeaker.wait = null;
+  const playing = loudspeaker.playing;
+  loudspeaker.playing = null;
   if (!playing?.source) return;
   const now = sound.currentTime;
-  playing.gain.gain.setTargetAtTime(0, now, ANNOUNCER.fadeS / 3);
-  playing.source.stop(now + ANNOUNCER.fadeS);
+  playing.gain.gain.setTargetAtTime(0, now, LOUDSPEAKER.fadeS / 3);
+  playing.source.stop(now + LOUDSPEAKER.fadeS);
 }
 
 function updateShoppers(dt) {
@@ -4401,7 +4421,7 @@ function frame(now) {
   if (!paused) {
     updateAnimals(dt, now);
     updateShoppers(dt);
-    updateAnnouncer(dt);
+    updateLoudspeaker(dt);
   }
   if (timer.running && !paused) {
     timer.ms += dt;

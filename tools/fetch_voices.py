@@ -33,6 +33,8 @@ LINES = {
     "store-no": "Ii.",
     "store-notonlist": "Dat ii leat mu listtus.",
     "store-notonlist-plural": "Dat eai leat mu listtus.",
+    "store-taken": "Dat lea juo mu márssus.",  # mársu, kori: in the basket already. A draft for the user to check.
+    "store-taken-plural": "Dat leat juo mu márssus.",
     "store-full": "Vuordde.",
     # The lávvu camp. Drafts, machine made like the game's other sentences: for the user to check. Must match CHORES in src/camp.js.
     "is-it-so": "Leago nu?",  # after a number's own line: "Dát lea vihtta. Leago nu?"
