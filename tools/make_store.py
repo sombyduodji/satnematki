@@ -317,6 +317,7 @@ FREEZERS = runs_of("Z")
 FRIDGE_FRONT = 15  # how far a fridge reaches, from the back of its tile
 GLASS_AT = FRIDGE_FRONT - 1.4
 FRIDGE_FLOOR, FRIDGE_SHELF = 3.0, 8.0
+FRIDGE_END = 1.2  # how thick the panel at each end of a row is
 
 
 def into_row(p):
@@ -386,8 +387,10 @@ def fridge_front(p):
     d.append(np.maximum(door - 0.55, np.maximum(np.maximum(GLASS_AT - y, y - FRIDGE_FRONT), np.maximum(-p[:, 2], p[:, 2] - FRIDGE_H))))
     handle = p[:, 0] % TILE
     d.append(box(np.stack([handle, y, p[:, 2]], axis=1), (13, FRIDGE_FRONT, 12), (13.7, FRIDGE_FRONT + 0.6, 21)))
+    # A solid panel closing each end of a row, inside its last tile, so the food doesn't show through the end.
     for a, b, row in FRIDGES:
-        d.append(box(p, (b * TILE - 0.3, row * TILE, 0), (b * TILE + 0.3, row * TILE + FRIDGE_FRONT, FRIDGE_H)))
+        d.append(box(p, (a * TILE, row * TILE, 0), (a * TILE + FRIDGE_END, row * TILE + FRIDGE_FRONT, FRIDGE_H)))
+        d.append(box(p, (b * TILE - FRIDGE_END, row * TILE, 0), (b * TILE, row * TILE + FRIDGE_FRONT, FRIDGE_H)))
     return np.minimum.reduce(d)
 
 
@@ -398,6 +401,10 @@ def fridge_front_paint(p):
     out[z > FRIDGE_H - 1.7] = colour("#dfe3e4")
     out[y > FRIDGE_FRONT + 0.05] = colour("#c8ced3")
     out[(z > FRIDGE_H - 3.1) & (z < FRIDGE_H - 1.7) & (y > GLASS_AT)] = colour("#3f6b4f")
+    # The ends' outer sides, pale like the top, with the dark frame round their front edge.
+    for a, b, row in FRIDGES:
+        at_end = (np.abs(p[:, 1] - row * TILE - FRIDGE_FRONT / 2) < FRIDGE_FRONT / 2) & ((x < a * TILE + 0.05) | (x > b * TILE - 0.05))
+        out[at_end & (y < FRIDGE_FRONT - 0.8) & (z < FRIDGE_H - 1.7)] = colour("#c8ced3")
     return out
 
 
@@ -968,6 +975,9 @@ def sign_item(sprite, spots, index, letter):
     """A sign for one of a food's tiles, ready to go among the tiles' pictures."""
     tx, ty = spots[index]
     between = len(spots) == 2 or letter == "e"  # across both of its places, from the nearer one so that it isn't covered by the next
+    if letter == "R" and not between and [tx + 1, ty] in spots:
+        # A fridge's sign sits low on its top and is longer than a door: over the middle one, it goes with the next door, or that one covers its end.
+        return placed_sign(FINNISH[sprite], tx + 1, ty, dict(SIGNS[letter]), along=8 - TILE)
     return placed_sign(FINNISH[sprite], tx, ty, dict(SIGNS[letter]), between)
 
 

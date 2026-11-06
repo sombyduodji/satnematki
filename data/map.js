@@ -3695,7 +3695,7 @@ window.MAHTTE_MAPS = {
    "WWffffffffffffffffffffffffffffffffffffffffffXX",
    "WWffffffffffffffffffffffffffffffffffffffffffXX",
    "WWfffffffffffffffffffffffffPPPPffPPPPPPPPPPfXX",
-   "WWffffffffffffffffffffffffffffffffffffffffffXX",
+   "WWffffffffffffffffffCfffCfffffffffffffffffffXX",
    "WWffffffffffffffffffCfffCfffffeeffffffffffffXX",
    "WWffffffffffffffffffCfffCfffffeeffffffffffffXX",
    "WWffffffffffffffffffCfffCfffffffffffffffffffXX",
@@ -5008,7 +5008,7 @@ window.MAHTTE_MAPS = {
    "WWffffffffffffffffffffffffffXX__________________",
    "WWffffffffffffffffffffffffffXX__________________",
    "WWffffffffffffffffffffffffffXX__________________",
-   "WWffffCCCCffffffffffffffffffXX__________________",
+   "WWfffCCCCCffffffffffffffffffXX__________________",
    "WWffffffffffffffffffffffffffXX__________________",
    "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX__________________",
    "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX__________________"

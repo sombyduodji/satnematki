@@ -201,9 +201,10 @@ shelves(store, "Z", (14,), ((25, 30), (33, 42)))
 shelves(store, "S", (19,), ((6, 12), (15, 21)))
 shelves(store, "P", (19,), ((25, 30), (33, 42)))
 # Two checkouts running across the store, each with the customers' lane on its left, and a barrier from wall to wall: the way out is
-# through a lane, and the way in is by the gate near the door. Must match STORE_LANES and STORE_GATE in src/game.js.
+# through a lane, and the way in is by the gate near the door. Each counter starts with a stretch without a belt, where the basket goes.
+# Must match STORE_LANES and STORE_GATE in src/game.js.
 for x in (20, 24):
-    for y in range(24, 28):
+    for y in range(23, 28):
         store[y][x] = "C"
 for x in range(2, 44):
     if store[27][x] == "f" and x not in (19, 23, 39, 40):
@@ -305,7 +306,7 @@ shelves(gearstore, "U", (9, 14), ((5, 13),))
 shelves(gearstore, "O", (9,), ((16, 24),))
 shelves(gearstore, "U", (14,), ((16, 24),))
 shelves(gearstore, "N", (5, 9), ((32, 34), (36, 38), (40, 42)))
-shelves(gearstore, "C", (18,), ((6, 9),))
+shelves(gearstore, "C", (18,), ((5, 9),))  # the first tile without a belt, for the basket
 gearstore_place = rooms(gearstore, (15, 18), [])
 gearstore_place["spots"].update(
     tools=[(x, 4) for x in range(5, 14)], fishing=[(x, y) for y in (4, 9) for x in range(16, 25)],

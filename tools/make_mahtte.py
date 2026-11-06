@@ -940,6 +940,12 @@ def work_rows():
     return [chop, saw, throw]
 
 
+def belt_row():
+    """At the till, facing the counter: a hand into the basket on it, and a thing lifted out and put on the belt. Also putting the basket down."""
+    return [F("right", reach=r, reach_x=x, bend=b) for r, x, b in
+            ((3, 4, 1), (4, 5, 1), (2, 6, 0), (1, 8, 0), (2, 9, 0), (3, 6, 0))]
+
+
 def all_rows():
     """In the order the game expects: see art/mahtte/README.md and the row constants in src/game.js."""
     rows = [idle("down"), idle("up"), idle("right"), walk("down"), walk("up"), walk("right"), cheer(), jump(), crouch(), fall()]
@@ -954,6 +960,7 @@ def all_rows():
     rows += [[F("ne", seated=True, hand_up=hand) for hand in (1, 2, 3)]]
     rows += [[F("ne", seated=True, kick=kick) for kick in (0, 1, 1, 0, 0, -1, -1)]]
     rows += [crouch_walk(facing) for facing in ("down", "up", "right", "se", "ne")]
+    rows += [belt_row()]
     return rows
 
 

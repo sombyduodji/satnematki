@@ -963,6 +963,7 @@ function personCarried(p, frame, carrying) {
   const size = Math.max(0.7, Math.min(1, p.k + 0.05));
   const carriedX = side * (hand + 0.3 + 2 * size);
   if (carrying === "stack") return MODELS.basket_stack(0, 4).map((shape) => shifted(shape, 0, 5.5, leg - 1));
+  if (carrying === "one") return MODELS.basket_stack(0, 1).map((shape) => shifted(shape, 0, 5.5, leg - 1)); // an emptied basket, back to the stack
   if (`${carrying}`.startsWith("bag")) return samiBag(carriedX * 1.1, 0.6, Math.max(leg - 2, size * 9), size * 1.3, Number(carrying.slice(3)));
   if (p.basket && carrying !== "none" && carrying !== undefined) return shoppingBasket(carriedX, 0.6, leg - 2.4, p.basket, p.goods.slice(0, carrying), size);
   return [];

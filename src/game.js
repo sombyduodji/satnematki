@@ -348,6 +348,7 @@ const ACTIONS = {
   cheer: { row: 6, ms: 540 },
   raiseHand: { row: 6, ms: 900 },
   pick: { row: 6, ms: 320 }, // a quick reach, with the cheer's arms until there is a drawing of it
+  belt: { row: 111, ms: 720 }, // down to the basket on the floor and up onto the belt
   pat: { row: 99, ms: 1050 }, // to the right, with the hand low; 100 has it high
 };
 const CROUCH_ROW = 8;
@@ -459,6 +460,7 @@ const KEYS = {
 };
 
 const promptEl = document.getElementById("prompt");
+const noteEl = document.getElementById("note"); // the shopping list, there all round, beside whatever the prompt says
 const cardEl = document.getElementById("card");
 // How to play, over the picture, until it's closed. It comes back with the next round.
 const guideBox = document.getElementById("guide-box");
@@ -882,6 +884,8 @@ function escapeText(text) {
 }
 
 function showPrompt() {
+  // What's been dropped is back on the list, not crossed off, until it's picked up again.
+  noteEl.replaceChildren(...(theme?.ordered && shoppingList.length ? [paperList()] : []));
   if (theme?.camp) {
     promptEl.replaceChildren(campList());
     return;
@@ -906,7 +910,7 @@ function showPrompt() {
     const left = theme.counts ? targets.filter((word) => word === targets[0]).length : 1;
     const aim = `${left > 1 ? `${left} × ` : ""}${targets[0].aim || listWord(targets[0])}`;
     if (theme.ordered) {
-      promptEl.replaceChildren(paperList());
+      promptEl.replaceChildren(); // the list says it all
       return;
     }
     const aimOf = targets[0].aimOf ? `<span class="aim-of" lang="se">${escapeText(targets[0].aimOf)}:</span>` : "";
@@ -1717,13 +1721,14 @@ function touch(object, now) {
     cardEl.innerHTML = `<div class="note">${TEXT.needBasket}</div>`;
     return;
   }
-  // What's in the basket already stays on its shelf, and touching it again only says so.
+  // What's in the basket already stays on its shelf, and touching it again says so, with the same pause as a wrong pick.
   if (!right && object.taken) {
     const id = VOICES[look.gender], plural = PLURAL_ONLY[object.word.sprite] ? "-plural" : "";
     cardEl.className = "";
     cardEl.innerHTML = audioOnly ? `<div class="note">${TEXT.taken(object.word)}</div>`
       : `<div><span lang="se">${plural ? "Dat leat" : "Dat lea"} juo mu márssus.</span><div class="note">${TEXT.taken(object.word)}</div></div>`;
     if (!rightSpeech) playVoice(`audio/store-taken${plural}-${id}.wav`);
+    holdForWrongPick(now);
     return;
   }
   // In the store only what's on the list can be taken; anything else stays where it is, and is said what it is.
@@ -3126,15 +3131,17 @@ async function buildAnimalsAhead() {
 const SHOPPING = { least: 5, most: 7, startWith: 3, walk: 0.0015, stepMs: 170, wants: 5, pickMs: 900, browseMs: 3000, moreBrowseMs: 6000, unloadMs: 350, scanMs: 350, payMs: 1000, bagMs: 400, newAfter: 2500, moreNewAfter: 4500, fadeMs: 400, apart: 1.5, awayFromGoal: 2.5, buildRestMs: 100 };
 // Where things are, as tile positions like those of the words in the store.
 const ONE_TILL = {
-  door: [15, 19], outside: [15, 19.9], doorway: [15, 20], baskets: [12.3, 19.1], takeBasket: [13.3, 19], queue: [[3.2, 15], [2.2, 15], [2.2, 14], [2.2, 13], [2.2, 12], [2.2, 11]], unload: [6.2, 17], pay: [8.5, 17], zone: [5.3, 11, 16.5, 18.05, 18.95, 20], takeBag: [9.9, 17], usedBaskets: [10.3, 18], basketsFull: 5, startBaskets: 14, staffDoor: [1.5, 16], staffAtUsed: [10.3, 17], staffAtDoor: [12.3, 18], stockDoor: [3.4, 16],
+  door: [15, 19], outside: [15, 19.9], doorway: [15, 20], baskets: [12.3, 19.1], takeBasket: [13.3, 19], queue: [[3.2, 15], [2.2, 15], [2.2, 14], [2.2, 13], [2.2, 12], [2.2, 11]], unload: [6.2, 17], pay: [8.5, 17], zone: [5.3, 11, 16.5, 18.05, 18.95, 20], takeBag: [9.9, 17], startBaskets: 14, staffDoor: [1.5, 16], staffAtDoor: [12.3, 18], stockDoor: [3.4, 16],
   cashier: [8.1, 19.1], belt: [7.2, 18], beltTiles: [6], beltFrom: 5.9, beltTo: 7.9, goodsApart: 0.5, beltHolds: 5, beltSpeed: 0.002, register: [8.4, 18], registerReach: 0.6, bag: [9.3, 18], closed: 14, counterTop: 11,
+  basketSpot: [5.1, 18], basketReach: 1.4, porterHome: [5.1, 19.2], porterAtBasket: [5.1, 19.1], // the counter's start, without a belt, and its basket worker
 };
 // The grocery store's two lanes, side by side and going the same way. Everyone goes through towards the door, and shares the baskets.
 const storeLane = (x) => ({
-  ...ONE_TILL, door: [37, 31], outside: [37, 31.9], doorway: [37, 32], baskets: [40.9, 25.9], takeBasket: [40.3, 25.5], staffDoor: [1.5, 25], stockDoor: [3.4, 25], staffAtUsed: [27.3, 29], staffAtDoor: [41.3, 25], usedBaskets: [27.3, 30], // fresh baskets just inside the gate, on its right
+  ...ONE_TILL, door: [37, 31], outside: [37, 31.9], doorway: [37, 32], baskets: [40.9, 25.9], takeBasket: [40.3, 25.5], staffDoor: [1.5, 25], stockDoor: [3.4, 25], staffAtDoor: [41.3, 25], // fresh baskets just inside the gate, on its right
   upright: true, faceTill: 1, cashierFacing: 3, // its belt runs along y, towards the door's side of the barrier, with the customer on the left
   queue: [[x - 1, 23.2], [x - 1, 22.2], [x - 1, 21.2], [x - 1, 20.2], [x - 2, 20.2], [x - 3, 20.2]], unload: [x - 1, 24.2], pay: [x - 1, 26.5], takeBag: [x - 1, 27.9], zone: [23.3, 29, x - 1.5, x + 0.05],
   cashier: [x + 1.1, 25.5], belt: [x, 25.2], beltTiles: [24], beltFrom: 23.9, beltTo: 25.9, register: [x, 26.4], bag: [x, 27.3],
+  basketSpot: [x, 23.05], porterHome: [x + 1.1, 22.4], porterAtBasket: [x + 1.05, 23.1],
 });
 const STORE_LANES = [storeLane(24), storeLane(20)];
 // The way into the store, at these tiles of the barrier: once inside there's no going back out through it. Must match tools/make_map.py.
@@ -3146,7 +3153,7 @@ let LANES = [ONE_TILL], TILL = ONE_TILL, laneNow = 0;
 let BASKET_TILES = new Set(); // nobody walks through the stacks
 function chooseLanes(place) {
   LANES = place === "store" ? STORE_LANES : [ONE_TILL];
-  BASKET_TILES = new Set([LANES[0].baskets, LANES[0].usedBaskets].map(([x, y]) => `${Math.round(x)},${Math.round(y)}`));
+  BASKET_TILES = new Set([LANES[0].baskets].map(([x, y]) => `${Math.round(x)},${Math.round(y)}`));
 }
 // What's done at a till is done at the lane in hand. Between times that's the player's.
 function useLane(lane) {
@@ -3158,9 +3165,10 @@ function useLane(lane) {
 const customerLooks = () => Object.keys(PERSON_LOOKS).filter((name) => !["cashier", "stocker", "butcher"].includes(name) && !/^(teacher|classmate|store_cashier|cashier_man)/.test(name) && name.startsWith("gear_") === (placeName === "gearstore"));
 const DISPLAY_TILES = new Set("SRZPOU");
 let shoppers = [];
-const newLaneState = (stacks) => ({ queue: [], current: null, goods: [], bag: null, scanning: false, get usedBaskets() { return stacks.used; }, set usedBaskets(n) { stacks.used = n; }, get baskets() { return stacks.fresh; }, set baskets(n) { stacks.fresh = n; } });
+const newLaneState = (stacks) => ({ queue: [], current: null, goods: [], bag: null, scanning: false, counterBasket: null, get baskets() { return stacks.fresh; }, set baskets(n) { stacks.fresh = n; } });
 let tills = [newLaneState({ used: 0, fresh: 0 })], till = tills[0];
 let stocker = null;
+let porters = []; // one basket worker for each till
 let wantedShoppers = 0, nextShopperIn = 0;
 
 const betweenMs = (least, more) => least + Math.random() * more;
@@ -3311,7 +3319,7 @@ let cart = newCart();
 const fallingDown = () => me.knockedAt !== null || me.slideAt !== null || me.restAt !== null;
 
 function spillBasket(now) {
-  if ((!cart.has && !cart.bag) || cart.dropped) return;
+  if ((!cart.has && !cart.bag) || cart.dropped || (cart.setDown && !cart.bag)) return; // a basket on the floor stays there
   // Only where the character can walk to, and with nothing in the way: what hits a fridge or a shelf falls back on this side of it,
   // and nothing lands behind the butcher's counter.
   const walkable = spreadOverGrid(() => false);
@@ -3343,17 +3351,17 @@ const nearBaskets = () => Math.hypot(me.x - TILL.baskets[0] - 0.5, me.y - TILL.b
 // Either side of the counter, all along it.
 const inZone = ({ zone, upright }) => (upright ? me.y > zone[0] && me.y < zone[1] && me.x > zone[2] && me.x < zone[3]
   : me.x > zone[0] && me.x < zone[1] && ((me.y > zone[2] && me.y < zone[3]) || (me.y > zone[4] && me.y < zone[5])));
-// Whichever lane the player comes to with their shopping is theirs, until something of theirs is on its belt.
+// Whichever lane the player comes to with their shopping is theirs, once their basket is on its counter.
 function atBelt() {
   if (inZone(TILL)) return true;
-  if (LANES.length < 2 || cart.stage !== "pay" || laneNow !== cart.lane || till.goods.some((good) => good.word)) return false;
+  if (LANES.length < 2 || cart.stage !== "pay" || laneNow !== cart.lane || till.counterBasket?.player || till.goods.some((good) => good.word)) return false;
   const lane = LANES.findIndex(inZone);
   if (lane < 0) return false;
   cart.lane = lane;
   useLane(lane);
   return true;
 }
-const playerAtTill = () => laneNow === cart.lane && (cart.stage === "bag" || cart.stage === "price" || (cart.stage === "pay" && (atBelt() || till.goods.some((good) => good.word))));
+const playerAtTill = () => laneNow === cart.lane && (cart.stage === "bag" || cart.stage === "price" || (cart.stage === "pay" && (atBelt() || till.counterBasket?.player || till.goods.some((good) => good.word))));
 const onDoorMat = () => Math.abs(me.x - TILL.door[0] - 0.5) < 1 && me.y > TILL.door[1] + 0.2;
 
 function takeBasket() {
@@ -3367,11 +3375,33 @@ function takeBasket() {
   showPrompt();
 }
 
+// The basket goes on the counter's start, where there's no belt, and each thing is lifted out of it and comes onto the belt as the hand
+// reaches there. When it's empty, the lane's basket worker takes it back to the stack by the way in.
+const BELT_PUT = { atFrame: 0.62, lifted: 0.3, arc: 4 }; // how far into the action it lands, how far into it the thing shows in the hand, and how high it swings
+const nearBasketSpot = () => Math.hypot(me.x - 0.5 - TILL.basketSpot[0], me.y - 0.5 - TILL.basketSpot[1]) < (TILL.basketReach ?? 1.5);
+function putBasketDown() {
+  startAction("belt", performance.now());
+  action.flip = !TILL.upright; // the drawing reaches to the screen's right, where an upright lane's belt is; the general store's is to the left
+  cart.setDown = TILL.basketSpot;
+  till.counterBasket = { player: true, empty: !cart.goods.length };
+  playImpact("brush");
+}
+
 // Onto the belt beside the character, from anywhere along it.
 function putOnBelt() {
-  startAction("pick", performance.now());
+  if (cart.toBelt) return;
+  const now = performance.now();
+  startAction("belt", now);
+  action.flip = !TILL.upright;
   const room = TILL.beltTo - till.goods.length * TILL.goodsApart;
-  till.goods.push({ word: cart.goods.pop(), x: Math.max(TILL.beltFrom, Math.min(room, (TILL.upright ? me.y : me.x) - 0.5)) });
+  cart.toBelt = { word: cart.goods.pop(), x: Math.max(TILL.beltFrom, Math.min(room, (TILL.upright ? me.y : me.x) - 0.5)), at: now + ACTIONS.belt.ms * BELT_PUT.atFrame };
+}
+
+function landOnBelt(now) {
+  if (!cart.toBelt || now < cart.toBelt.at) return;
+  till.goods.push({ word: cart.toBelt.word, x: cart.toBelt.x });
+  cart.toBelt = null;
+  if (!cart.goods.length && till.counterBasket?.player) till.counterBasket.empty = true; // for the basket worker
   cart.scanIn = SHOPPING.scanMs;
   playImpact("brush");
 }
@@ -3427,8 +3457,8 @@ function takeBag() {
   startAction("pick", performance.now());
   cart.bag = till.bag;
   till.bag = null;
-  cart.has = false;
-  till.usedBaskets++;
+  cart.has = false; // the basket stays on the counter for the basket worker
+  cart.setDown = null;
   cart.stage = "door";
   playImpact("brush");
   showPrompt();
@@ -3449,6 +3479,8 @@ const STORE_HINTS = {
   basket: { line: "store-basket", sme: "Váldde márssu", fi: "Ota kori", act: takeBasket },
   till: { line: "store-till", sme: "Mana kássii", fi: "Mene kassalle" },
   wait: { line: "store-wait", sme: "Vuordde vuoru", fi: "Odota vuoroasi" },
+  basketDown: { line: "store-basketdown", sme: "Bija márssu beavdái", fi: "Laita kori pöydälle", act: putBasketDown },
+  basketCloser: { line: "store-basketdown", sme: "Bija márssu beavdái", fi: "Laita kori pöydälle" }, // not yet near enough to the counter's start
   belt: { line: "store-belt", sme: "Bija dan beavdái", fi: "Laita se hihnalle", act: putOnBelt },
   full: { line: "store-full", sme: "Vuordde", fi: "Hihna on täynnä" },
   pay: { line: "store-pay", sme: "Mávsse", fi: "Maksa", act: () => (theme.counts ? confirmPrice() : payCashier()) },
@@ -3465,6 +3497,7 @@ function storeHint() {
   if (cart.stage === "pay") {
     if (!atBelt()) return STORE_HINTS.till;
     if (till.current) return STORE_HINTS.wait;
+    if (!cart.setDown) return till.counterBasket ? STORE_HINTS.wait : nearBasketSpot() ? STORE_HINTS.basketDown : STORE_HINTS.basketCloser;
     if (!cart.goods.length) return null;
     return till.goods.length < TILL.beltHolds ? STORE_HINTS.belt : STORE_HINTS.full;
   }
@@ -3486,7 +3519,7 @@ function scanForPlayer(dt) {
       cart.scanIn = SHOPPING.scanMs;
     }
   }
-  if (!till.goods.length && !cart.goods.length && !cart.spilled.length) {
+  if (!till.goods.length && !cart.goods.length && !cart.spilled.length && !cart.toBelt) {
     till.scanning = false;
     cart.stage = "price";
     showPrompt();
@@ -3595,7 +3628,7 @@ function updateCart(now) {
 
 // Where the basket hangs beside the character on the screen, and whether the body hides it.
 const CARRIED = { S: [8, -8, true], SE: [8, -8, true], E: [4, -8, true], NE: [8, -8, false], N: [-8, -8, false], NW: [-8, -8, false], W: [-4, -8, true], SW: [-8, -8, true] };
-const carriedBasket = () => (isShop(placeName) && (cart.has || cart.bag) && !cart.dropped ? CARRIED[me.facing] : null);
+const carriedBasket = () => (isShop(placeName) && ((cart.has && !cart.setDown) || cart.bag) && !cart.dropped ? CARRIED[me.facing] : null);
 
 // It swings with each step, further at a run, and comes down when the character crouches.
 function basketSwing() {
@@ -3608,10 +3641,11 @@ function setupShoppers() {
   shoppers = [];
   chooseLanes(placeName);
   cart.lane = 0;
-  const stacks = { used: 0, fresh: LANES[0].startBaskets };
+  const stacks = { fresh: LANES[0].startBaskets };
   tills = LANES.map(() => newLaneState(stacks));
   useLane(0);
   stocker = null;
+  porters = isShop(placeName) ? LANES.map((lane, i) => ({ lane: i, x: lane.porterHome[0], y: lane.porterHome[1], facing: lane.upright ? 3 : 2, path: [], arrived: null, clock: 0, wait: 0, then: null, carrying: "none", doing: "wait", alpha: 1, speed: SHOPPING.walk * PERSON_LOOKS.stocker.pace })) : [];
   wantedShoppers = 0;
   if (!isShop(placeName)) return;
   wantedShoppers = SHOPPING.least + Math.floor(Math.random() * (SHOPPING.most - SHOPPING.least + 1));
@@ -3652,8 +3686,8 @@ function moveQueue() {
   next.doing = "toTill";
   walkShopper(next, TILL.unload[0], TILL.unload[1], () => {
     next.facing = TILL.faceTill ?? 0;
-    next.doing = "unload";
-    next.wait = SHOPPING.unloadMs;
+    next.doing = "putBasket";
+    next.wait = SHOPPING.bagMs;
   });
 }
 
@@ -3704,12 +3738,23 @@ function updateShopper(s, dt) {
   } else if (s.doing === "browse") {
     if (s.picked >= s.wants) joinQueue(s);
     else goShopping(s);
+  } else if (s.doing === "putBasket") {
+    // Onto the counter's start, as the player does, once the basket worker has taken the last one away.
+    if (till.counterBasket) {
+      s.wait = SHOPPING.bagMs;
+      return;
+    }
+    s.hasBasket = false;
+    till.counterBasket = { empty: false };
+    s.doing = "unload";
+    s.wait = SHOPPING.unloadMs;
   } else if (s.doing === "unload") {
-    // One by one onto the belt, and off to the card reader when the basket is empty.
+    // One by one onto the belt, and off to the card reader when the basket is empty, which the basket worker then takes.
     till.goods.unshift({ kind: PERSON_LOOKS[s.look].goods[s.picked % 3], x: TILL.beltFrom });
     s.picked--;
     s.wait = SHOPPING.unloadMs;
     if (s.picked <= 0) {
+      if (till.counterBasket) till.counterBasket.empty = true;
       s.doing = "toPay";
       walkShopper(s, TILL.pay[0], TILL.pay[1], () => {
         s.facing = TILL.faceTill ?? 0;
@@ -3731,15 +3776,9 @@ function updateShopper(s, dt) {
     s.doing = "toBag";
     walkShopper(s, TILL.takeBag[0], TILL.takeBag[1], () => {
       s.facing = TILL.faceTill ?? 0;
-      s.doing = "dropBasket";
+      s.doing = "takeBag";
       s.wait = SHOPPING.bagMs;
     });
-  } else if (s.doing === "dropBasket") {
-    // The empty basket goes on the stack at the end of the counter.
-    s.hasBasket = false;
-    till.usedBaskets++;
-    s.doing = "takeBag";
-    s.wait = SHOPPING.bagMs;
   } else if (s.doing === "takeBag") {
     till.bag = null;
     till.current = null;
@@ -3752,9 +3791,8 @@ function updateShopper(s, dt) {
   }
 }
 
-// A worker fills the shelves from a small trolley, now and then pushing it further along. When five baskets have
-// gathered at the end of the counter they carry them to the stack by the door, then go back to the shelves. When the
-// boxes are empty they push the trolley through the staff door and come back with a full one.
+// A worker fills the shelves from a small trolley, now and then pushing it further along. When the boxes are empty they push the trolley
+// through the staff door and come back with a full one.
 // The trolley only stands right beside a shelf in an aisle four tiles wide, so there's always a way past it.
 const STOCK = { least: 10, most: 20, itemMs: 2600, awayLeast: 10000, awayMore: 10000, reachMs: 700, moveAfter: 18000, moreMoveAfter: 22000, nearest: 3, furthest: 9, glide: 0.002, solid: 0.45, playerClear: 2.5, itemClear: 2 };
 
@@ -3825,19 +3863,37 @@ function pauseThen(s, facing, thenDo) {
   s.then = thenDo;
 }
 
-// Carry the baskets over, then back to the shelves.
-function moveBaskets(s) {
-  s.doing = "baskets";
-  walkShopper(s, ...TILL.staffAtUsed, () => pauseThen(s, 0, () => {
-    s.carrying = "stack";
-    s.count = till.usedBaskets;
-    till.usedBaskets = 0;
-    walkShopper(s, ...TILL.staffAtDoor, () => pauseThen(s, 0, () => {
-      till.baskets += s.count;
-      s.carrying = 0;
-      walkShopper(s, s.spot.x, s.spot.y, () => {
-        s.facing = s.spot.facing;
-        s.doing = "fill";
+// Each till's basket worker waits by its counter's start. An emptied basket there, the player's or a customer's, they take to the stack by
+// the way in, and come back to wait for the next.
+function updatePorter(p, dt) {
+  if (p.wait > 0) {
+    p.wait -= dt;
+    if (p.wait <= 0 && p.then) {
+      const then = p.then;
+      p.then = null;
+      then();
+    }
+    return;
+  }
+  if (p.path.length) {
+    walkAlong(p, dt);
+    return;
+  }
+  if (p.doing !== "wait" || !till.counterBasket?.empty) return;
+  p.doing = "fetch";
+  walkShopper(p, ...TILL.porterAtBasket, () => pauseThen(p, TILL.upright ? 3 : 2, () => {
+    if (till.counterBasket?.player) {
+      cart.setDown = null;
+      cart.has = false;
+    }
+    till.counterBasket = null;
+    p.carrying = "one";
+    walkShopper(p, ...TILL.staffAtDoor, () => pauseThen(p, 0, () => {
+      till.baskets++;
+      p.carrying = "none";
+      walkShopper(p, ...TILL.porterHome, () => {
+        p.facing = TILL.upright ? 3 : 2;
+        p.doing = "wait";
       });
     }));
   }));
@@ -3894,10 +3950,6 @@ function updateStocker(dt) {
     return;
   }
   if (s.doing !== "fill") return;
-  if (till.usedBaskets >= TILL.basketsFull) {
-    moveBaskets(s);
-    return;
-  }
   // Item by item off the trolley, until the boxes are empty.
   s.itemIn -= dt;
   if (s.itemIn <= 0) {
@@ -3974,8 +4026,14 @@ function updateShoppers(dt) {
     moveGoodsOnBelt(dt);
   });
   useLane(cart.lane);
+  landOnBelt(performance.now());
   scanForPlayer(dt);
   updateStocker(dt);
+  for (const p of porters) {
+    useLane(p.lane);
+    updatePorter(p, dt);
+  }
+  useLane(cart.lane);
   for (const s of shoppers) {
     useLane(s.lane ?? cart.lane);
     updateShopper(s, dt);
@@ -4023,7 +4081,6 @@ function storeLife(now) {
 // What happens in any shop: the baskets, the helper's arrow, spilled shopping, the belt and the customers.
 function shopGoings(things, now, flying, onCounter) {
   if (till.baskets) things.push({ sprite: "basket_stack", x: TILL.baskets[0], y: TILL.baskets[1], facing: 0, frame: 0, carrying: Math.min(5, till.baskets), shadow: true });
-  if (till.usedBaskets) things.push({ sprite: "basket_stack", x: TILL.usedBaskets[0], y: TILL.usedBaskets[1], facing: 0, frame: 0, carrying: Math.min(5, till.usedBaskets), shadow: true });
   if (stocker) {
     const walking = stocker.path.length > 0 && !stocker.wait;
     const filling = stocker.doing === "fill" && Math.floor(stocker.clock / STOCK.reachMs) % 2;
@@ -4033,10 +4090,26 @@ function shopGoings(things, now, flying, onCounter) {
       things.push({ sprite: "stock_trolley", x: stocker.cartX, y: stocker.cartY, facing: 0, frame: 0, carrying: boxesLeft(stocker.stock), alpha: stocker.alpha, shadow: true });
     }
   }
-  const pointsAt = helpRound && { basket: TILL.baskets, pay: atBelt() ? null : TILL.belt, price: atBelt() ? null : TILL.belt, bag: TILL.bag, door: TILL.door }[cart.stage];
-  if (pointsAt) {
-    const high = pointsAt === TILL.belt ? 20 : pointsAt === TILL.bag ? 22 : pointsAt === TILL.door ? 4 : 7;
-    things.push({ marker: true, x: pointsAt[0], y: pointsAt[1], lift: high + Math.round(Math.sin(now / 180) * 2), d: Infinity });
+  const atTill = atBelt();
+  const pointsAt = helpRound && { basket: TILL.baskets, pay: atTill ? (cart.setDown ? null : TILL.basketSpot) : TILL.belt, price: atTill ? null : TILL.belt, bag: TILL.bag, door: TILL.door }[cart.stage];
+  // Either till will do until the basket is on one of their counters.
+  const anyTill = cart.stage === "pay" && !cart.setDown && pointsAt === TILL.belt;
+  const markHigh = { [TILL.bag]: 22, [TILL.door]: 4, [TILL.baskets]: 7, [TILL.basketSpot]: 18 };
+  for (const at of anyTill ? LANES.map((lane) => lane.belt) : pointsAt ? [pointsAt] : []) {
+    things.push({ marker: true, x: at[0], y: at[1], lift: (markHigh[at] ?? 20) + Math.round(Math.sin(now / 180) * 2), d: Infinity });
+  }
+  // Baskets on the counters' starts, being emptied or waiting for the basket worker, and the thing on its way out of the player's.
+  tills.forEach((lane, i) => {
+    if (lane.counterBasket) things.push({ ...onCounter(lane.counterBasket.player ? "player_basket" : "basket_stack", LANES[i].basketSpot), carrying: 1, shadow: false });
+  });
+  if (cart.toBelt && cart.setDown) {
+    const lands = ACTIONS.belt.ms * BELT_PUT.atFrame, along = 1 - (cart.toBelt.at - now) / lands;
+    if (along > BELT_PUT.lifted) {
+      const k = Math.min(1, (along - BELT_PUT.lifted) / (1 - BELT_PUT.lifted));
+      const [fromX, fromY] = cart.setDown, [toX, toY] = onBelt(TILL, cart.toBelt.x);
+      const lift = Math.round(TILL.counterTop + 3 + Math.sin(k * Math.PI) * BELT_PUT.arc);
+      things.push({ picture: cart.toBelt.word, scale: 0.45, fits: BELT_ITEM_PX, x: fromX + (toX - fromX) * k, y: fromY + (toY - fromY) * k, lift, d: Infinity });
+    }
   }
   if (cart.dropped) {
     const carried = cart.bag ? { sprite: "till_bag", carrying: Number(cart.bag.slice(3)) } : { sprite: "player_basket" };
@@ -4052,9 +4125,14 @@ function shopGoings(things, now, flying, onCounter) {
     }
     if (lane.bag) things.push({ ...onCounter("till_bag", LANES[i].bag), carrying: Number(lane.bag.slice(3)) });
   });
+  for (const p of porters) {
+    const frame = p.path.length ? 1 + (Math.floor(p.clock / SHOPPING.stepMs) % 2) : p.wait > 0 ? 3 : 0;
+    things.push({ sprite: "person_stocker", x: p.x, y: p.y, facing: p.facing, frame, carrying: p.carrying, alpha: p.alpha, shadow: true });
+  }
   for (const s of shoppers) {
     const walking = s.path.length > 0;
-    const frame = walking ? 1 + (Math.floor(s.clock / SHOPPING.stepMs) % 2) : s.doing === "pick" || s.doing === "takeBasket" || s.doing === "dropBasket" ? 3 : s.doing === "pay" ? 4 : 0;
+    const reaching = s.doing === "pick" || s.doing === "takeBasket" || s.doing === "putBasket" || (s.doing === "unload" && s.wait > SHOPPING.unloadMs / 2);
+    const frame = walking ? 1 + (Math.floor(s.clock / SHOPPING.stepMs) % 2) : reaching ? 3 : s.doing === "pay" ? 4 : 0;
     things.push({ sprite: `person_${s.look}`, x: s.x, y: s.y, facing: s.facing, frame, carrying: s.carriesBag ? s.bag : s.hasBasket ? shownGoods(s) : "none", alpha: s.alpha, shadow: true });
   }
   return things;

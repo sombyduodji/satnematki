@@ -27,6 +27,7 @@ LINES = {
     "store-till": "Mana kássii.",
     "store-wait": "Vuordde vuoru.",
     "store-belt": "Bija dan beavdái.",
+    "store-basketdown": "Bija márssu beavdái.",  # the basket onto the counter's start. A draft for the user to check.
     "store-bag": "Váldde seahka.",
     "store-door": "Mana uksii.",
     "store-pay": "Mávsse.",

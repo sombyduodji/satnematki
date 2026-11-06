@@ -88,6 +88,7 @@ body.menu #game-title { display: block; }
 .paper-list li[data-left]::after { content: " (" attr(data-left) ")"; font-size: 18px; font-weight: 400; color: #7a6a4a; }
 .paper-list .bought { text-decoration: line-through; text-decoration-color: #b5342c; text-decoration-thickness: 2px; color: #8a90a8; }
 #top-hint { min-height: 24px; margin-bottom: 4px; font-size: 15px; visibility: hidden; }
+#note:empty { display: none; }
 #top-hint kbd { padding: 0 6px; border-radius: 4px; background: var(--sami-yellow); color: #14213d; font: bold 13px sans-serif; }
 #top-hint small { opacity: 0.75; }
 body.menu #top-hint { display: none; }
@@ -485,7 +486,7 @@ footer a { color: #cfe3ee; }
   }
   body:not(.menu) #prompt:empty { display: none; }
   body:not(.menu) #prompt button { pointer-events: auto; }
-  body:not(.menu) #prompt:has(.paper-list) { justify-self: end; max-width: none; margin: 42px 10px 0 0; padding: 0; background: none; }
+  body:not(.menu) #note { grid-area: 1 / 1; z-index: 5; justify-self: end; align-self: start; margin: 42px 10px 0 0; pointer-events: none; }
   body:not(.menu) .paper-list {
     display: block;
     margin: 0;
