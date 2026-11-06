@@ -4574,7 +4574,7 @@ window.MAHTTE_MAPS = {
      4
     ]
    ],
-   "cake": [
+   "cheese": [
     [
      7,
      4
@@ -4584,7 +4584,7 @@ window.MAHTTE_MAPS = {
      4
     ]
    ],
-   "cheese": [
+   "juice": [
     [
      9,
      4
@@ -4594,7 +4594,7 @@ window.MAHTTE_MAPS = {
      4
     ]
    ],
-   "juice": [
+   "milk": [
     [
      11,
      4
@@ -4604,7 +4604,7 @@ window.MAHTTE_MAPS = {
      4
     ]
    ],
-   "milk": [
+   "mince": [
     [
      15,
      4
@@ -4614,7 +4614,7 @@ window.MAHTTE_MAPS = {
      4
     ]
    ],
-   "mince": [
+   "pancake": [
     [
      17,
      4
@@ -4622,19 +4622,17 @@ window.MAHTTE_MAPS = {
     [
      18,
      4
-    ]
-   ],
-   "pancake": [
-    [
-     19,
-     4
     ],
     [
-     20,
+     19,
      4
     ]
    ],
    "sausage": [
+    [
+     20,
+     4
+    ],
     [
      21,
      4

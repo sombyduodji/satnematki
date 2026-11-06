@@ -1,6 +1,6 @@
 # Sátnemátki
 
-*Sátnemátki* means "word journey" in Northern Sámi. Version 0.2.5.2, a technology demo.
+*Sátnemátki* means "word journey" in Northern Sámi. Version 0.2.5.3, a technology demo.
 
 A Northern Sámi word game for children. The player creates a character, Máhtte or Biret, chooses a place, and
 walks around it in an isometric view with a camera that follows: furniture and family at home, animals in the forest, coloured books on the shelves and
