@@ -179,6 +179,9 @@
       gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([0, 0, 0, 255]));
       // Until a place with a light map is loaded, the light map is a single dark texel.
       this.noLight = this.black;
+      // Made now, with the sprites' own: made later, inside the first frame with its GPU timer running, the first one failed on
+      // ANGLE with Vulkan (no log, no error) and the next frame had to make them again.
+      this.makePrograms(owner.lightGlsl);
     }
 
     setQuality(q, byHand = true) {
@@ -195,10 +198,12 @@
       this.light = info;
       this.owner.light = info;
       this.lightReady = false;
+      this.lightPixels = null;
       if (!info) return;
       const image = new Image();
       image.onload = () => {
         if (this.light !== info) return;
+
         this.lightTexture ??= gl.createTexture();
         gl.bindTexture(gl.TEXTURE_2D, this.lightTexture);
         gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
@@ -208,6 +213,18 @@
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+        // Read back as well, to tell whether someone stands in the sun: only then do they throw a shadow from it. From the texture, as
+        // a 2D canvas would lose the colours where the map's alpha, a height, is 0.
+        try {
+          const w = image.naturalWidth, h = image.naturalHeight, data = new Uint8Array(w * h * 4);
+          const fb = gl.createFramebuffer();
+          gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
+          gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.lightTexture, 0);
+          gl.readPixels(0, 0, w, h, gl.RGBA, gl.UNSIGNED_BYTE, data);
+          gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+          gl.deleteFramebuffer(fb);
+          this.lightPixels = { data, w, h };
+        } catch { /* without it everyone throws one, as before */ }
         this.lightReady = true;
       };
       image.src = src;
@@ -221,6 +238,14 @@
         blur: compileQuad(gl, BLUR_FS),
         composite: compileQuad(gl, COMPOSITE_FS),
       };
+    }
+
+    // How much sun there is where someone stands, from 0 to 1, at a point of the light map (the floor's units, or the screen's pixels).
+    sunAt(mx, my) {
+      const p = this.lightPixels;
+      if (!p) return 1;
+      const x = Math.max(0, Math.min(p.w - 1, Math.floor(mx))), y = Math.max(0, Math.min(p.h - 1, Math.floor(my)));
+      return p.data[(y * p.w + x) * 4] / 255;
     }
 
     target(name, w, h) {
@@ -290,8 +315,10 @@
           gl.uniform4f(u.uRoom, ...L.room);
           gl.uniform2f(u.uWindowZ, L.windowLow, L.windowHigh);
           gl.uniform1f(u.uHeightTop, L.heightTop);
-          gl.uniform2fv(u.uWinX, L.windowsX.flat());
-          gl.uniform2fv(u.uWinY, L.windowsY.flat());
+          // Up to four windows in each back wall, the rest none: an older light.js has three.
+          const four = (list) => [...list, [0, 0], [0, 0], [0, 0], [0, 0]].slice(0, 4).flat();
+          gl.uniform2fv(u.uWinX, four(L.windowsX));
+          gl.uniform2fv(u.uWinY, four(L.windowsY));
           gl.uniform2f(u.uMullion, ...L.mullion);
         }
         if (u.uShaftTop) gl.uniform1f(u.uShaftTop, L.shaftTop ?? 0);
@@ -472,7 +499,7 @@
       const shader = gl.createShader(type);
       gl.shaderSource(shader, source);
       gl.compileShader(shader);
-      if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(shader));
+      if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) throw new Error(`${type === gl.VERTEX_SHADER ? "vertex" : "fragment"} shader: ${gl.isContextLost() ? "context lost" : gl.getShaderInfoLog(shader)} | ${source.slice(0, 120).replace(/\s+/g, " ")}`);
       gl.attachShader(program, shader);
     }
     gl.linkProgram(program);

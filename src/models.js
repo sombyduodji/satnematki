@@ -268,14 +268,15 @@ const rounded = (x0, x1, y0, y1, z0, z1, r, colour) => ({ kind: "box", low: [x0,
 // Things on shelves and tables, standing still and facing +y. Those that come in colours take one from COLOURS.
 const WHITE = "#f4f1e8", PAGES = "#eee8d8", DARK = "#2b2b3a", STEEL = "#b5bcc6";
 Object.assign(MODELS, {
+  // A hardback standing with its cover to the front, as it's shown on its card.
   book: (frame, colour) => {
     const c = COLOURS[colour];
     return [
-      across(4, -1.25, 1.25, 0, 11.5, c[1]),
-      animalBox(3.4, 4.1, -1, 1, 0.5, 11, PAGES),
-      animalBox(-4.5, -3.5, -1.25, 1.25, 0, 11.5, c[2]),
-      animalBox(-2.5, 3, 1.25, 1.5, 7, 9.5, c[3]),
-      animalBox(-1.5, 2, 1.25, 1.5, 5.25, 6, c[3]),
+      rounded(-4.2, 3.6, -1.3, 1.3, 0, 11.6, 0.35, c[1]),
+      rounded(3.2, 4.1, -1.05, 1.05, 0.4, 11.2, 0.15, PAGES),
+      rounded(-4.6, -3.4, -1.35, 1.35, 0, 11.6, 0.6, c[2]),
+      rounded(-2.4, 2.8, 1.2, 1.45, 7.1, 9.4, 0.1, c[3]),
+      rounded(-1.4, 1.8, 1.2, 1.45, 5.3, 6, 0.1, c[3]),
     ];
   },
   pen: (frame, colour) => {
@@ -298,14 +299,57 @@ Object.assign(MODELS, {
       ball(8, 0, 1.3, 0.6, 0.35, 0.35, DARK),
     ];
   },
+  // A paper exercise book lying open a crack, with its spiral along the left.
   notebook: (frame, colour) => {
     const c = COLOURS[colour];
     return [
-      across(5, -6, 6, 0, 0.5, c[1]),
-      across(4.8, -5.8, 5.8, 0.5, 1.5, PAGES),
-      across(5, -6, 6, 1.5, 2, c[1]),
-      animalBox(-2, 3, -3, 2, 2, 2.2, WHITE),
-      ...[-4, -2, 0, 2, 4].map((y) => animalBox(-5.8, -5, y - 0.4, y + 0.4, 0, 2.5, STEEL)),
+      rounded(-5, 5, -6, 6, 0, 0.6, 0.25, c[1]),
+      rounded(-4.8, 4.8, -5.8, 5.8, 0.6, 1.6, 0.15, PAGES),
+      rounded(-5, 5, -6, 6, 1.6, 2.1, 0.25, c[1]),
+      rounded(-2.2, 3.2, -3.4, 2, 2.1, 2.25, 0.1, WHITE),
+      rounded(-1.6, 2.4, -2.6, -2.2, 2.2, 2.3, 0.05, c[2]),
+      ...[-4.4, -2.6, -0.8, 1, 2.8, 4.6].map((y) => tube([-5.4, y, 0], [-5.4, y, 2.4], 0.5, 0.5, STEEL)),
+    ];
+  },
+  // Open on a table, its screen to the front.
+  laptop: (frame, colour) => {
+    const c = COLOURS[colour];
+    return [
+      rounded(-6, 6, -3.8, 4.2, 0, 0.9, 0.4, c[1]),
+      rounded(-5.2, 5.2, -3, 0.9, 0.8, 1.05, 0.1, DARK),
+      rounded(-1.7, 1.7, 1.6, 3.5, 0.8, 1.0, 0.2, c[3]),
+      rounded(-6, 6, -4.6, -3.7, 0.6, 9.2, 0.4, c[1]),
+      rounded(-5.3, 5.3, -3.8, -3.55, 1.5, 8.4, 0.1, "#9fd8f2"),
+      rounded(-4.6, -0.6, -3.62, -3.45, 5.4, 7.6, 0.1, "#e6f6fc"),
+      rounded(0.2, 4.4, -3.62, -3.45, 2.4, 4.6, 0.1, "#ffe680"),
+    ];
+  },
+  // A tablet, dihtorduolbbus, lying on the table in a coloured case, its screen up, with a few things on it.
+  tablet: (frame, colour) => {
+    const c = COLOURS[colour];
+    return [
+      rounded(-4.6, 4.6, -6.4, 6.4, 0, 1, 0.5, c[1]),
+      rounded(-4, 4, -5.8, 5.8, 0.9, 1.05, 0.1, DARK),
+      rounded(-3.6, 3.6, -5.2, 4.8, 1, 1.12, 0.1, "#9fd8f2"),
+      ...[[-2.4, -3.6, "#ffe680"], [0, -3.6, "#ee6a58"], [2.4, -3.6, "#6fc774"], [-2.4, -1.2, "#62a0e6"], [0, -1.2, "#ffffff"]].map(([x, y, tone]) => rounded(x - 0.9, x + 0.9, y - 0.9, y + 0.9, 1.08, 1.2, 0.2, tone)),
+      rounded(-0.6, 0.6, 5.2, 5.6, 1, 1.12, 0.1, c[3]),
+    ];
+  },
+  // Scissors lying open a little, with coloured handles.
+  scissors: (frame, colour) => {
+    const c = COLOURS[colour];
+    const ring = (cx, cy) => Array.from({ length: 10 }, (_, i) => {
+      const a = (i / 10) * Math.PI * 2, b = ((i + 1) / 10) * Math.PI * 2;
+      return tube([cx + Math.cos(a) * 1.9, cy + Math.sin(a) * 1.4, 0.7], [cx + Math.cos(b) * 1.9, cy + Math.sin(b) * 1.4, 0.7], 0.65, 0.65, c[1]);
+    });
+    return [
+      tube([0.4, 0, 0.9], [8.5, 1.4, 0.5], 0.9, 0.2, STEEL),
+      tube([0.4, 0, 0.6], [8.5, -1.4, 0.5], 0.9, 0.2, "#d8dde4"),
+      ball(0.4, 0, 1.3, 0.7, 0.7, 0.5, DARK),
+      tube([0.4, 0, 0.7], [-2.6, 2.2, 0.7], 0.75, 0.75, c[1]),
+      tube([0.4, 0, 0.7], [-2.6, -2.2, 0.7], 0.75, 0.75, c[1]),
+      ...ring(-4.2, 2.8),
+      ...ring(-4.2, -2.8),
     ];
   },
   apple: () => [
@@ -781,8 +825,15 @@ Object.assign(MODELS, {
     ball(0, 0, 15.5, 3.8, 3.2, 2.2, "#8e4a7a"),
     ...sides((s) => tube([s * 4.6, 0, 15], [s * 5, 2.8, 10.8], 1.3, 1.1, "#8e4a7a")),
     ...sides((s) => tube([s * 5, 2.8, 10.8], [s * 1.4, 5, 10.2], 1.1, 0.9, SKIN)),
-    // Knitting on her lap, the needles working.
-    ball(0, 5.6, 10 + frame * 0.4, 2.4, 1.6, 1.3, "#e6c15a"),
+    // Knitting held up in front of her: a striped piece hanging from two needles, the needles crossing as they work, and the
+    // ball of yarn on the sofa beside her with its thread going up to it.
+    { ...rounded(-2.6, 2.6, 5.4, 6.2, 8.4, 12.4, 0.3, "#e6c15a"), paint: ([, , z]) => ((z + 40) % 1.4 < 0.5 ? "#c84a3a" : (z + 40) % 1.4 < 0.75 ? "#f4f1e8" : "#e6c15a") },
+    tube([-3.8 + frame * 0.5, 5.8, 13.4], [2.6, 5.8, 11.6], 0.22, 0.18, "#c9ccd2"),
+    tube([3.8 - frame * 0.5, 5.8, 13.4], [-2.6, 5.8, 11.6], 0.22, 0.18, "#c9ccd2"),
+    ball(-3.8 + frame * 0.5, 5.8, 13.5, 0.35, 0.35, 0.35, "#e8b830"),
+    ball(3.8 - frame * 0.5, 5.8, 13.5, 0.35, 0.35, 0.35, "#e8b830"),
+    ball(6.4, 2, 9.4, 1.9, 1.9, 1.8, "#c84a3a"),
+    tube([6, 2.6, 10.4], [2.4, 5.6, 9], 0.12, 0.12, "#c84a3a"),
     ...head(20, [
       ball(0, -0.7, 20.5, 4, 3.7, 4, "#5a3a22"),
       ball(0, -1.4, 24.5, 1.9, 1.8, 1.6, "#5a3a22"),
@@ -1326,13 +1377,25 @@ Object.assign(MODELS, {
     ball(7.3, 0, 7.3, 0.9, 0.8, 1.1, "#8a5f35"),
   ],
   // Coiled up, with the end hanging down and the ring it runs through.
-  lasso: () => [
-    ...[0, 0.5, 1].flatMap((k, i) => ring(k - 0.5, 13 + k * 0.6, 6.4 - i * 0.3, 7 - i * 0.3, 0.5, i === 1 ? "#c9b888" : ROPE, 14)),
-    tube([0, 0, 21], [0, 0, 22.5], 0.3, 0.3, "#8c9198"),
-    ...ring(5.7, 7.6, 1.2, 1.2, 0.3, "#f4f1e8", 8),
-    tube([5.2, 0, 7], [4.2, 0, 3.4], 0.45, 0.4, ROPE),
-    tube([4.2, 0, 3.4], [5, 0, 1.2], 0.4, 0.35, ROPE),
-  ],
+  // A suohpan coiled and hung up by its coil: loops of rope, each its own, fanned out a little as they hang from the peg, and the end
+  // hanging down with its small ring. For the user to check.
+  lasso: () => {
+    const loop = (top, rx, rz, y, tilt, colour) => Array.from({ length: 16 }, (_, i) => {
+      const at = (n) => {
+        const a = (n / 16) * Math.PI * 2;
+        return [Math.sin(a) * rx + Math.sin(a) * tilt, y + Math.cos(a) * 0.4, top - rz + Math.cos(a) * rz];
+      };
+      return tube(at(i), at(i + 1), 0.32, 0.32, colour);
+    });
+    return [
+      tube([0, 0, 22.2], [0, 0, 23.2], 0.3, 0.3, "#8c9198"),
+      ...[[6.6, 7.4, -1.5, 0.4], [6.2, 7.6, -1, -0.3], [5.9, 7.2, -0.5, 0.6], [6.4, 7.8, 0, -0.5], [6, 7.3, 0.5, 0.2], [5.6, 7, 1, -0.2], [6.3, 7.5, 1.5, 0.5]]
+        .flatMap(([rx, rz, y, tilt], i) => loop(22, rx, rz, y, tilt, i % 2 ? "#c9b888" : ROPE)),
+      tube([5.4, 1.6, 13], [4.6, 1.8, 6], 0.32, 0.3, ROPE),
+      tube([4.6, 1.8, 6], [5.2, 1.6, 2.6], 0.3, 0.3, ROPE),
+      ...ring(5.4, 1.4, 1, 1, 0.28, "#f4f1e8", 8).map((t) => ({ ...t, from: [t.from[0], 1.6, t.from[2]], to: [t.to[0], 1.6, t.to[2]] })),
+    ];
+  },
   // A reindeer's bell: a round bell on a wide leather collar with a buckle, and no face to take it for a clock.
   reindeerbell: () => [
     ...ring(0, 15, 6.4, 5.2, 0.75, LEATHER, 16),
@@ -1366,11 +1429,34 @@ Object.assign(MODELS, {
     tube([-0.3, 2.1, 5.8], [-0.3, -0.6, 5.8], 1.6, 1.6, "#3a3a48"),
     ball(1.9, 2.4, 5.8, 0.6, 0.6, 0.6, "#e8902e"),
   ],
-  scoopnet: () => [
-    tube([0, 0, 1], [0, 0, 13], 0.65, 0.6, BIRCH),
-    ...ring(0, 20, 6.5, 7.5, 0.5, "#6f7884", 16),
-    { ...ball(0, 0, 19.5, 6.2, 0.5, 7.2, "#3e6a5a"), paint: ([x, , z]) => (Math.abs(((x + 30) % 2) - 1) < 0.25 || Math.abs(((z + 30) % 2) - 1) < 0.25 ? "#d8e4d4" : "#3e6a5a") },
-  ],
+  // A landing net hung up by its hoop: the net is cord, open between, from the whole hoop down to a sagging bottom in front of the handle,
+  // so it isn't taken for a paddle.
+  scoopnet: () => {
+    const CORD = "#2f5a4a", HOOP = { z: 20, r: 6.5 };
+    // The net's shape: from the hoop (t = 0) to its bottom (t = 1), its middle going out in front and down, and narrowing.
+    const at = (t, a) => {
+      const r = HOOP.r * (1 - 0.82 * t ** 1.2);
+      return [Math.cos(a) * r, 4.2 * Math.sin(t * Math.PI * 0.62), HOOP.z - 9.5 * t + Math.sin(a) * r * (1 - 0.25 * t)];
+    };
+    const cords = [];
+    const STRINGS = 12, RINGS = [0.22, 0.44, 0.66, 0.86];
+    for (let i = 0; i < STRINGS; i++) {
+      const a = (i / STRINGS) * Math.PI * 2;
+      for (let k = 0; k < 5; k++) cords.push(tube(at(k / 5, a), at((k + 1) / 5, a), 0.22, 0.22, CORD));
+    }
+    for (const t of RINGS) {
+      for (let i = 0; i < STRINGS; i++) {
+        cords.push(tube(at(t, (i / STRINGS) * Math.PI * 2), at(t, ((i + 1) / STRINGS) * Math.PI * 2), 0.2, 0.2, CORD));
+      }
+    }
+    return [
+      tube([0, 0, 1], [0, 0, HOOP.z - HOOP.r + 0.2], 0.65, 0.6, BIRCH),
+      tube([0, 0, 0.6], [0, 0, 2.2], 0.8, 0.8, "#3a3a48"),
+      ...ring(0, HOOP.z, HOOP.r, HOOP.r, 0.5, "#6f7884", 16),
+      ...cords,
+      ball(...at(1, 0).slice(0, 2), at(1, 0)[2] - 0.3, 1.3, 1, 0.9, CORD), // where it gathers at the bottom
+    ];
+  },
   // A tin of worms.
   bait: () => [
     { ...tube([0, 0, 0.8], [0, 0, 5], 4.2, 4.2, "#c9ccd2"), cuts: [[0, 0, 1, 5.6], [0, 0, -1, -0.1]], paint: ([, , z]) => (z > 1.5 && z < 4.6 ? "#3e8a4e" : "#c9ccd2") },
@@ -1396,15 +1482,19 @@ Object.assign(MODELS, {
     tube([4.6, 2, 1.4], [6.4, 2, 1], 0.18, 0.18, "#2f7ab0"),
   ],
   // A reel for a rod, with its handle and the foot it's fixed by.
+  // A spinning reel for a rod, hung by its foot: the spool of blue line with its rim, the wire bail round it, and the handle with its knob.
   reel: () => [
-    wheel(8, -2, 2, 4.4, "#3a3a48"),
-    wheel(8, -2.5, -2, 5, BRASS),
-    wheel(8, 2, 2.5, 5, BRASS),
-    wheel(8, 2.5, 3.7, 1.2, "#8c9198"),
-    tube([0, 3.7, 8], [4.6, 3.7, 6], 0.55, 0.45, "#8c9198"),
-    ball(4.8, 4.8, 5.9, 1, 1.2, 1, "#d13a30"),
-    rounded(-1, 1, -1.2, 1.2, 12.5, 14, 0.2, "#6f7884"),
-    rounded(-5, 5, -0.8, 0.8, 14, 14.9, 0.2, "#8c9198"),
+    rounded(-4.5, 4.5, -1, 1, 19.6, 20.6, 0.4, "#6f7884"),
+    tube([0, 0, 19.6], [0, 0.4, 14.6], 0.75, 0.9, "#3a3a48"),
+    ball(0, 0.4, 11.6, 3, 3, 3.4, "#2c2c34"),
+    { ...tube([0, 2.8, 11.2], [0, 6.6, 11.2], 3.1, 3.1, "#2f6fc2"), paint: ([x, y, z]) => ((Math.atan2(z - 11.2, x) * 6 + y * 2.4) % 2 < 0.5 ? "#5a98e0" : "#2f6fc2") },
+    tube([0, 6.6, 11.2], [0, 7.1, 11.2], 3.35, 3.2, "#4a4e56"),
+    tube([0, 2.4, 11.2], [0, 2.8, 11.2], 3.35, 3.35, "#4a4e56"),
+    ball(0, 7.4, 11.2, 1.2, 0.6, 1.2, "#d13a30"),
+    ...ring(0, 11.2, 3.9, 3.9, 0.2, "#c9ccd2", 14).map((t) => ({ ...t, from: [t.from[0], 4.8, t.from[2]], to: [t.to[0], 4.8, t.to[2]] })),
+    tube([-2.8, 0.4, 11.6], [-5.6, 0.4, 11.6], 0.45, 0.45, "#8c9198"),
+    tube([-5.6, 0.4, 11.6], [-5.6, 0.4, 7.4], 0.45, 0.45, "#8c9198"),
+    ball(-6.6, 0.4, 7.2, 1.2, 1, 1.4, "#d8c79a"),
   ],
   shirt: () => [
     ...hanger(21, 5),
@@ -1487,15 +1577,26 @@ Object.assign(MODELS, {
     ball(16, 0, 8, 0.8, 1.6, 1.2, "#ffe680"),
   ],
   // A sled shaped like a boat, in wood, with its raised back and a skin in it: for the user to check.
-  pulk: () => [
-    tube([-11, 0, 0.8], [12, 0, 0.8], 0.8, 0.8, "#5c3a1e"),
-    { ...ball(0, 0, 4.4, 15, 5.6, 4.4, "#a9743f"), cuts: [[0, 0, 1, 6.4], [0, 0, -1, -0.6]], paint: ([, , z]) => ((z + 40) % 1.8 < 0.3 ? "#6f4726" : "#a9743f") },
-    { ...ball(0, 0, 6.4, 13, 4.3, 0.3, "#6a4426") },
-    { ...ball(-1, 0, 6.8, 8, 3.6, 1, "#e0d0ae"), paint: mottled(["#e0d0ae", "#cdbc9f", "#e8decb"], 1) },
-    tube([13, 0, 4.6], [17, 0, 10.4], 1.3, 0.7, "#a9743f"),
-    rounded(-12.6, -10.6, -3.6, 3.6, 5.6, 12, 0.6, "#8a5f35"),
-    tube([17, 0, 10.4], [15, 0, 8], 0.3, 0.3, LEATHER),
-  ],
+  // A geres (ahkio): a boat-shaped sled of laths (láitta) on a keel, with a pointed bow that rises, ribs (fierra) inside, loops on its
+  // edges (gáron) and a leather trace from the bow, its back closed level with the sides. Built after the dictionary's words for its
+  // parts; the shape is general, not of one kind, for the user to check.
+  pulk: () => {
+    const laths = ([, , z]) => ((z + 40) % 1.5 < 0.22 ? "#6f4726" : "#a9743f");
+    return [
+      tube([-12, 0, 0.5], [13, 0, 0.9], 0.7, 0.7, "#5c3a1e"),
+      { ...ball(1, 0, 5, 15, 4.4, 4.8, "#a9743f"), cuts: [[0, 0, 1, 6.6], [0, 0, -1, -0.4], [-1, 0, 0, 11.6]], paint: laths },
+      { ...ball(1, 0, 6.6, 13.4, 3.4, 0.4, "#5a3a20") },
+      ...[-6, -1, 4, 9].map((x) => rounded(x - 0.35, x + 0.35, -3.6 + Math.abs(x - 1) * 0.08, 3.6 - Math.abs(x - 1) * 0.08, 3.2, 6.7, 0.2, "#8a5f35")),
+      { ...tube([12, 0, 2.6], [18.2, 0, 9.2], 2.4, 0.7, "#a9743f"), paint: laths },
+      tube([18.2, 0, 9.2], [19, 0, 10.6], 0.7, 0.4, "#6f4726"),
+      // The back closed with a board level with the sides; nothing stands up there, as no source shows one.
+      rounded(-12, -10.9, -3.7, 3.7, 0.9, 6.7, 0.4, "#8a5f35"),
+      // Loops on its edges, gáron, for lashing a load or a cover.
+      ...[-7, -1, 5].flatMap((x) => [-1, 1].map((s) => tube([x - 0.8, s * 4.1, 6.4], [x + 0.8, s * 4.3, 6.4], 0.28, 0.28, LEATHER))),
+      tube([18.6, 0, 9.8], [21.5, 0, 6], 0.32, 0.3, LEATHER),
+      tube([21.5, 0, 6], [24, 0, 1], 0.3, 0.3, LEATHER),
+    ];
+  },
   // A plain lávvu: canvas on poles that cross at the top, with the door towards the viewer: for the user to check.
   lavvu: () => [
     {
@@ -1687,3 +1788,180 @@ const ANIMAL_WAYS = {
   eadni: { acts: 300, shadow: [0, 0] }, viellja: { acts: 900, shadow: [0, 0] }, oabbá: { acts: 700, shadow: [12, 5] },
   áhčči: { acts: 420, head: 0, shadow: [12, 5] }, tv: { acts: 1100, shadow: [14, 6] },
 };
+
+// ------------------------------------------------------------------ vehicles
+// The car park's vehicles, round and shaded like everything else, in the colour of the word: rounded bodies, glass, wheels with hubs,
+// lamps. Each is as big as VEHICLES in src/game.js says, in the world's units (a tile is 16), parked nose in, so the back is at +y and
+// faces the viewer; a truck, a fire engine and a tractor are reversed in, their cab at +y.
+const TYRE = "#24242c", HUB = "#a8aeb8", GLASS = "#8fc8e8", GLASS_DARK = "#5a90b0", LAMP = "#e0342c", HEAD = "#fff3b0", METAL = "#44444e";
+// A wheel standing along y, its axle across x, flat on both faces, with a hub.
+const roadWheel = (x0, x1, y, r, hub = HUB) => [
+  { ...tube([x0, y, r], [x1, y, r], r, r, TYRE), cuts: [[1, 0, 0, x1], [-1, 0, 0, -x0]] },
+  { ...tube([x0 - 0.2, y, r], [x1 + 0.2, y, r], r * 0.5, r * 0.5, hub), cuts: [[1, 0, 0, x1 + 0.2], [-1, 0, 0, -x0 + 0.2]] },
+];
+const axle = (half, y, r, hub) => [...roadWheel(half - 2.2, half, y, r, hub), ...roadWheel(-half, -half + 2.2, y, r, hub)];
+// Windows round a cabin: glass between z0 and z1, with pillars where they're given, along y.
+const windows = (z0, z1, pillars, body) => ([x, y, z]) => (z > z0 && z < z1 && !pillars.some((p) => Math.abs(y - p) < 0.6) ? (Math.abs(x) > Math.abs(y) * 0.2 ? GLASS_DARK : GLASS) : body);
+Object.assign(MODELS, {
+  car: (frame, colour) => {
+    const c = COLOURS[colour];
+    return [
+      ...axle(6.2, -7.2, 3.1),
+      ...axle(6.2, 7.2, 3.1),
+      { ...rounded(-6, 6, -11.6, 11.6, 2.4, 8.4, 2.2, c[1]), paint: ([x, y, z]) => (z < 3.4 ? "#2c2c36" : Math.abs(z - 6.4) < 0.25 ? c[2] : c[1]) },
+      { ...rounded(-5.2, 5.2, -4, 7, 7.6, 13.4, 2.4, c[1]), paint: windows(8.6, 12.6, [1.2], c[1]) },
+      rounded(-5.2, 5.2, -3, 6, 12.8, 13.6, 1.6, c[3]),
+      ...sides((s) => rounded(s * 3.6 - 1, s * 3.6 + 1, 11.2, 11.9, 5.6, 7.2, 0.3, LAMP)),
+      rounded(-1.6, 1.6, 11.2, 11.8, 3.6, 5, 0.2, "#f4f1e8"),
+      ...sides((s) => rounded(s * 3.8 - 1.1, s * 3.8 + 1.1, -11.9, -11.2, 5.4, 6.8, 0.3, HEAD)),
+      rounded(-6.2, 6.2, 11, 12.2, 2.6, 4, 0.6, "#2c2c36"),
+    ];
+  },
+  taxi: (frame, colour) => [
+    ...MODELS.car(frame, colour),
+    { ...rounded(-2.4, 2.4, 0.4, 3, 13.4, 15.6, 0.6, "#f2c14e"), paint: ([x, , z]) => (z < 14.4 && (Math.floor(x + 10) % 2 === 0) ? "#2c2c36" : "#f2c14e") },
+  ],
+  van: (frame, colour) => {
+    const c = COLOURS[colour];
+    return [
+      ...axle(6.4, -7.8, 3.1),
+      ...axle(6.4, 7.6, 3.1),
+      { ...rounded(-6.2, 6.2, -7.6, 12.4, 2.4, 14.6, 1.8, c[1]), paint: ([x, y, z]) => (z < 3.4 ? "#2c2c36" : y > 12 && z > 8.6 && z < 13 && Math.abs(x) < 5 && Math.abs(x) > 0.5 ? GLASS : x > 6 && y < -2 && z > 8.6 && z < 13 ? GLASS_DARK : c[1]) },
+      { ...rounded(-6, 6, -12.4, -6, 2.4, 9, 1.8, c[1]), paint: ([, , z]) => (z < 3.4 ? "#2c2c36" : c[1]) },
+      { ...rounded(-5.4, 5.4, -8.6, -6.8, 8.6, 13.6, 0.6, GLASS), paint: () => GLASS },
+      ...sides((s) => rounded(s * 4.6 - 1, s * 4.6 + 1, 12.1, 12.7, 4.6, 7, 0.3, LAMP)),
+      ...sides((s) => rounded(s * 3.8 - 1.1, s * 3.8 + 1.1, -12.7, -12.1, 5.2, 6.6, 0.3, HEAD)),
+      rounded(-6.4, 6.4, 11.8, 13, 2.6, 4, 0.6, "#2c2c36"),
+    ];
+  },
+  ambulance: (frame, colour) => {
+    const c = COLOURS[colour];
+    return [
+      ...axle(6.6, -8, 3.2),
+      ...axle(6.6, 8.6, 3.2),
+      { ...rounded(-6.4, 6.4, -9, 13.2, 2.4, 16.4, 1.8, c[1]), paint: ([x, y, z]) => (z < 3.4 ? "#2c2c36" : Math.abs(z - 9) < 1.4 ? "#d13a30" : y > 12.9 && z > 11 && z < 15 && Math.abs(x) > 0.5 && Math.abs(x) < 5.2 ? GLASS : c[1]) },
+      { ...rounded(-6.2, 6.2, -13.2, -8.4, 2.4, 11, 1.8, c[1]), paint: ([, , z]) => (z < 3.4 ? "#2c2c36" : Math.abs(z - 9) < 1.4 ? "#d13a30" : c[1]) },
+      { ...rounded(-5.6, 5.6, -10, -8.6, 10.6, 15.4, 0.6, GLASS), paint: () => GLASS },
+      rounded(-3.4, 3.4, -7.6, -5.2, 16.4, 18.2, 0.6, "#4a8fe0"),
+      ...sides((s) => rounded(s * 4.8 - 1, s * 4.8 + 1, 12.9, 13.5, 4.6, 7, 0.3, LAMP)),
+      ...sides((s) => rounded(s * 3.8 - 1.1, s * 3.8 + 1.1, -13.5, -12.9, 5.2, 6.6, 0.3, HEAD)),
+    ];
+  },
+  truck: (frame, colour) => {
+    const c = COLOURS[colour];
+    return [
+      ...axle(6.8, -10, 3.4), ...axle(6.8, -4.6, 3.4), ...axle(6.8, 10.6, 3.4),
+      rounded(-4.8, 4.8, -15, 14.6, 2.4, 5.4, 0.6, METAL),
+      { ...rounded(-6.8, 6.8, -15.2, 4.2, 5, 24, 0.8, c[1]), paint: ([x, y, z]) => (Math.abs(((y + 40) % 5.2) - 2.6) < 0.25 ? c[2] : z > 22.6 ? c[3] : c[1]) },
+      { ...rounded(-6.4, 6.4, 5.6, 15.2, 4, 18.4, 2.2, c[1]), paint: ([x, y, z]) => (z > 10.4 && z < 16 && (y > 14.6 || (x > 6 && y > 8))) ? (y > 14.6 ? GLASS : GLASS_DARK) : y > 14.8 && z < 8.4 && z > 5.6 && Math.abs(x) < 3 ? "#2c2c36" : c[1] },
+      ...sides((s) => rounded(s * 4.8 - 1.2, s * 4.8 + 1.2, 14.9, 15.5, 6, 7.6, 0.3, HEAD)),
+      rounded(-6.8, 6.8, 14.4, 15.8, 3, 5, 0.6, METAL),
+      rounded(6.4, 7.4, 13.6, 14.6, 11, 16, 0.3, METAL),
+    ];
+  },
+  firetruck: (frame, colour) => {
+    const c = COLOURS[colour], STEEL_ = "#c6cad0";
+    return [
+      ...axle(6.8, -10, 3.4), ...axle(6.8, -4.6, 3.4), ...axle(6.8, 10.6, 3.4),
+      rounded(-4.8, 4.8, -15, 14.6, 2.4, 5.4, 0.6, METAL),
+      { ...rounded(-6.8, 6.8, -15.2, 4.8, 5, 18, 0.8, c[1]), paint: ([x, y, z]) => (Math.abs(z - 11) < 1 ? "#f2c14e" : x > 6.5 && z > 12.6 && z < 16.6 && Math.abs(((y + 40) % 6.4) - 3.2) > 0.5 ? STEEL_ : c[1]) },
+      ...sides((s) => tube([s * 3, -14.6, 19.4], [s * 3, 6, 19.4], 0.5, 0.5, STEEL_)),
+      ...Array.from({ length: 10 }, (_, i) => tube([-3, -13.6 + i * 2.1, 19.4], [3, -13.6 + i * 2.1, 19.4], 0.3, 0.3, STEEL_)),
+      ...sides((s) => tube([s * 3, -14.6, 18], [s * 3, -14.6, 19.4], 0.4, 0.4, STEEL_)),
+      { ...rounded(-6.4, 6.4, 5.6, 15.2, 4, 18.4, 2.2, c[1]), paint: ([x, y, z]) => (z > 10.4 && z < 16 && (y > 14.6 || (x > 6 && y > 8))) ? (y > 14.6 ? GLASS : GLASS_DARK) : Math.abs(z - 7.6) < 0.6 ? "#f2c14e" : c[1] },
+      rounded(-3.6, 3.6, 8.6, 11, 18.4, 20.2, 0.6, "#4a8fe0"),
+      ...sides((s) => rounded(s * 4.8 - 1.2, s * 4.8 + 1.2, 14.9, 15.5, 5.4, 7, 0.3, HEAD)),
+      rounded(-6.8, 6.8, 14.4, 15.8, 3, 5, 0.6, METAL),
+    ];
+  },
+  bus: (frame, colour) => {
+    const c = COLOURS[colour];
+    const pillars = Array.from({ length: 6 }, (_, i) => -13 + i * 5.2);
+    return [
+      ...axle(6.8, -9.6, 3.3), ...axle(6.8, 9.6, 3.3),
+      { ...rounded(-6.8, 6.8, -15.5, 15.5, 2.4, 17.4, 2.4, c[1]), paint: ([x, y, z]) => (z < 3.4 ? "#2c2c36" : z > 9 && z < 14.4 && (y > 15.2 ? Math.abs(x) < 5.4 : x > 6.4 && !pillars.some((p) => Math.abs(y - p) < 0.7)) ? (y > 15.2 ? GLASS : GLASS_DARK) : Math.abs(z - 6.8) < 0.5 ? "#f4f1e8" : z > 16.6 ? c[3] : c[1]) },
+      ...sides((s) => rounded(s * 5.2 - 1, s * 5.2 + 1, 15.3, 15.9, 4.4, 6.6, 0.3, LAMP)),
+      ...sides((s) => rounded(s * 5 - 1.1, s * 5 + 1.1, -15.9, -15.3, 4.6, 6.2, 0.3, HEAD)),
+    ];
+  },
+  tractor: (frame, colour) => {
+    const c = COLOURS[colour];
+    return [
+      ...roadWheel(4.8, 7.8, -5.4, 9.6, c[3]), ...roadWheel(-7.8, -4.8, -5.4, 9.6, c[3]),
+      ...roadWheel(3.4, 5, 8, 5, c[3]), ...roadWheel(-5, -3.4, 8, 5, c[3]),
+      rounded(-1.8, 1.8, -10, 12, 3.6, 7, 0.6, METAL),
+      { ...rounded(-3, 3, -1.2, 11.8, 6, 13, 1.6, c[1]), paint: ([x, y, z]) => (y > 11.4 && z < 12 && z > 7.4 && Math.abs(x) < 2.2 && (z % 1.4) < 0.7 ? "#2c2c36" : c[1]) },
+      ...sides((s) => rounded(s * 2.2 - 0.6, s * 2.2 + 0.6, 11.6, 12.1, 10.4, 12, 0.2, HEAD)),
+      tube([1.6, 4.6, 13], [1.6, 4.6, 22], 0.6, 0.6, METAL),
+      { ...rounded(-4.2, 4.2, -9.6, -0.8, 11, 22, 0.8, GLASS), paint: ([x, y]) => (Math.abs(x) > 3.6 && (Math.abs(y + 9) < 0.7 || Math.abs(y + 1.4) < 0.7) ? c[2] : GLASS) },
+      rounded(-4.8, 4.8, -10.2, -0.2, 22, 23.6, 0.6, c[1]),
+      ...sides((s) => rounded(s * 5.6 - 1.6, s * 5.6 + 1.6, -10.4, -0.4, 19.4, 20.4, 0.4, c[1])),
+    ];
+  },
+  snowmobile: (frame, colour) => {
+    const c = COLOURS[colour];
+    return [
+      ...sides((s) => rounded(s * 3.4 - 0.9, s * 3.4 + 0.9, -9.6, -2, 0, 0.8, 0.3, "#3a3a48")),
+      ...sides((s) => tube([s * 3.4, -9.6, 0.5], [s * 3.4, -11, 2.6], 0.7, 0.4, "#3a3a48")),
+      { ...rounded(-2.6, 2.6, -1, 9.4, 0.2, 3.6, 1.4, TYRE), paint: ([, y, z]) => ((y + 40) % 1.4 < 0.5 && z < 1.2 ? "#55555f" : TYRE) },
+      { ...ball(0, -4.4, 5, 3.6, 6.6, 3.6, c[1]), cuts: [[0, 0, -1, -2.2]] },
+      rounded(-3, 3, -2, 9.6, 3, 5.4, 1, c[1]),
+      rounded(-2.2, 2.2, -0.6, 9, 5.2, 7.4, 1, "#23232a"),
+      flat(ball(0, -3, 8.6, 2.8, 0.8, 2.4, "#a8d4f0"), 0.8),
+      tube([-3.6, -1.4, 9.2], [3.6, -1.4, 9.2], 0.4, 0.4, "#3a3a48"),
+      rounded(-1.2, 1.2, 9.2, 9.8, 4, 5.2, 0.3, LAMP),
+    ];
+  },
+  trailer: (frame, colour) => {
+    const c = COLOURS[colour];
+    return [
+      tube([0, -11.8, 4.2], [0, -4.6, 4.2], 0.6, 0.6, METAL),
+      ball(0, -12, 4.2, 0.9, 0.9, 0.9, METAL),
+      ...axle(6, 2.8, 3),
+      rounded(-5.6, 5.6, -5, 11.6, 3.4, 5, 0.4, c[2]),
+      ...sides((s) => ({ ...rounded(s * 5.6 - 0.8, s * 5.6 + 0.8, -5, 11.6, 5, 9, 0.3, c[1]) })),
+      ...[-5, 11.6].map((y) => rounded(-5.6, 5.6, y - 0.8, y + 0.8, 5, 9, 0.3, c[1])),
+      ...sides((s) => rounded(s * 4.4 - 0.9, s * 4.4 + 0.9, 11.9, 12.5, 6, 7.6, 0.3, LAMP)),
+    ];
+  },
+  moto: (frame, colour) => {
+    const c = COLOURS[colour];
+    return [
+      ...roadWheel(-0.9, 0.9, -6.6, 3.4), ...roadWheel(-0.9, 0.9, 6.6, 3.4),
+      { ...rounded(-1.8, 1.8, -4, 3, 4.6, 9.4, 1.4, c[1]) },
+      rounded(-1.6, 1.6, 1, 7.4, 8.4, 10.2, 0.8, "#2c2c36"),
+      tube([0, -5.4, 5], [0, -6.8, 3.4], 0.5, 0.5, "#8d95a3"),
+      tube([0, -4.2, 9.4], [0, -5.4, 5], 0.5, 0.5, "#8d95a3"),
+      tube([-3.4, -4.4, 11.6], [3.4, -4.4, 11.6], 0.4, 0.4, "#2c2c36"),
+      tube([0, -4.2, 9.4], [0, -4.4, 11.6], 0.45, 0.45, "#8d95a3"),
+      flat(ball(0, -5.4, 12.4, 1.8, 0.4, 1.6, "#a8d4f0"), 0.4),
+      tube([1.6, 1, 4.4], [1.6, 8, 5.6], 0.7, 0.5, "#c6cad0"),
+      rounded(-0.8, 0.8, 7.2, 7.8, 7.4, 8.4, 0.2, LAMP),
+    ];
+  },
+  bike: (frame, colour) => {
+    const c = COLOURS[colour];
+    const spoked = (y) => [
+      ...Array.from({ length: 16 }, (_, i) => {
+        const at = (n) => [0, y + Math.cos((n / 16) * Math.PI * 2) * 3.6, 3.8 + Math.sin((n / 16) * Math.PI * 2) * 3.6];
+        return tube(at(i), at(i + 1), 0.5, 0.5, TYRE);
+      }),
+      tube([0, y - 3.2, 3.8], [0, y + 3.2, 3.8], 0.12, 0.12, "#a8aeb8"),
+      tube([0, y, 0.6], [0, y, 7], 0.12, 0.12, "#a8aeb8"),
+    ];
+    return [
+      ...spoked(-5.4), ...spoked(5.4),
+      tube([0, -5.4, 3.8], [0, -1, 3.6], 0.45, 0.45, c[1]),
+      tube([0, -1, 3.6], [0, 1.6, 9.2], 0.45, 0.45, c[1]),
+      tube([0, 1.6, 9.2], [0, -4.6, 9.6], 0.45, 0.45, c[1]),
+      tube([0, -4.6, 9.6], [0, -5.4, 3.8], 0.45, 0.45, c[1]),
+      tube([0, -1, 3.6], [0, 5.4, 3.8], 0.4, 0.4, c[1]),
+      tube([0, 1.6, 9.2], [0, 5.4, 3.8], 0.4, 0.4, c[1]),
+      tube([0, 1.6, 9.2], [0, 2, 10.6], 0.35, 0.35, "#8d95a3"),
+      rounded(-0.8, 0.8, 0.8, 3.4, 10.6, 11.4, 0.4, "#2c2c36"),
+      tube([0, -4.6, 9.6], [0, -5, 11.6], 0.35, 0.35, "#8d95a3"),
+      tube([-2.6, -5, 11.6], [2.6, -5, 11.6], 0.35, 0.35, "#2c2c36"),
+    ];
+  },
+});
+

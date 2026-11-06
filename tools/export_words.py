@@ -66,6 +66,9 @@ DROP_NB = re.compile(r"\b(lapp\w*|sigøyner\w*|tater\w*|morder|avliver|penis)\b"
 
 # A translation shown in place of a dated one the dictionary has as its only choice, by hand. Must be checked by the user.
 SHOWN_INSTEAD = {("gákti", "N"): {"saamenpuku": "lapinpuku"}}
+# A Finnish translation the game gives where the dictionary has none at all, chosen by the user: only used while satni.db has no Finnish
+# for the word, so that a translation added there later is checked as usual.
+FINNISH_WHERE_NONE = {("dihtorduolbbus", "N"): "tabletti"}
 
 # Words the translation patterns can't catch.
 BLOCK_LEMMAS = {
@@ -115,12 +118,12 @@ def main():
     rows = db.execute(
         """SELECT * FROM dictionary
            WHERE pos IN ('N','V','A') AND COALESCE(subtype,'') <> 'Prop'
-             AND COALESCE(finnish_translation,'') <> ''
            ORDER BY COALESCE(freq, 0) DESC, sme_lemma, pos, id""",
     ).fetchall()
     # A word picked by hand may be rarer than the limit; it still has to pass every filter.
     picked = {(s["lemma"], s["pos"]) for s in load_starter()}
-    rows = [r for r in rows if (r["sme_lemma"], r["pos"]) in picked or ((r["freq"] or 0) >= MIN_FREQ and r["nob_translation"])]
+    rows = [r for r in rows if (r["finnish_translation"] or (r["sme_lemma"], r["pos"]) in FINNISH_WHERE_NONE)
+            and ((r["sme_lemma"], r["pos"]) in picked or ((r["freq"] or 0) >= MIN_FREQ and r["nob_translation"]))]
 
     words, removed = [], []
     for row in rows:
@@ -140,7 +143,7 @@ def main():
         fi = [t for t in fi_all if not DROP_FI.search(t)]
         nb = [t for t in nb_all if not DROP_NB.search(t)]
         dropped = [t for t in fi_all + nb_all if t not in fi + nb]
-        if not fi or (not nb and nb_all):
+        if (not fi and (row["sme_lemma"], row["pos"]) not in FINNISH_WHERE_NONE) or (not nb and nb_all):
             removed.append(base + ["word removed", "unsuitable translation", "; ".join(dropped), fi_text, nb_text])
             continue
         if dropped:
@@ -183,7 +186,8 @@ def main():
         if not word:
             problems.append(f"{key}: filtered out or not in the database")
             continue
-        if SHOWN_INSTEAD.get(key, {}).get(s["fi"], s["fi"]) not in word["_all_fi"]:
+        given = not word["_all_fi"] and FINNISH_WHERE_NONE.get(key) == s["fi"]
+        if not given and SHOWN_INSTEAD.get(key, {}).get(s["fi"], s["fi"]) not in word["_all_fi"]:
             problems.append(f"{key}: fi {s['fi']!r} not in {word['_all_fi']}")
         if s["nb"] and s["nb"] not in word["_all_nb"]:
             problems.append(f"{key}: nb {s['nb']!r} not in {word['_all_nb']}")

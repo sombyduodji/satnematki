@@ -2,13 +2,24 @@
 // the rules and the movement are in game.js. The places come from tools/make_map.py.
 const TILE = 16;
 let placeName, MAP, START, SPOTS, WIDTH, HEIGHT, WORLD_W, WORLD_H, OX, forestAt, trees, treeMap;
-const SOLID_TILES = new Set("vQewBWXKSCMDRZPETVGHYJIOUNAo_"); // _ is nothing at all, beyond the walls of a room that isn't square
-const BLOCK_TILES = new Set("vQeBWXKSCMDRZPETVGHYJIOUNo")
+const SOLID_TILES = new Set("vQewBWXKSCMDRZPETVGHYJIOUNAokn_"); // _ is nothing at all, beyond the walls of a room that isn't square
+const BLOCK_TILES = new Set("vQeBWXKSCMDRZPETVGHYJIOUNokn")
 // The places played as a trip to the shops: basket, list, till, bag and door.
 const SHOPS = new Set(["store", "gearstore"]);
 const isShop = (place) => SHOPS.has(place);;
 // Food stands in its fixture, this far above the floor.
-const RAISED = { pallet: 15, meat: 11, shelf: 11, fridge: 8, freezer: 10, produce: 8, desk: 9, bookshelf: 13, table: 10, tools: 3, fishing: 3, clothes: 4, platform: 3 };
+// How far towards the aisle, in tiles from the tile's middle, things stand in a fixture of the rooms made with tools/rooms3d.py.
+const IN_FRONT = { tools: 0.13, fishing: 0.13 };
+// In the general store every thing is stocked on all of its tiles: two side by side on each, or one of what's wide, as if hung up there.
+// Some come in several looks, one to a tile: the backpacks are four of the classmates' ten from tools/make_animals.py (the flag,
+// a reindeer under the midnight sun, the northern lights, a rainbow), standing on the shelf under the rail.
+const WIDE_STOCK = new Set(["saw", "spade", "oar", "rod", "fishnet", "rubberboots", "boat", "snowscooter", "pulk", "lavvu", "backpack"]);
+const STOCK_LOOKS = { backpack: ["backpack-0", "backpack-3", "backpack-4", "backpack-8"] };
+const stockCopies = (o) => (placeName !== "gearstore" || !o.tiles ? [o]
+  : o.tiles.flatMap(([x, y], i) => (WIDE_STOCK.has(o.word.sprite) ? [0] : [-0.21, 0.21]).map((dx) => ({
+    ...o, x, y, tiles: undefined, copyDx: dx, of: o, drawSprite: STOCK_LOOKS[o.word.sprite]?.[i % STOCK_LOOKS[o.word.sprite].length],
+  }))));
+const RAISED = { pallet: 15, meat: 11, shelf: 11, fridge: 8, freezer: 10, produce: 8, desk: 9, bookshelf: 14.8, table: 10, tools: 3, fishing: 3, clothes: 4, platform: 3 };
 const canvas = document.getElementById("world");
 // In kauppa-gl.html the GPU draws instead (src/gl/), through a stand-in that takes the same calls. Elsewhere, or without WebGL 2, the 2D canvas.
 const ctx = (window.SATNE_GL && window.makeGLContext?.(canvas)) || canvas.getContext("2d", { alpha: false }); // nothing shows through it, and knowing that saves the browser work
@@ -462,8 +473,8 @@ function churchPicture(entry, src) {
 }
 
 const STORE_CELL = { width: 32, height: 64 }; // a tile's picture in the world's pixels
-// Where each place made ahead has its tiles, from tools/make_store.py and tools/make_classrooms.py.
-const madeTiles = () => (placeName === "store" ? window.MAHTTE_STORE : window.MAHTTE_CLASSROOMS?.[placeName]);
+// Where each place made ahead has its tiles, from tools/make_store.py, tools/make_classrooms.py and the rooms of tools/rooms3d.py.
+const madeTiles = () => (placeName === "store" ? window.MAHTTE_STORE : window.MAHTTE_CLASSROOMS?.[placeName] ?? window.MAHTTE_ROOMS?.[placeName]);
 const madeSheets = new Map();
 function madeSheet() {
   const key = `${placeName}/${CANVAS_DETAIL}`;
@@ -487,6 +498,9 @@ function placeThings() {
       if (sign) list.push({ tx, ty, block: true, made: sign, image: STORE_CELL, x: isoX(tx, ty), y: isoY(tx, ty) + 14, mx: tx + 0.5, my: ty + 0.5 });
     } else if (BLOCK_TILES.has(tile)) {
       list.push({ tx, ty, block: true, image: blockImage(tile, tx * 3 + ty), x: isoX(tx, ty), y: isoY(tx, ty) + 14, mx: tx + 0.5, my: ty + 0.5 });
+    } else if (tile === "t" && madeTiles()?.[`${tx},${ty}`]) {
+      // A tree made with the place, as the car park's birches: drawn like a fixture, and still a trunk to walk round in its middle.
+      list.push({ tx, ty, made: madeTiles()[`${tx},${ty}`], image: STORE_CELL, x: isoX(tx, ty), y: isoY(tx, ty) + 14, mx: tx + 0.5, my: ty + 0.5, trunk: 0.16 });
     } else if (tile === "t") {
       const birch = forestAt[ty][tx] < 0.35 ? noise(tx * 2, ty) > 0.45 : noise(tx * 2, ty) > 0.86;
       const choices = treeKinds ? FOREST_TREES[treeKinds[ty][tx]].map((_, which) => forestTreeImage(treeKinds[ty][tx], which)) : birch ? BIRCHES : PINES;
@@ -499,6 +513,15 @@ function placeThings() {
     }
   }
   return list;
+}
+
+// A piece of furniture from a room's sheet, where it goes in the world: from tools/rooms3d.py, in picture pixels, four to the world's pixel.
+function paintPiece([sx, sy, w, h, left, top]) {
+  const { ready, plain } = madeSheet(), sheet = ready ?? plain, scale = ready ? CANVAS_DETAIL / 4 : 1;
+  if (!sheet) return;
+  ctx.lit = false; // its light is in it already
+  ctx.drawImage(sheet, sx * scale, sy * scale, w * scale, h * scale, left / 4, top / 4, w / 4, h / 4);
+  ctx.lit = true;
 }
 
 // Sets everything up for one of the places. Each is drawn once and kept.
@@ -720,6 +743,73 @@ function fillShapeOn(g, points, colour) {
 // Drawn from the same angle as the world, as boxes in tile units. x is across the bay and y along it, with the nose
 // at the far end of the bay, so the back and the right side are what can be seen; the truck, fire engine and tractor face out. Sizes are in VEHICLES in game.js.
 const VEHICLE_ANCHOR = { x: 60, y: 62 };
+// A vehicle's shadow on the ground in the sun, from its model in src/models.js: for each point of the ground round it, whether the model
+// is in the way of the sun. Made once for each kind, at three times the world's detail and softened at its edge, and laid down as a
+// shadow by the GPU.
+// left and top: where it goes from the vehicle's middle on the ground, in the world's pixels.
+const vehicleShadows = new Map();
+function vehicleShadow(sprite, sun) {
+  const key = `${sprite}/${sun.join()}`;
+  if (vehicleShadows.has(key)) return vehicleShadows.get(key);
+  const shapes = MODELS[sprite]?.(0, "grey");
+  if (!shapes?.[0]?.kind) return null;
+  const bounds = shapes.map(shapeBounds);
+  const lo = [0, 1, 2].map((i) => Math.min(...bounds.map((b) => b[0][i]))), hi = [0, 1, 2].map((i) => Math.max(...bounds.map((b) => b[1][i])));
+  const [sx, sy, sz] = sun, along = hi[2] / sz; // how far to look towards the sun from the ground, to clear the top
+  // On the screen: the footprint, and the same where its top's shadow falls.
+  const corners = [];
+  for (const x of [lo[0], hi[0]]) for (const y of [lo[1], hi[1]]) for (const z of [0, hi[2]]) {
+    const gx = x - (sx / sz) * z, gy = y - (sy / sz) * z;
+    corners.push([gx - gy, (gx + gy) / 2]);
+  }
+  const DETAIL = 3, SOFT = 2; // how many of its pixels its edge is softened over
+  const left = Math.floor(Math.min(...corners.map((c) => c[0]))) - 2, top = Math.floor(Math.min(...corners.map((c) => c[1]))) - 2;
+  const w = (Math.ceil(Math.max(...corners.map((c) => c[0]))) + 2 - left) * DETAIL, h = (Math.ceil(Math.max(...corners.map((c) => c[1]))) + 2 - top) * DETAIL;
+  const canvas = Object.assign(document.createElement("canvas"), { width: w, height: h });
+  const g = canvas.getContext("2d");
+  const image = g.createImageData(w, h);
+  const distance = (p) => Math.min(...shapes.map((shape) => shapeDistance(shape, p)));
+  for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) {
+    const u = left + (i + 0.5) / DETAIL, v = top + (j + 0.5) / DETAIL;
+    const x0 = v + u / 2, y0 = v - u / 2;
+    // Only where the ray towards the sun passes through the model's box.
+    let t0 = 0, t1 = along;
+    for (const [o, d, a, b] of [[x0, sx, lo[0], hi[0]], [y0, sy, lo[1], hi[1]], [0, sz, lo[2], hi[2]]]) {
+      if (Math.abs(d) < 1e-6) { if (o < a || o > b) t1 = -1; continue; }
+      const ta = (a - o) / d, tb = (b - o) / d;
+      t0 = Math.max(t0, Math.min(ta, tb));
+      t1 = Math.min(t1, Math.max(ta, tb));
+    }
+    if (t1 < t0) continue;
+    for (let t = t0, k = 0; t <= t1 && k < 48; k++) {
+      const d = distance([x0 + sx * t, y0 + sy * t, sz * t]);
+      if (d < 0.15) { image.data[(j * w + i) * 4 + 3] = 255; break; }
+      t += Math.max(d, 0.25);
+    }
+  }
+  // A soft edge: the shadow blurred a little, across and then down.
+  const a = new Float32Array(w * h), b = new Float32Array(w * h);
+  for (let k = 0; k < w * h; k++) a[k] = image.data[k * 4 + 3];
+  const blur = (from, to, step, count, stride) => {
+    for (let line = 0; line < count; line++) for (let i = 0; i < (step === 1 ? w : h); i++) {
+      let sum = 0, n = 0;
+      for (let k = -SOFT; k <= SOFT; k++) {
+        const at = i + k;
+        if (at < 0 || at >= (step === 1 ? w : h)) continue;
+        sum += from[line * stride + at * step];
+        n++;
+      }
+      to[line * stride + i * step] = sum / n;
+    }
+  };
+  blur(a, b, 1, h, w);
+  blur(b, a, w, w, 1);
+  for (let k = 0; k < w * h; k++) image.data[k * 4 + 3] = Math.round(a[k]);
+  g.putImageData(image, 0, 0);
+  Object.assign(canvas, { detail: DETAIL, left, top });
+  vehicleShadows.set(key, canvas);
+  return canvas;
+}
 
 function drawVehicleBoxes(g, sprite, colour) {
   const [mid, dark, light] = [COLOURS[colour][1], COLOURS[colour][2], COLOURS[colour][3]];
@@ -1082,7 +1172,7 @@ function drawModel(g, sprite, facing, frame, headFacing, colour, detail = 1) {
 
 const modelImages = new Map();
 // These places are drawn at double detail, so that things are easier to recognize.
-const DETAIL_PLACES = { home: 2, forest: FOREST_DETAIL, city: 2, library: 2, store: FOREST_DETAIL, gearstore: 2, camp: 2, classroom: FOREST_DETAIL, lesson: FOREST_DETAIL };
+const DETAIL_PLACES = { home: FOREST_DETAIL, forest: FOREST_DETAIL, city: FOREST_DETAIL, library: FOREST_DETAIL, store: FOREST_DETAIL, gearstore: FOREST_DETAIL, camp: 2, classroom: FOREST_DETAIL, lesson: FOREST_DETAIL };
 let viewDetail = 1;
 // The characters are finer than the things around them, so the canvas has room for them, as far as the screen can show it.
 // More would only be work for the browser to shrink again.
@@ -1093,7 +1183,7 @@ let mostDetail = 4; // comes down if this device can't keep up
 const SCREEN_STEPS = [[4, 4], [3, 3], [2, 2], [1, 2]];
 let screenStep = 0;
 // In these places the window shows more of the world instead of a bigger picture of it: this many screen pixels to each of the world's.
-const WIDE_VIEW_PLACES = new Set(["store", "classroom", "forest"]);
+const WIDE_VIEW_PLACES = new Set(["store", "classroom", "forest", "library", "home", "city", "gearstore"]);
 const ZOOMS = [1, 2, 3, 4];
 // The forest only close up: further out, its animals are too small to find.
 const PLACE_ZOOMS = { forest: [3, 4] };
@@ -1420,7 +1510,7 @@ function doubledImage(image) {
 }
 
 // An image cut out of its empty surroundings, for the menu and the word card.
-const vehiclePicture = (sprite, colour) => croppedImage(vehicleImage(sprite, colour));
+const vehiclePicture = (sprite, colour) => (MODELS[sprite] ? modelPicture(sprite, colour) : croppedImage(vehicleImage(sprite, colour)));
 const modelPicture = (sprite, colour) => croppedImage(modelImage(sprite, 0, sprite === "beaiveloddi" ? 1 : 0, 0, colour)); // wings half raised
 
 function croppedImage(image) {
@@ -1538,7 +1628,7 @@ function paintCarried(cx, cy, [dx, dy]) {
 
 // The forest's ground, in pieces from tools/make_forest.py that load as they come near. Only the river and a little grass move, gently.
 const FOREST_CHUNK = 512 / FOREST_DETAIL; // in the world's pixels
-const MADE_GROUNDS = { forest: { folder: "art/forest", back: "#14302a" }, store: { folder: "art/store", back: "#191614" }, classroom: { folder: "art/classroom", back: "#191614" }, lesson: { folder: "art/lesson", back: "#191614" } };
+const MADE_GROUNDS = { forest: { folder: "art/forest", back: "#14302a" }, store: { folder: "art/store", back: "#191614" }, classroom: { folder: "art/classroom", back: "#191614" }, lesson: { folder: "art/lesson", back: "#191614" }, library: { folder: "art/library", back: "#191614" }, home: { folder: "art/home", back: "#191614" }, city: { folder: "art/city", back: "#23262c" }, gearstore: { folder: "art/gearstore", back: "#191614" } };
 const forestChunks = new Map();
 function forestChunk(folder, column, row) {
   const key = `${folder}/ground-${column}-${row}.webp`;
@@ -1686,14 +1776,14 @@ function draw(now) {
     if (t.block ? !seen(t.x, t.y, 70) : t.x + t.image.width / 2 + 3 < camX || t.x - t.image.width / 2 - 3 > camX + VIEW_W || t.y + 4 < camY || t.y - t.image.height > camY + VIEW_H) continue;
     // In front of the character and covering them, a tree turns see-through.
     const left = t.x - t.image.width / 2, top = t.y + 2 - t.image.height + (t.made ? t.made[5] / 4 : 0);
-    const covers = !"CMETHXZ".includes(MAP[t.ty]?.[t.tx]) && t.mx + t.my > me.x + me.y && footX + 8 > left && footX - 8 < left + t.image.width && footY > top && footY - 30 < t.y;
+    const covers = !"CMETHXZD".includes(MAP[t.ty]?.[t.tx]) && t.mx + t.my > me.x + me.y && footX + 8 > left && footX - 8 < left + t.image.width && footY > top && footY - 30 < t.y;
     // In the forest, an animal behind a tree shows through it too, as there it's what's being looked for.
     const hidesThing = placeName === "forest" && !t.block && objects.some((o) => {
       if (o.x + 0.5 + o.y + 0.5 >= t.mx + t.my) return false;
       const ox = isoX(o.x + 0.5, o.y + 0.5), oy = isoY(o.x + 0.5, o.y + 0.5);
       return ox + 8 > left && ox - 8 < left + t.image.width && oy > top && oy - 16 < t.y;
     });
-    if (t.image.fine && !t.image.fine.complete) continue;
+    if (t.image.fine?.complete === false) continue; // a tree's picture still loading; a doubled block's is a canvas, ready at once
     const madeBox = t.made && [t.x - 16 + t.made[4] / 4, t.y - 62 + t.made[5] / 4, t.x - 16 + (t.made[4] + t.made[2]) / 4, t.y - 62 + (t.made[5] + t.made[3]) / 4];
     (t.made ? madeTilesNow : scene).push({ d: t.mx + t.my, box: madeBox, paint: () => {
       if (covers || hidesThing) ctx.globalAlpha = placeName === "forest" ? 0.1 : placeName === "store" ? 0.3 : 0.5;
@@ -1744,7 +1834,7 @@ function draw(now) {
       if (fenceNow) scene.push({ d: mine + (inYard ? 0.03 : -0.03), paint: () => { ctx.lit = false; ctx.drawImage(fenceNow, left, top, church.w, church.h); ctx.lit = true; } });
     }
   }
-  for (const o of objects) {
+  for (const o of objects.flatMap(stockCopies)) {
     if (o.word.place === "bay") {
       const box = vehicleBox(o);
       const vx = isoX((box.x0 + box.x1) / 2, (box.y0 + box.y1) / 2), vy = isoY((box.x0 + box.x1) / 2, (box.y0 + box.y1) / 2);
@@ -1757,7 +1847,27 @@ function draw(now) {
         ctx.globalAlpha = 0.34;
         castShadow(ctx, Math.round(isoX(box.x1, box.y1)) - 2, Math.round(isoY(box.x1, box.y1)) - 3, 22, 8);
         ctx.globalAlpha = 1;
-        ctx.drawImage(vehicleImage(o.word.sprite, o.word.colour), vx - VEHICLE_ANCHOR.x, vy - VEHICLE_ANCHOR.y);
+        // A round, shaded model where there is one (src/models.js).
+        if (MODELS[o.word.sprite]) {
+          // Its shadow right under it, its own footprint on the ground, a little wider and softer at the edge; and where the GPU draws, its
+          // shadow in the sun too, as the player's. Both go with it when it's found.
+          const under = (grow, lean) => [[box.x0 - grow, box.y0 - grow], [box.x1 + grow + lean, box.y0 - grow], [box.x1 + grow + lean, box.y1 + grow + lean], [box.x0 - grow, box.y1 + grow + lean]]
+            .map(([x, y]) => [isoX(x, y), isoY(x, y)]);
+          for (const [grow, lean, alpha] of [[0.14, 0.12, 0.14], [0.05, 0.06, 0.18], [-0.03, 0.02, 0.22]]) {
+            ctx.globalAlpha = alpha;
+            fillShape(under(grow, lean), SHADOW);
+          }
+          ctx.globalAlpha = 1;
+          // In the sun, the shadow of its own shape, as the player's: worked out from its model, laid on the ground from its wheels.
+          if (ctx.gpu && ctx.light) {
+            const sun = ctx.sunHere(vx, vy), shade = vehicleShadow(o.word.sprite, ctx.light.sun);
+            if (sun > 0.05 && shade) {
+              ctx.shadowPaint = 0.42 * sun;
+              ctx.drawImage(shade, Math.round(vx) + shade.left, Math.round(vy) + shade.top, shade.width / shade.detail, shade.height / shade.detail);
+            }
+          }
+          paintImage(modelImage(o.word.sprite, 0, 0, 0, o.word.colour), Math.round(vx) - MODEL_ANCHOR.x, Math.round(vy) - MODEL_ANCHOR.y);
+        } else ctx.drawImage(vehicleImage(o.word.sprite, o.word.colour), vx - VEHICLE_ANCHOR.x, vy - VEHICLE_ANCHOR.y);
       }});
       continue;
     }
@@ -1770,7 +1880,22 @@ function draw(now) {
       // Someone on the sofa counts as in front of it.
       const middle = (box.x0 + box.x1 + box.y0 + box.y1) / 2 + (SITTING_ON_SOFA.has(o.word.sprite) ? 1 : 0);
       // A rug is under everything. Otherwise as for parked vehicles, but kept in front of the walls behind it.
-      const depth = flat ? -1 : (behind ? Math.max(me.x + me.y + 0.02, middle) : Math.min(me.x + me.y - 0.02, middle)) + middle * 1e-3;
+      let depth = flat ? -1 : (behind ? Math.max(me.x + me.y + 0.02, middle) : Math.min(me.x + me.y - 0.02, middle)) + middle * 1e-3;
+      // Whoever sits on a sofa made with the room is in front of it, and so after it when it's drawn again over someone behind it.
+      if (SITTING_ON_SOFA.has(o.word.sprite) && madeTiles()?.["piece:sofa"]) {
+        const sofa = objects.find((other) => other.word.sprite === "sofa");
+        const sofaBox = sofa && vehicleBox(sofa);
+        if (sofaBox && me.x < sofaBox.x1 + 0.1 && me.y < sofaBox.y1 + 0.1) {
+          const sofaMiddle = (sofaBox.x0 + sofaBox.x1 + sofaBox.y0 + sofaBox.y1) / 2;
+          depth = Math.max(depth, Math.max(me.x + me.y + 0.02, sofaMiddle) + sofaMiddle * 1e-3 + 0.01);
+        }
+      }
+      // Made with the room, by tools/make_home.py, it's in the floor's pictures already: drawn again only over someone behind it.
+      const piece = madeTiles()?.[`piece:${o.word.sprite}`];
+      if (piece) {
+        if (!flat && behind) scene.push({ d: depth, paint: () => paintPiece(piece) });
+        continue;
+      }
       scene.push({ d: depth, paint: () => {
         const pose = animalPose(o, now);
         if (!flat && ANIMAL_WAYS[o.word.sprite]?.shadow?.[0] !== 0) {
@@ -1784,12 +1909,15 @@ function draw(now) {
       continue;
     }
     const raised = RAISED[o.word.place] || 0;
-    const cx = isoX(o.x, o.y), onWater = o.word.place === "water";
-    const cy = isoY(o.x, o.y) + HH + (onWater ? WATER_DROP : 0) - raised;
+    const room = !!window.MAHTTE_ROOMS?.[placeName], forward = room ? IN_FRONT[o.word.place] ?? 0 : 0;
+    const cx = isoX(o.x, o.y) - forward * HW + (o.copyDx ?? 0) * HW, onWater = o.word.place === "water";
+    const cy = isoY(o.x, o.y) + HH + forward * HH + (o.copyDx ?? 0) * HH + (onWater ? WATER_DROP : 0) - raised;
     if (!seen(cx, cy)) continue;
-    if (o.tiles) continue; // on its shelf already, as part of the store's pictures
-    // Something in a fixture is drawn after the fixtures beside it, or they would cover it.
-    scene.push({ d: o.x + o.y + (raised ? 2.2 : 1), box: [cx - 16, cy - 40, cx + 16, cy + 8], paint: () => {
+    if (o.tiles) continue; // on its shelf already, as part of the store's pictures, or among its colour's books in the library
+    // Something in a fixture is drawn after the fixtures beside it, or they would cover it. In a room made ahead, its own fixture is
+    // already in the picture, so it only needs to be in front of that one, and stays behind whoever stands in the aisle before it.
+    // Nor are the fixture's own tiles beside it drawn again over it, where it reaches over them, as a snowmobile's skis over its platform.
+    scene.push({ d: o.x + o.y + (raised ? (room ? 1.45 : 2.2) : 1), inFixture: room && raised > 0, box: [cx - 16, cy - 40, cx + 16, cy + 8], paint: () => {
       ctx.fillStyle = SHADOW;
       ctx.globalAlpha = 0.34;
       if (raised) ctx.globalAlpha = 0;
@@ -1807,11 +1935,12 @@ function draw(now) {
         const bob = onWater ? Math.round(Math.sin((now + o.phase) / 520)) : 0;
         ctx.globalAlpha = o.fade ?? 1;
         if (ctx.gpu && !pose.lift && !onWater) ctx.casting = true; // standing on the ground, it has a shadow in the light
-        paintImage(modelImage(o.word.sprite, pose.facing, pose.frame, pose.head, o.word.colour), Math.round(cx) - MODEL_ANCHOR.x, Math.round(cy) - MODEL_ANCHOR.y - pose.lift - bob);
+        paintImage(modelImage(o.drawSprite ?? o.word.sprite, pose.facing, pose.frame, pose.head, o.word.colour), Math.round(cx) - MODEL_ANCHOR.x, Math.round(cy) - MODEL_ANCHOR.y - pose.lift - bob);
         if (pose.asleep) paintSleepZ(cx, cy, now, o.phase);
         ctx.globalAlpha = 1;
         return;
       }
+      // In a bookcase a book stands as the others do, spine out; its card still shows the cover.
       const image = pictureOf(o.word);
       let lift = 0, squash = 0, lean = 0, flip = false;
       if (onWater && FLOATING.has(o.word.sprite)) {
@@ -1821,6 +1950,15 @@ function draw(now) {
       drawLiving(image, cx - Math.floor(image.width / 2), cy + 3 - image.height - lift, { lean, squash, flip });
     }});
   }
+  // What stands at home that isn't asked for, made with the room: as the furniture, drawn again only over someone behind it.
+  decorThings.forEach((o, i) => {
+    const piece = madeTiles()?.[`piece:decor-${i}`];
+    if (!piece) return;
+    const box = vehicleBox(o);
+    if (!(me.x < box.x1 + 0.1 && me.y < box.y1 + 0.1)) return;
+    const middle = (box.x0 + box.x1 + box.y0 + box.y1) / 2;
+    scene.push({ d: Math.max(me.x + me.y + 0.02, middle) + middle * 1e-3, paint: () => paintPiece(piece) });
+  });
   for (const thing of storeLife(now)) {
     const cx = onScreen(isoX(thing.x, thing.y)), cy = onScreen(isoY(thing.x, thing.y) + HH - (thing.lift || 0));
     if (!seen(cx, cy)) continue;
@@ -1969,8 +2107,8 @@ function draw(now) {
   for (const tile of madeTilesNow) {
     const [x0, y0, x1, y1] = tile.box;
     for (let i = 0; i < before; i++) {
-      const { d, box } = scene[i];
-      if (d < tile.d && (!box || (box[0] < x1 && box[2] > x0 && box[1] < y1 && box[3] > y0))) {
+      const { d, box, inFixture } = scene[i];
+      if (!inFixture && d < tile.d && (!box || (box[0] < x1 && box[2] > x0 && box[1] < y1 && box[3] > y0))) {
         scene.push(tile);
         break;
       }

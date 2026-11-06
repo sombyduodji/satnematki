@@ -38,6 +38,9 @@ girji	N	kirja	bok	book	bookshelf	item
 peanna	N	kynä	penn	pen	table	item
 bliánta	N	lyijykynä	blyant	pencil	table	item
 čállingirji	N	kirjoitusvihko	skrivebok	notebook	table	item
+dihtor	N	tietokone	datamaskin	laptop	table	item
+skárrit	N	sakset	saks	scissors	table	item
+dihtorduolbbus	N	tabletti	nettbrett	tablet	table	item
 biila	N	auto	bil	car	bay	vehicle
 sihkkel	N	polkupyörä	sykkel	bike	bay	vehicle
 mohtorsihkkel	N	moottoripyörä	motorsykkel	moto	bay	vehicle
@@ -94,6 +97,8 @@ ruoná	A	vihreä	grønn	green	land	colour
 vielgat	A	valkoinen	hvit	white	land	colour
 čáhppat	A	musta	svart	black	land	colour
 ránis	A	harmaa	grå	grey	land	colour
+ruškat	A	ruskea	brun	brown	land	colour
+oránša	A	oranssi	oransje	orange	land	colour
 tákse	N	taksi	taxi	taxi	bay	lot
 ambulánsa	N	ambulanssi	ambulanse	ambulance	bay	lot
 čáskadanbiila	N	paloauto	brannbil	firetruck	bay	lot
@@ -155,6 +160,7 @@ jáhkka	N	takki	jakke	jacket	clothes	gear
 gahpir	N	lakki	lue	hat	clothes	gear
 suohkku	N	sukka	strømpe	sock	clothes	gear
 gummestevvel	N	kumisaapas	gummistøvel	rubberboots	clothes	gear
+rehppo	N	selkäreppu		backpack	clothes	gear
 fanas	N	vene	båt	boat	platform	gear
 muohtaskohter	N	moottorikelkka	snøskuter	snowscooter	platform	gear
 geres	N	pulkka	pulk	pulk	platform	gear

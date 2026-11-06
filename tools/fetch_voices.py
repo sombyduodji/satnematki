@@ -86,6 +86,9 @@ ASK_RELATIVE = "Veahket mu gávdnat {noun} mii lea {colour}!"
 NUMBER_OBJECT = {"okta": "ovtta", "čuohti": "čuođi"}
 FAMILY = ("eadni", "áhčči", "oabbá", "viellja")  # the same as in src/game.js
 THIS_ONE_IS = "Dát {noun} lea {colour}."
+# And for a word that is only plural, as skárrit: "Dát skárrit leat ruoksadat." For the user to check.
+THESE_ARE = "Dát {noun} leat {colour}."
+ASK_RELATIVE_PLURAL = "Veahket mu gávdnat {noun} mat leat {colour}!"
 
 
 def load_words():
@@ -99,7 +102,7 @@ UNCOUNTED_FOODS = {"bread", "milk", "cheese", "butter", "guolli", "icecream", "c
 
 
 # Words that are only plural. Must match PLURAL_ONLY in src/game.js.
-PLURAL_ONLY = {"trousers"}
+PLURAL_ONLY = {"trousers", "scissors"}
 
 
 def accusative(word):
@@ -167,11 +170,12 @@ def wanted_lines():
             for colour in colours:
                 # Harder level: "Dát lea rukses biila." Easy level: "Dát biila lea ruoksat."
                 attributive = f"{colour['forms']['Attr'][0]} {word['lemma']}"
-                lines.append((f"hard-{word['sprite']}-{colour['sprite']}", THIS_IS.format(word=attributive)))
-                base = colour["forms"]["Sg+Nom"][0]
-                lines.append((f"easy-{word['sprite']}-{colour['sprite']}", THIS_ONE_IS.format(noun=word["lemma"], colour=base)))
+                plural = word["sprite"] in PLURAL_ONLY
+                lines.append((f"hard-{word['sprite']}-{colour['sprite']}", (THIS_ARE if plural else THIS_IS).format(word=attributive)))
+                base = colour["forms"]["Pl+Nom" if plural else "Sg+Nom"][0]
+                lines.append((f"easy-{word['sprite']}-{colour['sprite']}", (THESE_ARE if plural else THIS_ONE_IS).format(noun=word["lemma"], colour=base)))
                 lines.append((f"ask-hard-{word['sprite']}-{colour['sprite']}", ASK.format(what=f"{colour['forms']['Attr'][0]} {accusative(word)}")))
-                lines.append((f"ask-easy-{word['sprite']}-{colour['sprite']}", ASK_RELATIVE.format(noun=accusative(word), colour=base)))
+                lines.append((f"ask-easy-{word['sprite']}-{colour['sprite']}", (ASK_RELATIVE_PLURAL if plural else ASK_RELATIVE).format(noun=accusative(word), colour=base)))
     numbers = (OUT.parent / "data/numbers.js").read_text(encoding="utf-8")
     numbers = json.loads(numbers[numbers.index("["):numbers.rindex("]") + 1])
     lines += [(f"number-{n}", THIS_IS.format(word=word)) for n, word in enumerate(numbers)]
@@ -205,7 +209,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--list", action="store_true", help="show what is missing and fetch nothing")
     parser.add_argument("--limit", type=int, help="fetch at most this many")
-    parser.add_argument("--pause", type=float, default=15, help="seconds between requests")
+    parser.add_argument("--pause", type=float, default=5, help="seconds to wait after each line has come, before asking for the next")
     args = parser.parse_args()
     OUT.mkdir(exist_ok=True)
     jobs = []

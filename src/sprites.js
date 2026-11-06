@@ -15,6 +15,8 @@ const COLOURS = {
   white: { 1: "#eeeee6", 2: "#b5b5ae", 3: "#ffffff" },
   black: { 1: "#3a3a48", 2: "#22222c", 3: "#62626f" },
   grey: { 1: "#9a9ea6", 2: "#6c7078", 3: "#c6cad0" },
+  brown: { 1: "#8a5630", 2: "#5c361c", 3: "#b47c4a" },
+  orange: { 1: "#ee7a24", 2: "#b04e12", 3: "#ffa858" },
 };
 
 const SPRITES = {

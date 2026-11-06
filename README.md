@@ -1,6 +1,6 @@
 # Sátnemátki
 
-*Sátnemátki* means "word journey" in Northern Sámi. Version 0.3.0, a technology demo.
+*Sátnemátki* means "word journey" in Northern Sámi. Version 0.3.1, a technology demo.
 
 A Northern Sámi word game for children. The player creates a character, Máhtte or Biret, chooses a place, and
 walks around it in an isometric view with a camera that follows: furniture and family at home, animals in the forest, coloured books on the shelves and
@@ -36,7 +36,7 @@ Laavu is a slow evening with no clock or list to race. The chores come one after
 
 The forest is made ahead by `tools/make_forest.py` into `art/forest/`: the ground in pieces that load as they come near, and the trees. Which species grows where is decided in `tools/make_map.py`: Norway spruce, Scots pine with juniper under it, and birch with some rowan along the river. Only the river, some grass, the trees' slow lean and a few specks of light move, so that it stays calm to look at.
 
-The grocery store and the two classrooms are made the same way, by `tools/make_store.py` and `tools/make_classrooms.py` into `art/store/`, `art/classroom/` and `art/lesson/`: the floor in pieces, one sheet with each tile's walls and fixtures, and for the classrooms the chair. All of it goes into the floor's pictures, and a tile is drawn again only over someone behind it. In these two, on a big enough screen, the window shows more of the world rather than a bigger picture of it, with buttons for 1×, 2×, 3× and 4× zoom, and the game window is never larger than 1920×1080. In the grocery store every food always has its own place, from `stock_of` in `tools/make_map.py`, and a sign with its Finnish name. The food, the animals, the shops' things and the people are made by `tools/make_animals.py` into `art/animals/`. After changing the map, run the store's or the classrooms' script again.
+The grocery store, the two classrooms, the library, the home, the car park and the general store are made the same way, by `tools/make_store.py`, `tools/make_classrooms.py`, `tools/make_library.py`, `tools/make_home.py`, `tools/make_city.py` and `tools/make_gearstore.py` (the last four with `tools/rooms3d.py`) into `art/store/`, `art/classroom/`, `art/lesson/`, `art/library/`, `art/home/`, `art/city/` and `art/gearstore/`: the floor in pieces, one sheet with each tile's walls and fixtures, and for the classrooms the chair. All of it goes into the floor's pictures, and a tile is drawn again only over someone behind it. At home the furniture is made with the room too, each piece a picture of its own drawn again over the player behind it, and the family sit, stand and play on and by it. In these places, on a big enough screen, the window shows more of the world rather than a bigger picture of it, with buttons for 1×, 2×, 3× and 4× zoom, and the game window is never larger than 1920×1080. In the grocery store every food always has its own place, from `stock_of` in `tools/make_map.py`, and a sign with its Finnish name; in the general store every thing has its own place too, hanging from the pegboards' pegs or the clothes rails or standing on a low platform, from `GEAR_FIXTURES` there. The library's bookcases have sections for each colour, and a book is found at its colour's sections; pens, pencils, notebooks, laptops, tablets and scissors lie on its reading tables. The car park has a small town's shops and flats along two sides, birches, street lamps and benches, and two ways in for cars. The food, the animals, the shops' things and the people are made by `tools/make_animals.py` into `art/animals/`. After changing the map, run the place's script again.
 
 ## Art
 
@@ -60,7 +60,7 @@ grocery store, and `?canvas` on it draws the same with the 2D canvas, for compar
 The code is in `src/gl/`. `gl2d.js` takes the drawing calls the game already makes and gathers them into a few batched
 draws: every picture goes once into a texture atlas, trimmed to what shows, and a place's whole picture of the world into a
 texture of its own. The camp's dark, firelight and glow are drawn by the GPU itself. `post.js` adds light where a place has
-its light baked: the grocery store, the forest and both classrooms. People and animals are lit by where they stand and cast
+its light baked: the grocery store, the forest, both classrooms, the library, the home, the car park and the general store. People and animals are lit by where they stand and cast
 shadows from the sun (and in the store the lamps), with light shafts through the windows or between the trees, a glow round
 what's bright and a slight colour mood. Elsewhere the effects are greyed out for now. In every place the zoom is eased, and a
 slow device turns the effects down by itself. The light comes from each place's own geometry and sun, baked by
@@ -69,8 +69,8 @@ slow device turns the effects down by itself. The light comes from each place's 
 python3 tools/make_light.py
 ```
 
-into `art/<place>/light.png` and `light.js`. Run it again after `tools/make_store.py`, `tools/make_classrooms.py` or
-`tools/make_forest.py` changes a place.
+into `art/<place>/light.png` and `light.js`. Run it again after `tools/make_store.py`, `tools/make_classrooms.py`,
+`tools/make_library.py`, `tools/make_home.py`, `tools/make_city.py`, `tools/make_gearstore.py` or `tools/make_forest.py` changes a place.
 
 ## Sound
 

@@ -111,6 +111,8 @@ function lessonBegin() {
 
 // She goes to the board and writes the next number.
 function lessonWrite(now) {
+  // When the classmates have answered all of them, the numbers start again, shuffled, but not with the one just done.
+  if (!lesson.numbers.length) lesson.numbers = shuffled(Array.from({ length: theme.most + 1 }, (_, n) => n)).filter((n) => n !== lesson.current?.number);
   const number = lesson.numbers.pop();
   const word = window.MAHTTE_NUMBERS[number];
   // Which way round: the word on the board and the number to type, or at the hard level the number on the board and the word to write.

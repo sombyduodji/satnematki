@@ -2,160 +2,194 @@
 window.MAHTTE_MAPS = {
  "home": {
   "rows": [
-   "YYYYYYYYYYYYYYYYYYYYYYYYYYYYHH",
-   "YYYYYIIYYYYYIIYYYYYYIIYYYIIYHH",
-   "YYFFFFFFFFFFFFFFHfffffffffffHH",
-   "YYFFFFFFFFFFFFFFHfffffffffffHH",
-   "YYFFFFFFFFFFFFFFHfffffffffffHH",
-   "YJFFFFFFFFFFFFFFHfffffffffffHH",
-   "YJFFFFFFFFFFFFFFHfffffffffffHH",
-   "YYFFFFFFFFFFFFFFFfffffffffffHH",
-   "YYFFFFFFFFFFFFFFFfffffffffffHH",
-   "YYFFFFFFFFFFFFFFFfffffffffffHH",
-   "YJFFFFFFFFFFFFFFHfffffffffffHH",
-   "YJFFFFFFFFFFFFFFHfffffffffffHH",
-   "YYFFFFFFFFFFFFFFHfffffffffffHH",
-   "YYHHHHHFFHHHHHFFHHHHHHHHHHHHHH",
-   "YYccccccccccHFFFFFHjjjjjjjjjHH",
-   "YYccccccccccHFFFFFHjjjjjjjjjHH",
-   "YJccccccccccHFFFFFHjjjjjjjjjHH",
-   "YJccccccccccFFFFFFFjjjjjjjjjHH",
-   "YYccccccccccFFFFFFFjjjjjjjjjHH",
-   "YYccccccccccHFFFFFHjjjjjjjjjHH",
-   "YJccccccccccHFFFFFHjjjjjjjjjHH",
-   "YYccccccccccHFFFFFHjjjjjjjjjHH",
-   "HHHHHHHHHHHHHHHHHHHHHHHHHHHHHH",
-   "HHHHHHHHHHHHHHHHHHHHHHHHHHHHHH"
+   "YYYYYYYYYYYYYYYYYYYYYYYYHH",
+   "YYYYYIIIYYYYYYYYYYIYYYYYHH",
+   "YYFFFFFFFFFFnHffffffffffHH",
+   "YYFFFFFFFFFFFHffffffffffHH",
+   "YYFFFFFFFFFFFHffffffffffHH",
+   "YYFFFFFFFFFFFHffffffffffHH",
+   "YYFFFFFFFFFFFHffffffffffHH",
+   "YJFFFFFFFFFFFFffffffffffHH",
+   "YJFFFFFFFFFFFFffffffffffHH",
+   "YYFFFFFFFFFFFHfffffffffnHH",
+   "YYHHHHHHHHHFFHHHHHHHHHHHHH",
+   "YYccccccccHFFFnHjjjjjjjjHH",
+   "YYccccccccHFFFFHjjjjjjjjHH",
+   "YYccccccccFFFFFFjjjjjjjjHH",
+   "YJccccccccFFFFFFjjjjjjjjHH",
+   "YJccccccccHFFFFHjjjjjjjjHH",
+   "YYccccccccHFFFFHjjjjjjjjHH",
+   "YYncccccccHFFFFHjjjnjjjjHH",
+   "HHHHHHHHHHHHHHHHHHHHHHHHHH",
+   "HHHHHHHHHHHHHHHHHHHHHHHHHH"
   ],
   "start": {
-   "x": 15,
-   "y": 18
+   "x": 12,
+   "y": 16
   },
   "spots": {
    "land": [],
    "water": [],
    "home": {
     "sofa": [
-     9,
-     3,
+     6,
+     2,
      0
     ],
     "rug": [
-     8,
-     7,
+     6,
+     5,
      0
     ],
     "tv": [
-     3,
-     6,
+     2,
+     5,
      1
     ],
     "lamp": [
-     5,
-     3,
+     4,
+     2,
      0
     ],
     "bookcase": [
-     13,
-     3,
+     9,
+     2,
      0
     ],
     "flower": [
-     14,
-     11,
+     2,
+     8.4,
      0
     ],
     "stove": [
-     19,
-     3,
+     16,
+     2,
      0
     ],
     "cupboard": [
-     22,
-     3,
+     18,
+     2,
      0
     ],
     "fridge": [
-     24,
-     3,
+     20,
+     2,
      0
     ],
     "freezer": [
-     26,
-     3,
+     22,
+     2,
      0
     ],
     "table": [
-     22,
-     8,
+     18,
+     6,
      0
     ],
     "chair": [
-     22,
-     9.4,
+     17.2,
+     7.25,
      2
     ],
     "bed": [
-     6,
-     17,
-     0
+     2.95,
+     12.6,
+     1
     ],
     "wardrobe": [
-     9,
-     15,
+     6,
+     11,
      0
     ],
     "mirror": [
-     16,
-     15,
+     8,
+     11.05,
      0
     ],
     "toilet": [
-     20,
-     15,
+     17,
+     11.05,
      0
     ],
     "sink": [
-     22,
-     15,
+     19,
+     11.1,
      0
     ],
     "washer": [
-     24,
-     15,
-     0
+     16.05,
+     16,
+     1
     ],
     "bathtub": [
-     26,
-     17,
-     0
+     21.7,
+     11.18,
+     1
     ],
     "shower": [
-     20,
-     20,
+     22.92,
+     16.92,
      0
     ],
     "eadni": [
-     8.4,
-     3.25,
+     5.4,
+     2.25,
      0
     ],
     "viellja": [
-     9.6,
-     3.25,
+     6.6,
+     2.25,
      0
     ],
     "oabbá": [
-     9,
-     19,
+     6,
+     15,
      0
     ],
     "áhčči": [
-     20.4,
-     3.6,
+     16,
+     3.1,
+     2
+    ]
+   },
+   "decor": [
+    [
+     "chair",
+     18.8,
+     7.25,
+     2
+    ],
+    [
+     "chair",
+     17.2,
+     4.75,
+     0
+    ],
+    [
+     "chair",
+     18.8,
+     4.75,
+     0
+    ],
+    [
+     "chair",
+     16.05,
+     6,
+     1
+    ],
+    [
+     "chair",
+     20.25,
+     6,
+     3
+    ],
+    [
+     "sofa",
+     12,
+     4.5,
      3
     ]
-   }
+   ]
   }
  },
  "forest": {
@@ -3380,24 +3414,24 @@ window.MAHTTE_MAPS = {
   "rows": [
    "WWWWWWWWWWWWWWWWWWWWWWWWWWXX",
    "WWWWWWWWWWWWWWWWWWWWWWWWWWXX",
-   "WWFFFFFFFFFFFFFFFFFFFFFFFFXX",
-   "WWFFFFFFFFFFFFFFFFFFFFFFFFXX",
-   "WWFFFKKKKKKKKFFKKKKKKKKFFFXX",
-   "WWFFFFFFFFFFFFFFFFFFFFFFFFXX",
-   "WWFFFFFFFFFFFFFFFFFFFFFFFFXX",
-   "WWFFFFFFFFFFFFFFFFFFFFFFFFXX",
+   "WWnFFFFFFFFFFFFFFFFFFFFFFnXX",
    "WWFFFFFFFFFFFFFFFFFFFFFFFFXX",
    "WWFFFKKKKKKKKFFKKKKKKKKFFFXX",
    "WWFFFFFFFFFFFFFFFFFFFFFFFFXX",
    "WWFFFFFFFFFFFFFFFFFFFFFFFFXX",
    "WWFFFFFFFFFFFFFFFFFFFFFFFFXX",
    "WWFFFFFFFFFFFFFFFFFFFFFFFFXX",
+   "WWFFFKKKKKKKKFFKKKKKKKKFFFXX",
+   "WWFFFFFFFFFFFFFFFFFFFFFFFFXX",
+   "WWFFFFFFFFFFFFFFFFFFFFFFFFXX",
+   "WWFFFFFFFFFFFFFFFFFFFFFFkFXX",
+   "WWFFFFFFFFFFFFFFFFFFFFFFkFXX",
+   "WWFFFDDDDDDDDFFDDDDDDDDFkFXX",
+   "WWFFFFFFFFFFFFFFFFFFFFFFkFXX",
+   "WWFFFFFFFFFFFFFFFFFFFFFFFFXX",
+   "WWFFFFFFFFFFFFFFFFFFFFFFFFXX",
    "WWFFFDDDDDDDDFFDDDDDDDDFFFXX",
-   "WWFFFFFFFFFFFFFFFFFFFFFFFFXX",
-   "WWFFFFFFFFFFFFFFFFFFFFFFFFXX",
-   "WWFFFFFFFFFFFFFFFFFFFFFFFFXX",
-   "WWFFFDDDDDDDDFFDDDDDDDDFFFXX",
-   "WWFFFFFFFFFFFFFFFFFFFFFFFFXX",
+   "WWnFFFFFFFFFFFFFFFFFFFFFFFXX",
    "XXXXXXXXXXXXXXXXXXXXXXXXXXXX",
    "XXXXXXXXXXXXXXXXXXXXXXXXXXXX"
   ],
@@ -3666,6 +3700,154 @@ window.MAHTTE_MAPS = {
     [
      22,
      18
+    ]
+   ]
+  },
+  "sections": {
+   "red": [
+    [
+     5,
+     4
+    ],
+    [
+     6,
+     4
+    ],
+    [
+     7,
+     4
+    ],
+    [
+     8,
+     4
+    ]
+   ],
+   "blue": [
+    [
+     9,
+     4
+    ],
+    [
+     10,
+     4
+    ],
+    [
+     11,
+     4
+    ],
+    [
+     12,
+     4
+    ]
+   ],
+   "yellow": [
+    [
+     15,
+     4
+    ],
+    [
+     16,
+     4
+    ],
+    [
+     17,
+     4
+    ],
+    [
+     18,
+     4
+    ]
+   ],
+   "green": [
+    [
+     19,
+     4
+    ],
+    [
+     20,
+     4
+    ],
+    [
+     21,
+     4
+    ],
+    [
+     22,
+     4
+    ]
+   ],
+   "white": [
+    [
+     5,
+     9
+    ],
+    [
+     6,
+     9
+    ],
+    [
+     7,
+     9
+    ]
+   ],
+   "black": [
+    [
+     8,
+     9
+    ],
+    [
+     9,
+     9
+    ],
+    [
+     10,
+     9
+    ]
+   ],
+   "grey": [
+    [
+     11,
+     9
+    ],
+    [
+     12,
+     9
+    ]
+   ],
+   "brown": [
+    [
+     15,
+     9
+    ],
+    [
+     16,
+     9
+    ],
+    [
+     17,
+     9
+    ],
+    [
+     18,
+     9
+    ]
+   ],
+   "orange": [
+    [
+     19,
+     9
+    ],
+    [
+     20,
+     9
+    ],
+    [
+     21,
+     9
+    ],
+    [
+     22,
+     9
     ]
    ]
   }
@@ -5268,6 +5450,304 @@ window.MAHTTE_MAPS = {
      9
     ]
    ]
+  },
+  "stock": {
+   "spade": [
+    [
+     5,
+     4
+    ],
+    [
+     6,
+     4
+    ]
+   ],
+   "saw": [
+    [
+     7,
+     4
+    ]
+   ],
+   "axe": [
+    [
+     8,
+     4
+    ]
+   ],
+   "hammer": [
+    [
+     9,
+     4
+    ]
+   ],
+   "knife": [
+    [
+     10,
+     4
+    ]
+   ],
+   "kuksa": [
+    [
+     11,
+     4
+    ]
+   ],
+   "lasso": [
+    [
+     12,
+     4
+    ]
+   ],
+   "reindeerbell": [
+    [
+     13,
+     4
+    ]
+   ],
+   "rod": [
+    [
+     16,
+     4
+    ],
+    [
+     17,
+     4
+    ],
+    [
+     18,
+     4
+    ]
+   ],
+   "oar": [
+    [
+     19,
+     4
+    ],
+    [
+     20,
+     4
+    ]
+   ],
+   "fishnet": [
+    [
+     21,
+     4
+    ],
+    [
+     22,
+     4
+    ]
+   ],
+   "scoopnet": [
+    [
+     23,
+     4
+    ],
+    [
+     24,
+     4
+    ]
+   ],
+   "reel": [
+    [
+     16,
+     9
+    ],
+    [
+     17,
+     9
+    ],
+    [
+     18,
+     9
+    ]
+   ],
+   "fishingline": [
+    [
+     19,
+     9
+    ],
+    [
+     20,
+     9
+    ]
+   ],
+   "lure": [
+    [
+     21,
+     9
+    ],
+    [
+     22,
+     9
+    ]
+   ],
+   "bait": [
+    [
+     23,
+     9
+    ],
+    [
+     24,
+     9
+    ]
+   ],
+   "jacket": [
+    [
+     5,
+     9
+    ],
+    [
+     6,
+     9
+    ],
+    [
+     7,
+     9
+    ]
+   ],
+   "shirt": [
+    [
+     8,
+     9
+    ],
+    [
+     9,
+     9
+    ],
+    [
+     10,
+     9
+    ],
+    [
+     23,
+     14
+    ],
+    [
+     24,
+     14
+    ]
+   ],
+   "trousers": [
+    [
+     11,
+     9
+    ],
+    [
+     12,
+     9
+    ],
+    [
+     13,
+     9
+    ]
+   ],
+   "gakti": [
+    [
+     5,
+     14
+    ],
+    [
+     6,
+     14
+    ],
+    [
+     7,
+     14
+    ]
+   ],
+   "hat": [
+    [
+     8,
+     14
+    ],
+    [
+     9,
+     14
+    ],
+    [
+     10,
+     14
+    ]
+   ],
+   "sock": [
+    [
+     11,
+     14
+    ],
+    [
+     12,
+     14
+    ],
+    [
+     13,
+     14
+    ]
+   ],
+   "rubberboots": [
+    [
+     16,
+     14
+    ],
+    [
+     17,
+     14
+    ],
+    [
+     18,
+     14
+    ]
+   ],
+   "backpack": [
+    [
+     19,
+     14
+    ],
+    [
+     20,
+     14
+    ],
+    [
+     21,
+     14
+    ],
+    [
+     22,
+     14
+    ]
+   ],
+   "boat": [
+    [
+     33,
+     5
+    ],
+    [
+     37,
+     9
+    ]
+   ],
+   "snowscooter": [
+    [
+     37,
+     5
+    ]
+   ],
+   "pulk": [
+    [
+     41,
+     5
+    ],
+    [
+     41,
+     9
+    ]
+   ],
+   "lavvu": [
+    [
+     33,
+     9
+    ]
+   ]
   }
  },
  "camp": {
@@ -5465,31 +5945,31 @@ window.MAHTTE_MAPS = {
    "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBXXX",
    "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBXXX",
    "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBXXX",
-   "BBBtsssssssssssssssssssssssssssstXXX",
+   "BBBtsssssnssnssnsssssnssnssnsssstXXX",
    "BBBsaaaaaaaaaaaaaaaaaaaaaaaaaaaasXXX",
    "BBBsaaaaaaaaaaaaaaaaaaaaaaaaaaaasXXX",
    "BBBsaaqqqqqqqqqqqaaqqqqqqqqqqqaasXXX",
    "BBBsaaqqqqqqqqqqqaaqqqqqqqqqqqaasXXX",
    "BBBsaaaaaaaaaaaaaaaaaaaaaaaaaaaasXXX",
+   "BBBnaaaaaaaaaaaaaaaaaaaaaaaaaaaasXXX",
    "BBBsaaaaaaaaaaaaaaaaaaaaaaaaaaaasXXX",
    "BBBsaaaaaaaaaaaaaaaaaaaaaaaaaaaasXXX",
-   "BBBsaaaaaaaaaaaaaaaaaaaaaaaaaaaasXXX",
-   "BBBsaaqqqqqqqqqqqaaqqqqqqqqqqqaasXXX",
-   "BBBsaaqqqqqqqqqqqaaqqqqqqqqqqqaasXXX",
-   "BBBsaaaaaaaaaaaaaaaaaaaaaaaaaaaasXXX",
-   "BBBsaaaaaaaaaaaaaaaaaaaaaaaaaaaasXXX",
-   "BBBsaaaaaaaaaaaaaaaaaaaaaaaaaaaasXXX",
-   "BBBsaaaaaaaaaaaaaaaaaaaaaaaaaaaasXXX",
-   "BBBsaaqqqqqqqqqqqaaqqqqqqqqqqqaasXXX",
+   "BBBnaaqqqqqqqqqqqaaqqqqqqqqqqqaasXXX",
    "BBBsaaqqqqqqqqqqqaaqqqqqqqqqqqaasXXX",
    "BBBsaaaaaaaaaaaaaaaaaaaaaaaaaaaasXXX",
+   "BBBnaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+   "BBBsaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+   "BBBsaaaaaaaaaaaaaaaaaaaaaaaaaaaasXXX",
+   "BBBnaaqqqqqqqqqqqaaqqqqqqqqqqqaasXXX",
+   "BBBsaaqqqqqqqqqqqaaqqqqqqqqqqqaasXXX",
+   "BBBsaaaaaaaaaaaaaaaaaaaaaaaaaaaasXXX",
+   "BBBnaaaaaaaaaaaaaaaaaaaaaaaaaaaasXXX",
    "BBBsaaaaaaaaaaaaaaaaaaaaaaaaaaaasXXX",
    "BBBsaaaaaaaaaaaaaaaaaaaaaaaaaaaasXXX",
-   "BBBsaaaaaaaaaaaaaaaaaaaaaaaaaaaasXXX",
-   "BBBtsssssssssssssssssssssssssssstXXX",
-   "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
-   "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
-   "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+   "BBBtsssssssssssssaassssssssssssstXXX",
+   "XXXXXXXXXXXXXXXXXaaXXXXXXXXXXXXXXXXX",
+   "XXXXXXXXXXXXXXXXXaaXXXXXXXXXXXXXXXXX",
+   "XXXXXXXXXXXXXXXXXaaXXXXXXXXXXXXXXXXX"
   ],
   "start": {
    "x": 18,

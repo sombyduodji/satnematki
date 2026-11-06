@@ -5,7 +5,7 @@ The places' own pictures already have their light painted in, by tools/make_stor
 tools/make_forest.py. This takes the same geometry and sun from those, and writes them down so that the GPU can light what
 moves: people, animals, baskets.
 
-Indoors (the grocery store and the two classrooms) a pixel is one of the world's units on the floor, seen from above (a tile is 16):
+Indoors (the grocery store, the two classrooms and the rooms of tools/rooms3d.py) a pixel is one of the world's units on the floor, seen from above (a tile is 16):
   R  sunlight on the floor through the windows, after whatever stands in its way, softened at the edges
   G  how near the ceiling lamps are
   B  the daylight from the windows that isn't direct sun
@@ -78,7 +78,7 @@ def bake_room(name, width, height, room, sun, through, occluders, boxes, lamps, 
     lamp = np.minimum(sum((np.exp(-(((p[:, 0] - lx) ** 2 + (p[:, 1] - ly) ** 2) / 2400)) for lx, ly in lamps), np.zeros(len(p))), 1)
     rgba = np.stack([np.array(Image.fromarray(to8(sunny, (h, w))).filter(ImageFilter.GaussianBlur(0.8))), to8(lamp * inside, (h, w)),
                      to8(sky(p) * inside, (h, w)), to8(occluder_height(p, boxes) / HEIGHT_TOP, (h, w))], axis=-1)
-    pad = lambda pairs: [[a * TILE, b * TILE] for a, b in pairs] + [[0, 0]] * (3 - len(pairs))
+    pad = lambda pairs: [[a * TILE, b * TILE] for a, b in pairs] + [[0, 0]] * (4 - len(pairs))  # four at most, as in src/gl/gl2d.js
     info = {
         "space": "floor", "size": [w, h], "heightTop": HEIGHT_TOP,
         "sun": [round(float(v), 5) for v in sun], "shadowStep": shadow_step(sun),
@@ -132,7 +132,38 @@ def forest():
     write("forest", rgba, info, f"{int((deep > 0.5).sum())} pixels deep in the trees")
 
 
-PLACES = {"store": store, "classroom": lambda: classroom("classroom"), "lesson": lambda: classroom("lesson"), "forest": forest}
+def made_room(name, module):
+    """A room made with tools/rooms3d.py, by the script that makes it."""
+    __import__(module)
+    from rooms3d import ROOMS
+    room = ROOMS[name]
+    bake_room(name, room.width, room.height, (room.x0, room.y0, room.x1, room.y1), room.sun, room.through_a_window, room.occluder_field,
+              room.light_boxes(), room.lamps, room.sky_light, room.windows_x, room.windows_y, [room.transom, 0.8], (room.win_low, room.win_high),
+              room.wall_h, room.ox)
+
+
+def made_outdoors(name, module):
+    """An outdoor place made with tools/rooms3d.py, such as the car park: lit, as the forest is, on the screen, by where the sun falls."""
+    __import__(module)
+    from rooms3d import ROOMS, TOP_PAD
+    room = ROOMS[name]
+    xs, ys = np.meshgrid(np.arange(room.world_w) + 0.5, np.arange(room.world_h) + 0.5)
+    u, v = xs.ravel() - room.ox, ys.ravel() - TOP_PAD
+    p = np.stack([v + u / 2, v - u / 2, np.zeros(u.size)], axis=1)
+    inside = (p[:, 0] > 0) & (p[:, 1] > 0) & (p[:, 0] < room.width * TILE) & (p[:, 1] < room.height * TILE)
+    sunny = np.zeros(len(p))
+    sunny[inside] = sun_on_floor(p[inside], lambda q: np.ones(len(q), bool), room.occluder_field, room.sun)
+    shape = (room.world_h, room.world_w)
+    soft = np.array(Image.fromarray(to8(sunny, shape)).filter(ImageFilter.GaussianBlur(0.8)))
+    rgba = np.stack([soft, np.zeros(shape, np.uint8), np.zeros(shape, np.uint8), np.zeros(shape, np.uint8)], axis=-1)
+    info = {"space": "screen", "size": [room.world_w, room.world_h], "sun": [round(float(c), 5) for c in room.sun], "shadowStep": shadow_step(room.sun),
+            "lamps": [], "ox": room.ox, "shaftTop": 0}
+    write(name, rgba, info, f"{int(sunny.sum())} pixels in the sun")
+
+
+PLACES = {"store": store, "classroom": lambda: classroom("classroom"), "lesson": lambda: classroom("lesson"), "forest": forest,
+          "library": lambda: made_room("library", "make_library"), "home": lambda: made_room("home", "make_home"),
+          "city": lambda: made_outdoors("city", "make_city"), "gearstore": lambda: made_room("gearstore", "make_gearstore")}
 
 if __name__ == "__main__":
     for place in sys.argv[1:] or PLACES:

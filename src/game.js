@@ -181,23 +181,40 @@ function colouredWords(theme, findCount, extraCount, makeWord, { nouns, firstNou
 }
 
 // Easy: the noun and the colour in their base forms. "biila: ruoksat" to find, "biila lea ruoksat" once found.
-const easyPhrase = (noun, colour) => ({
-  spoken: "easy",
-  lemma: `${noun.lemma} lea ${colour.forms["Sg+Nom"][0]}`,
-  fi: `${noun.fi} on ${colour.fi}`,
-  aim: colour.forms["Sg+Nom"][0],
-  aimOf: noun.lemma,
-  thisWord: `Dát ${noun.lemma} lea ${colour.forms["Sg+Nom"][0]}.`,
-  thisWordFi: `Tämä ${noun.fi} on ${colour.fi}.`,
-  forms: { "Pl+Nom": [`${noun.forms["Pl+Nom"][0]} leat ${colour.forms["Pl+Nom"][0]}`] },
-});
+// A word that is only plural, as skárrit, takes the colour's plural: "skárrit leat ruoksadat", "sakset ovat punaiset".
+const easyPhrase = (noun, colour) => {
+  if (PLURAL_ONLY[noun.sprite]) {
+    const sme = colour.forms["Pl+Nom"][0], fi = FINNISH_PLURAL_COLOURS[colour.sprite];
+    return {
+      spoken: "easy", lemma: `${noun.lemma} leat ${sme}`, fi: `${noun.fi} ovat ${fi}`, aim: sme, aimOf: noun.lemma,
+      thisWord: `Dát ${noun.lemma} leat ${sme}.`, thisWordFi: `Nämä ${noun.fi} ovat ${fi}.`,
+      forms: { "Pl+Nom": [`${noun.lemma} leat ${sme}`] },
+    };
+  }
+  return {
+    spoken: "easy",
+    lemma: `${noun.lemma} lea ${colour.forms["Sg+Nom"][0]}`,
+    fi: `${noun.fi} on ${colour.fi}`,
+    aim: colour.forms["Sg+Nom"][0],
+    aimOf: noun.lemma,
+    thisWord: `Dát ${noun.lemma} lea ${colour.forms["Sg+Nom"][0]}.`,
+    thisWordFi: `Tämä ${noun.fi} on ${colour.fi}.`,
+    forms: { "Pl+Nom": [`${noun.forms["Pl+Nom"][0]} leat ${colour.forms["Pl+Nom"][0]}`] },
+  };
+};
+const FINNISH_PLURAL_COLOURS = { red: "punaiset", blue: "siniset", yellow: "keltaiset", green: "vihreät", white: "valkoiset", black: "mustat", grey: "harmaat", brown: "ruskeat", orange: "oranssit" };
 
 // Harder: the colour's attributive form goes before the noun. "rukses biila".
 const attributivePhrase = (noun, colour) => ({
   spoken: "hard",
   lemma: `${colour.forms.Attr[0]} ${noun.lemma}`,
-  fi: `${colour.fi} ${noun.fi}`,
+  fi: `${PLURAL_ONLY[noun.sprite] ? FINNISH_PLURAL_COLOURS[colour.sprite] : colour.fi} ${noun.fi}`,
   forms: { "Pl+Nom": [`${colour.forms.Attr[0]} ${noun.forms["Pl+Nom"][0]}`] },
+  // A word that is only plural takes leat and ovat: "Dát leat rukses skárrit", "Nämä ovat punaiset sakset".
+  ...(PLURAL_ONLY[noun.sprite] && {
+    thisWord: `Dát leat ${colour.forms.Attr[0]} ${noun.lemma}.`,
+    thisWordFi: `Nämä ovat ${FINNISH_PLURAL_COLOURS[colour.sprite]} ${noun.fi}.`,
+  }),
 });
 
 // On the easy level a round has one kind of thing in every colour, so the colour is all there is to read.
@@ -253,9 +270,8 @@ function gearWords(findCount, extraCount) {
     return room[word.place] <= GEAR_ROOM[word.place];
   });
   const find = gear.slice(0, findCount);
-  const rest = gear.slice(findCount);
-  const big = rest.filter((word) => word.place === "platform");
-  return { find, extra: [...big, ...rest.filter((word) => word.place !== "platform").slice(0, Math.max(0, extraCount - big.length))] };
+  // Everything is in the store, each always in its own place (stock in data/map.js), as in the grocery store.
+  return { find, extra: wordsOfTheme("gear").filter((word) => !find.includes(word) && window.MAHTTE_MAPS.gearstore.stock?.[word.sprite]) };
 }
 
 const THEMES = [
@@ -272,17 +288,17 @@ const THEMES = [
   { id: "gearstore", title: "Rautakauppa", level: "helppo", example: "veažir", place: "gearstore", sprite: "hammer", ordered: true, words: () => gearWords(5 + Math.floor(Math.random() * 2), 6) },
   { id: "gearstore-count", title: "Rautakauppa", level: "vaikeampi", example: "3 × vuokka", place: "gearstore", sprite: "boat", ordered: true, counts: true, words: () => gearWords(5 + Math.floor(Math.random() * 2), 6) },
   { id: "camp", title: "Laavu", place: "camp", sprite: "lavvu", camp: true, words: () => ({ find: [], extra: [] }) },
-  { id: "numbers-10", title: "Koulu", section: "Numerot", activity: "Opettele numerot", level: "0–10", place: "classroom", number: 7, desks: true, words: () => numberWords(10, 7, 4) },
-  { id: "numbers-20", title: "Koulu", section: "Numerot", activity: "Opettele numerot", level: "0–20", place: "classroom", number: 15, desks: true, words: () => numberWords(20, 10, 8) },
-  { id: "numbers-100", title: "Koulu", section: "Numerot", activity: "Opettele numerot", level: "0–100", place: "classroom", number: 64, desks: true, words: () => numberWords(100, 10, 8) },
-  ...[[9, 4], [20, 16], [100, 42]].map(([most, number]) => ({ id: `lesson-${most}`, title: "Koulu", section: "Numerot", activity: "Kirjoita numerot", level: `0–${most}`, place: "lesson", menuPlace: "classroom", number, lesson: true, most, words: () => ({ find: [], extra: [] }) })),
-  ...[[9, 6], [20, 14], [100, 86]].map(([most, number]) => ({ id: `lesson-words-${most}`, title: "Koulu", section: "Numerot", activity: "Kirjoita sanalla", level: `0–${most}`, place: "lesson", menuPlace: "classroom", number, lesson: true, inWords: true, most, words: () => ({ find: [], extra: [] }) })),
+  { id: "numbers-10", title: "Koulu", section: "Numerot ja luvut", activity: "Opettele numerot", level: "0–10", place: "classroom", number: 7, desks: true, words: () => numberWords(10, 7, 4) },
+  { id: "numbers-20", title: "Koulu", section: "Numerot ja luvut", activity: "Opettele numerot", level: "0–20", place: "classroom", number: 15, desks: true, words: () => numberWords(20, 10, 8) },
+  { id: "numbers-100", title: "Koulu", section: "Numerot ja luvut", activity: "Opettele numerot", level: "0–100", place: "classroom", number: 64, desks: true, words: () => numberWords(100, 10, 8) },
+  ...[[9, 4], [20, 16], [100, 42]].map(([most, number]) => ({ id: `lesson-${most}`, title: "Koulu", section: "Numerot ja luvut", activity: "Kirjoita numerot", level: `0–${most}`, place: "lesson", menuPlace: "classroom", number, lesson: true, most, words: () => ({ find: [], extra: [] }) })),
+  ...[[9, 6], [20, 14], [100, 86]].map(([most, number]) => ({ id: `lesson-words-${most}`, title: "Koulu", section: "Numerot ja luvut", activity: "Kirjoita sanalla", level: `0–${most}`, place: "lesson", menuPlace: "classroom", number, lesson: true, inWords: true, most, words: () => ({ find: [], extra: [] }) })),
 ];
 let theme = null;
 let shoppingList = [];
 const translation = (word) => word.fi;
 // Words that are only plural, as buvssat: "Dát leat buvssat", and their object form is the plural's. Must match PLURAL_ONLY in tools/fetch_voices.py.
-const PLURAL_ONLY = { trousers: { sme: "Dát leat buvssat.", fi: "Nämä ovat housut." } };
+const PLURAL_ONLY = { trousers: { sme: "Dát leat buvssat.", fi: "Nämä ovat housut." }, scissors: { sme: "Dát leat skárrit.", fi: "Nämä ovat sakset." } };
 const thisIs = (word) => word.thisWord || PLURAL_ONLY[word.sprite]?.sme || TEXT.thisWord(word.lemma);
 const thisIsFi = (word) => word.thisWordFi || PLURAL_ONLY[word.sprite]?.fi || TEXT.thisWordFi(translation(word));
 
@@ -530,6 +546,8 @@ let walkClock = 0;
 let action = null; // { name, start } while an animation plays
 let crouching = false;
 let objects = [];
+// What else stands in a place that isn't asked for, as the kitchen's other chairs at home: in the way as things are, never found.
+let decorThings = [];
 let targets = [];
 let stars = 0;
 let roundSize = 0;
@@ -927,7 +945,9 @@ function newRound() {
     const placed = [];
     const place = { forest: theme.place === "forest", store: isShop(theme.place) };
     objects = picked.map((word) => {
-      const tiles = theme.place === "store" && window.MAHTTE_MAPS.store.stock[word.sprite];
+      // In the library a book is among the books of its colour, in that colour's sections of the bookcases, and is found there.
+      const section = word.place === "bookshelf" && window.MAHTTE_MAPS[theme.place].sections?.[word.colour];
+      const tiles = window.MAHTTE_MAPS[theme.place].stock?.[word.sprite] || section;
       if (tiles) {
         const [x, y] = tiles[tiles.length >> 1];
         return { word, x, y, tiles, phase: 0 };
@@ -1429,7 +1449,7 @@ const menuPictures = new Map();
 function menuPicture(word) {
   const key = `${word.sprite}/${word.colour || ""}/${word.number ?? ""}`;
   if (!menuPictures.has(key)) {
-    const round = word.number === undefined && !VEHICLES[word.sprite] && MODELS[word.sprite]?.(0, word.colour)[0].kind;
+    const round = word.number === undefined && MODELS[word.sprite]?.(0, word.colour)[0].kind;
     if (round) menuPictures.set(key, croppedImage(makeModelImage(word.sprite, 0, word.sprite === "beaiveloddi" ? 1 : 0, 0, word.colour, MENU_DETAIL)));
     else {
       const detail = viewDetail;
@@ -1983,7 +2003,8 @@ function touch(object, now) {
   if (placeName === "forest" && ANIMALS.has(object.word.sprite)) startReaction(object, now);
   else {
     if (object.word.place === "home") object.done = true;
-    else if (object.tiles) object.taken = true; // in Ruokakauppa its place on the shelf stays and says it's taken; dropped from the basket, it's on the list again
+    else if (object.tiles && isShop(placeName)) object.taken = true; // in Ruokakauppa its place on the shelf stays and says it's taken; dropped from the basket, it's on the list again
+    else if (object.tiles) object.done = true; // a library's books stay in their bookcase, and aren't asked about again
     else objects = objects.filter((o) => o !== object);
     sparkles.push({ x: object.x, y: object.y, born: now });
     if (!me.sittingOn) startAction("cheer", now);
@@ -2158,7 +2179,7 @@ let crouchClock = 0;
 // At home things have their sizes, and the smallest wins, so someone on the sofa is found before the sofa.
 const objectAt = (x, y) => objects.find((o) => !o.animal?.crossing && Math.round(o.x) === x && (Math.round(o.y) === y || (o.word.place === "bay" && o.y + 1 === y)));
 function thingAtPoint(x, y) {
-  const homeThings = objects.filter((o) => o.word.place === "home" && pointToBox(x, y, vehicleBox(o)) < 0.2);
+  const homeThings = objects.filter((o) => o.word.place === "home" && awayFrom(o, x, y) < 0.2);
   const area = (o) => HOME_THINGS[o.word.sprite][0] * HOME_THINGS[o.word.sprite][1];
   const onCounter = OPEN_SPOTS.meat?.some(([a, b]) => a === Math.floor(x) && b === Math.floor(y));
   const inStock = objects.find((o) => o.tiles?.some(([a, b]) => a === Math.floor(x) && b === Math.floor(y)));
@@ -2195,7 +2216,7 @@ const VEHICLES = {
 };
 // Things at home, in tiles across and along as built, with the rug flat on the floor to be walked over.
 const HOME_THINGS = {
-  sofa: [2.75, 1.02], tv: [1.4, 0.55], table: [2.2, 1.45], chair: [0.7, 0.7], stove: [1.05, 1], cupboard: [1.55, 0.8], fridge: [1, 0.95],
+  sofa: [2.75, 1.02], tv: [1.4, 0.55], table: [3.2, 1.8], chair: [0.7, 0.7], stove: [1.05, 1], cupboard: [1.55, 0.8], fridge: [1, 0.95],
   freezer: [1.5, 1], toilet: [0.72, 1.05], bathtub: [1.35, 2.55], shower: [1.15, 1.15], sink: [0.9, 0.75], washer: [1.05, 0.95], mirror: [0.7, 0.3],
   bookcase: [1.8, 0.65], lamp: [0.55, 0.55], rug: [2.9, 2.15], flower: [0.5, 0.5], bed: [1.7, 2.8], wardrobe: [1.75, 0.9],
   eadni: [0.5, 0.9], viellja: [0.5, 0.9], // sitting, with their feet out in front of the sofa
@@ -2228,7 +2249,9 @@ const fromBehind = ({ word: { place }, tiles: [[a, b]] }, x, y) => (place === "m
 const pointToBox = (x, y, box) => Math.hypot(x - Math.max(box.x0, Math.min(box.x1, x)), y - Math.max(box.y0, Math.min(box.y1, y)));
 // How far a point is from a thing: from the edge of a parked vehicle, otherwise from the thing's centre.
 // What's for sale in the store fills several tiles in a row, and can be taken from any of them.
-const awayFrom = (o, x, y) => (boxed(o) ? pointToBox(x, y, vehicleBox(o))
+// At home, the other chairs round the table and the other sofa are that thing too: any of them will do.
+const sameKind = (o) => (o.word.place === "home" ? decorThings.filter((d) => d.word.sprite === o.word.sprite) : []);
+const awayFrom = (o, x, y) => (boxed(o) ? Math.min(pointToBox(x, y, vehicleBox(o)), ...sameKind(o).map((d) => pointToBox(x, y, vehicleBox(d))))
   : o.tiles ? (fromBehind(o, x, y) ? Infinity : Math.min(...o.tiles.map(([a, b]) => Math.hypot(x - a - 0.5, y - b - 0.5))))
   : Math.hypot(x - o.x - 0.5, y - o.y - 0.5));
 
@@ -2298,6 +2321,7 @@ function collide() {
       if (Math.hypot(me.x - chair.x, me.y - chair.y) < SIT_CHAIR_SIZE + MOVE.radius) me.hitTree = { mx: chair.x, my: chair.y };
       pushOutOfCircle(chair.x, chair.y, SIT_CHAIR_SIZE + MOVE.radius);
     }
+    for (const o of decorThings) pushOutOfBox(vehicleBox(o));
     for (const o of objects) {
       if (boxed(o) && !FLAT_THINGS.has(o.word.sprite)) pushOutOfBox(vehicleBox(o));
       if (!standsFree(o) || canPassOver(o)) continue;
@@ -2364,6 +2388,7 @@ function blockedAt(x, y, goal, room = MOVE.radius - 0.02) { // standing right ag
   if (chairs.some((chair) => Math.hypot(x - chair.x, y - chair.y) < SIT_CHAIR_SIZE + room)) return true;
   if (trolleySolid(x, y, room)) return true;
   if (objects.some((o) => o !== goal && boxed(o) && !FLAT_THINGS.has(o.word.sprite) && pointToBox(x, y, vehicleBox(o)) < room)) return true;
+  if (decorThings.some((o) => pointToBox(x, y, vehicleBox(o)) < room)) return true;
   return objects.some((o) => o !== goal && standsFree(o) && Math.hypot(x - o.x - 0.5, y - o.y - 0.5) < solidSize(o) + room);
 }
 
@@ -2460,6 +2485,7 @@ function enterPlace(name) {
     if ("pbafFLcj".includes(MAP[y][x])) pathCells.push({ key: gridKey(x * GRID + GRID / 2, y * GRID + GRID / 2), x: x + (GRID / 2 + 0.5) / GRID, y: y + (GRID / 2 + 0.5) / GRID });
   }
   openPathCells = null;
+  decorThings = (SPOTS.decor || []).map(([sprite, x, y, facing]) => ({ word: { sprite, place: "home" }, x, y, facing, decor: true }));
   OPEN_SPOTS = {
     land: SPOTS.land.filter((s) => openSpot(s, 10, 20)),
     water: SPOTS.water.filter((s) => openSpot(s, 10, 20)),
@@ -3494,7 +3520,7 @@ const SHOP_PRICES = {
   // The general store's are play prices and not real ones: a whole list has to stay within what the cashier can say.
   axe: 5, saw: 4, spade: 4, hammer: 3, knife: 4, kuksa: 3, lasso: 3, reindeerbell: 2,
   fishnet: 6, lure: 1, rod: 6, scoopnet: 3, bait: 1, oar: 3, fishingline: 1, reel: 3,
-  shirt: 3, trousers: 4, gakti: 12, jacket: 6, hat: 2, sock: 1, rubberboots: 5,
+  shirt: 3, trousers: 4, gakti: 12, jacket: 6, hat: 2, sock: 1, rubberboots: 5, backpack: 7,
   boat: 15, snowscooter: 20, pulk: 8, lavvu: 12,
 };
 const ENOUGH_SHOWN_MS = 2000;

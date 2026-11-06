@@ -4,7 +4,7 @@
 Test maps for now. The forest has a river with two bridges, two paths each way and forest at the edges, its species in areas of their own.
 Tiles: g grass, t tree, w water, b bridge, p path; a asphalt, q parking bay, s pavement; F wooden floor, f tiled floor;
 and the solid B building, W wall, X low wall, K bookshelf, S store shelf, R fridge, Z freezer, P produce crate,
-C till, M meat counter, D desk, O pegboard, U clothes rail, N low platform; A ground with something big on it; and in the classroom L floor, E pupil's desk, T teacher's desk, V blackboard wall, G window wall.
+C till, M meat counter, D desk, k the library's counter, n something standing in a corner, O pegboard, U clothes rail, N low platform; A ground with something big on it; and in the classroom L floor, E pupil's desk, T teacher's desk, V blackboard wall, G window wall.
 Spots are where things can be placed. The game drops any that something would hide; see openSpot in src/game.js.
 
 Usage: python3 tools/make_map.py
@@ -185,6 +185,11 @@ library = blank(28, 22, "F")
 walls(library, "W")
 shelves(library, "K", (4, 9), ((5, 12), (15, 22)))
 shelves(library, "D", (14, 18), ((5, 12), (15, 22)))
+# The librarian's counter by the right-hand wall, k, with room behind it, and n for what stands in the corners: two big plants at the
+# back and a globe at the front. Must match tools/make_library.py.
+shelves(library, "k", (12, 13, 14, 15), ((24, 24),))
+for x, y in ((2, 2), (25, 2), (2, 19)):
+    library[y][x] = "n"
 
 # Grocery store: long shelves and tills by the door.
 store = blank(46, 34, "f")
@@ -227,6 +232,17 @@ def fixture_spots(grid, tile):
 
 library_place = rooms(library, (14, 19), [])
 library_place["spots"].update(bookshelf=fixture_spots(library, "K"), table=fixture_spots(library, "D"))
+# Each colour has bookcase sections of its own, side by side, filled with books of that colour: a book to find stands in a gap of its
+# colour's sections. Along each run of bookcases from the left, the runs in the order of the map. Must match the colours of the words.
+LIBRARY_SECTIONS = [[("red", 4), ("blue", 4)], [("yellow", 4), ("green", 4)], [("white", 3), ("black", 3), ("grey", 2)], [("brown", 4), ("orange", 4)]]
+_case_runs = [(y, x0, x1) for y in (4, 9) for x0, x1 in ((5, 12), (15, 22))]
+library_place["sections"] = {}
+for (y, x0, x1), colours in zip(_case_runs, LIBRARY_SECTIONS):
+    x = x0
+    for name, count in colours:
+        library_place["sections"][name] = [[x + i, y] for i in range(count)]
+        x += count
+    assert x == x1 + 1, (y, x0, x1)
 store_place = rooms(store, (37, 30), [])
 # Every food has its own place in the store, always the same, and all the places are taken: what has a whole aisle to fill simply goes on for
 # several tiles. Must be what tools/make_store.py draws, and it's read from this.
@@ -312,6 +328,27 @@ gearstore_place["spots"].update(
     tools=[(x, 4) for x in range(5, 14)], fishing=[(x, y) for y in (4, 9) for x in range(16, 25)],
     clothes=fixture_spots(gearstore, "U"), platform=[(x, y) for y in (5, 9) for x in (33, 37, 41)],
 )
+# As in the grocery store, every thing for sale has its own place, always the same and always stocked, taking up tiles of its fixture
+# side by side: what the list asks for changes, what's on the pegboards, rails and platforms doesn't. Along each fixture from the left,
+# what's there and on how many tiles. The jackets and shirts have a second place on the third rail, the boats and pulks a second platform.
+# Must be the gear words' sprites in tools/starter_words.tsv.
+GEAR_FIXTURES = [
+    ((5, 4), [("spade", 2), ("saw", 1), ("axe", 1), ("hammer", 1), ("knife", 1), ("kuksa", 1), ("lasso", 1), ("reindeerbell", 1)]),
+    ((16, 4), [("rod", 3), ("oar", 2), ("fishnet", 2), ("scoopnet", 2)]),
+    ((16, 9), [("reel", 3), ("fishingline", 2), ("lure", 2), ("bait", 2)]),
+    ((5, 9), [("jacket", 3), ("shirt", 3), ("trousers", 3)]),
+    ((5, 14), [("gakti", 3), ("hat", 3), ("sock", 3)]),
+    ((16, 14), [("rubberboots", 3), ("backpack", 4), ("shirt", 2)]),
+]
+gearstore_place["stock"] = {}
+for (x0, y), things in GEAR_FIXTURES:
+    x = x0
+    for sprite, n in things:
+        gearstore_place["stock"].setdefault(sprite, []).extend([x + i, y] for i in range(n))
+        x += n
+    assert x == x0 + 9, (x0, y)
+for sprite, tile in zip(["boat", "snowscooter", "pulk", "lavvu", "boat", "pulk"], [(33, 5), (37, 5), (41, 5), (33, 9), (37, 9), (41, 9)]):
+    gearstore_place["stock"].setdefault(sprite, []).append(list(tile))
 
 # Car park: rows of marked bays, with buildings around and a pavement along them.
 city = blank(36, 28, "a")
@@ -326,6 +363,23 @@ for bays in (6, 7, 12, 13, 18, 19):
             city[bays][x] = "q"
 for x, y in ((3, 3), (32, 3), (3, 24), (32, 24)):
     city[y][x] = "t"
+# Two ways in for cars, through the pavement and the low walls at the front and on the right, the roads going on out of the map.
+# Must match ENTRANCES in tools/make_city.py.
+for y in range(24, 28):
+    for x in (17, 18):
+        city[y][x] = "a"
+for x in range(32, 36):
+    for y in (15, 16):
+        city[y][x] = "a"
+# Street lamps and benches on the pavement at the back, n. Must match tools/make_city.py.
+for x in (9, 15, 21, 27):
+    city[3][x] = "n"
+for y in (9, 15, 21):
+    city[y][3] = "n"
+for x in (12, 24):
+    city[3][x] = "n"
+for y in (12, 18):
+    city[y][3] = "n"
 # A bay is two tiles deep, from the first row of each pair. Vehicles park nose-in with a space beside them.
 city_spots = [(x, y) for y in (6, 12, 18) for x in range(6, 30) if city[y][x] == "q" and x % 2 == 0]
 
@@ -363,42 +417,54 @@ city_place["spots"]["bay"] = city_spots
 city_place["spots"]["land"] = sorted((x, y) for y in (9, 10, 15, 16, 21, 22) for x in range(6, 30) if city[y][x] == "a" and x % 3 == 0)
 
 # Home: a living room and a kitchen at the back, a bedroom, a hall and a bathroom in front, with low walls between
-# them so that all of it can be seen, like a doll's house.
-home = blank(30, 24, "F")
+# them so that all of it can be seen, like a doll's house. What stands in it stands against its walls, as at home,
+# but for the kitchen table with room for the whole family round it.
+home = blank(26, 20, "F")
 walls(home, "Y")
 for y in range(len(home)):
     for x in range(len(home[0])):
         if home[y][x] == "X":
             home[y][x] = "H"
-        elif 17 <= x <= 27 and 2 <= y <= 12:
+        elif 14 <= x <= 23 and 2 <= y <= 9:
             home[y][x] = "f"
-        elif 2 <= x <= 11 and 14 <= y <= 21:
+        elif 2 <= x <= 9 and 11 <= y <= 17:
             home[y][x] = "c"
-        elif 19 <= x <= 27 and 14 <= y <= 21:
+        elif 16 <= x <= 23 and 11 <= y <= 17:
             home[y][x] = "j"
-for x in range(2, 28):
-    if x not in (7, 8, 14, 15):
-        home[13][x] = "H"
-for y in range(2, 13):
-    if y not in (7, 8, 9):
-        home[y][16] = "H"
-for y in range(14, 22):
-    if y not in (17, 18):
-        home[y][12] = "H"
-        home[y][18] = "H"
-for y in (5, 6, 10, 11, 16, 17, 20):
+for x in range(2, 24):
+    if x not in (11, 12):  # from the hall into the living room
+        home[10][x] = "H"
+for y in range(2, 10):
+    if y not in (7, 8):  # from the living room into the kitchen
+        home[y][13] = "H"
+for y in range(11, 18):
+    if y not in (13, 14):  # from the hall into the bedroom and the bathroom
+        home[y][10] = "H"
+        home[y][15] = "H"
+# The windows: must match WINDOWS_X and WINDOWS_Y in tools/make_home.py.
+for y in (7, 8, 14, 15):
     home[y][1] = "J"
-for x in (5, 6, 12, 13, 20, 21, 25, 26):
+for x in (5, 6, 7, 18):
     home[1][x] = "I"
-home_place = rooms(home, (15, 18), [])
-# Each thing has its own place: x, y and which way it faces (0 towards lower left, 1 towards lower right).
+# Things standing in corners, n, as in the library: two plants, a toy box, a coat stand and a laundry basket. Must match tools/make_home.py.
+for x, y in ((12, 2), (23, 9), (2, 17), (14, 11), (19, 17)):
+    home[y][x] = "n"
+home_place = rooms(home, (12, 16), [])
+# Each thing has its own place: x, y and which way it faces (0 towards lower left, 1 towards lower right), its box as big as
+# HOME_THINGS in src/game.js says, round x + 0.5, y + 0.5.
 home_place["spots"]["home"] = {
-    "sofa": (9, 3, 0), "rug": (8, 7, 0), "tv": (3, 6, 1), "lamp": (5, 3, 0), "bookcase": (13, 3, 0), "flower": (14, 11, 0),
-    "stove": (19, 3, 0), "cupboard": (22, 3, 0), "fridge": (24, 3, 0), "freezer": (26, 3, 0), "table": (22, 8, 0), "chair": (22, 9.4, 2),
-    "bed": (6, 17, 0), "wardrobe": (9, 15, 0), "mirror": (16, 15, 0),
-    "toilet": (20, 15, 0), "sink": (22, 15, 0), "washer": (24, 15, 0), "bathtub": (26, 17, 0), "shower": (20, 20, 0),
-    "eadni": (8.4, 3.25, 0), "viellja": (9.6, 3.25, 0), "oabbá": (9, 19, 0), "áhčči": (20.4, 3.6, 3),
+    "sofa": (6, 2, 0), "rug": (6, 5, 0), "tv": (2, 5, 1), "lamp": (4, 2, 0), "bookcase": (9, 2, 0), "flower": (2, 8.4, 0),
+    "stove": (16, 2, 0), "cupboard": (18, 2, 0), "fridge": (20, 2, 0), "freezer": (22, 2, 0), "table": (18, 6, 0), "chair": (17.2, 7.25, 2),
+    "bed": (2.95, 12.6, 1), "wardrobe": (6, 11, 0), "mirror": (8, 11.05, 0),
+    "toilet": (17, 11.05, 0), "sink": (19, 11.1, 0), "washer": (16.05, 16, 1), "bathtub": (21.7, 11.18, 1), "shower": (22.92, 16.92, 0),
+    "eadni": (5.4, 2.25, 0), "viellja": (6.6, 2.25, 0), "oabbá": (6, 15, 0), "áhčči": (16, 3.1, 2),
 }
+# What else stands at home that isn't asked for: the rest of the chairs round the kitchen table, and an empty sofa facing the
+# television. Each blocks the way as the things asked for do, and is made with them by tools/make_home.py: its kind, x, y and facing.
+home_place["spots"]["decor"] = [
+    ["chair", 18.8, 7.25, 2], ["chair", 17.2, 4.75, 0], ["chair", 18.8, 4.75, 0], ["chair", 16.05, 6, 1], ["chair", 20.25, 6, 3],
+    ["sofa", 12, 4.5, 3],
+]
 
 # Lávvu camp: a clearing with a small river behind the lávvu and the forest around it. A marks ground that can't be walked on,
 # where something big stands that the game draws itself.

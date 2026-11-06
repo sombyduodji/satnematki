@@ -18,10 +18,17 @@
 
   const colourCache = new Map();
   const colourProbe = document.createElement("canvas").getContext("2d");
+  const COLOUR_CACHE_MOST = 1024;
+  const RGB_TEXT = /^rgba?\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)\s*(?:,\s*([\d.]+)\s*)?\)$/;
   function parseColour(style) {
     if (typeof style !== "string") return [0, 0, 0, 1]; // gradients and patterns aren't needed in the store
+    // rgb() and rgba() are read straight off and not kept: the game makes them anew every frame with the strength changing, as the
+    // river's glints, and keeping each was a store that grew all the time a place was open.
+    const direct = RGB_TEXT.exec(style);
+    if (direct) return [direct[1] / 255, direct[2] / 255, direct[3] / 255, direct[4] === undefined ? 1 : Number(direct[4])];
     let rgba = colourCache.get(style);
     if (rgba) return rgba;
+    if (colourCache.size >= COLOUR_CACHE_MOST) colourCache.clear(); // and anything else that comes in endless kinds can't grow it either
     colourProbe.fillStyle = "#000";
     colourProbe.fillStyle = style;
     const s = colourProbe.fillStyle; // the browser's own form: #rrggbb or rgba(r, g, b, a)
@@ -230,7 +237,7 @@
   uniform vec2 uLightSize;
   uniform vec2 uCam; uniform float uDetail; uniform vec2 uOrigin; // the world's OX and TOP_PAD
   uniform vec3 uSun; uniform vec4 uRoom; uniform vec2 uWindowZ; uniform float uHeightTop;
-  uniform vec2 uWinX[3]; uniform vec2 uWinY[3]; uniform vec2 uMullion; // the windows' crossbar: how high, and half its width
+  uniform vec2 uWinX[4]; uniform vec2 uWinY[4]; uniform vec2 uMullion; // the windows' crossbar: how high, and half its width
   uniform int uLit; // whether the place has a light map
   uniform int uSpace; // 0: the map is of the floor, in the world's units (rooms); 1: of the screen, in the world's pixels (the forest)
   uniform vec2 uShadowStep; // how far a shadow reaches on the screen for each unit of height
@@ -248,7 +255,7 @@
     float lit = 0.0;
     float t = max(p.x - uRoom.x, 0.0) / -uSun.x;
     float y = p.y + uSun.y * t, z = p.z + uSun.z * t;
-    for (int i = 0; i < 3; i++) {
+    for (int i = 0; i < 4; i++) {
       vec2 w = uWinX[i]; float mid = (w.x + w.y) * 0.5;
       float inside = step(w.x + 3.0, y) * step(y, w.y - 3.0) * step(uWindowZ.x + 1.0, z) * step(z, uWindowZ.y - 1.0);
       inside *= step(uMullion.y, abs(y - mid)) * step(uMullion.y, abs(z - uMullion.x));
@@ -256,7 +263,7 @@
     }
     t = max(p.y - uRoom.y, 0.0) / -uSun.y;
     float x = p.x + uSun.x * t; z = p.z + uSun.z * t;
-    for (int i = 0; i < 3; i++) {
+    for (int i = 0; i < 4; i++) {
       vec2 w = uWinY[i]; float mid = (w.x + w.y) * 0.5;
       float inside = step(w.x + 3.0, x) * step(x, w.y - 3.0) * step(uWindowZ.x + 1.0, z) * step(z, uWindowZ.y - 1.0);
       inside *= step(uMullion.y, abs(x - mid)) * step(uMullion.y, abs(z - uMullion.x));
@@ -307,7 +314,8 @@
       outColour = vColour * (1.0 - hole);
       return;
     }
-    vec2 px = sharp(vUv);
+    // Pictures are hard-edged, to keep the pixel art crisp; shadows are smooth, as a shadow's edge is soft.
+    vec2 px = vMode == 3 || vMode == 4 ? clamp(vUv, vRect.xy + 0.5, vRect.zw - 0.5) : sharp(vUv);
     vec4 c = tex(px);
     if (vMode == 7) {
       // A gradient: its colours are a row on the atlas (vRect), and how far along it this is comes from vFoot. For a radial one
@@ -338,7 +346,15 @@
       // A shadow lies on the floor: none where something stands, and the sun's only where there's sun to take away.
       vec2 p = mapAt(worldPx(vDev));
       if (uSpace == 0 && (heightAt(p) > 0.5 || !inRoom(p))) discard;
-      float a = c.a * vColour.a;
+      // Soft at its edge: the picture's cover here and round about, over a few of its pixels, so that a figure's hard pixel edges
+      // don't show in its long shadow.
+      float cover = 0.0, weight = 0.0;
+      for (int j = -2; j <= 2; j++) for (int i = -2; i <= 2; i++) {
+        float k = 3.0 - 0.5 * (abs(float(i)) + abs(float(j)));
+        cover += tex(clamp(px + vec2(float(i), float(j)) * 0.75, vRect.xy + 0.5, vRect.zw - 0.5)).a * k;
+        weight += k;
+      }
+      float a = cover / weight * vColour.a;
       if (vMode == 3) a *= lightAt(p).r;
       outColour = vec4(uShadow * a, a);
       return;
@@ -446,7 +462,8 @@
       this.texts = new Map();
       this.measure = document.createElement("canvas").getContext("2d");
       this.batchLit = false;
-      this.casting = null; // set by the game just before drawing someone who casts a shadow
+      this.casting = null; // set by the game just before drawing someone who casts a shadow: true, or how much of its picture is height
+      this.shadowPaint = null; // set by the game just before drawing a shadow's own picture, as dark as this, as a vehicle's
       this.inFrame = false;
       this.stats = { draws: 0, quads: 0, uploads: 0, drawsShown: 0, quadsShown: 0 };
       this.lightGlsl = LIGHT_GLSL;
@@ -824,8 +841,15 @@
       const ys = [corners[1], corners[3], corners[5], corners[7]];
       const foot = [(corners[0] + corners[2] + corners[4] + corners[6]) / 4, Math.max(...ys)];
       const alpha = this.state.alpha;
-      if (this.casting && this.post.quality > 0 && this.light) this.shadows(corners, uv, rect, entry.tex, entry.layer, foot, alpha);
+      if (this.casting && this.post.quality > 0 && this.light) this.shadows(corners, uv, rect, entry.tex, entry.layer, foot, alpha, typeof this.casting === "number" ? this.casting : 1);
       this.casting = null;
+      // A picture that is a shadow, laid on the ground as someone's is: dark only where the sun reaches.
+      if (this.shadowPaint !== null) {
+        const strength = this.shadowPaint;
+        this.shadowPaint = null;
+        if (this.post.quality > 0 && this.light) this.quad(corners, uv, rect, entry.tex, entry.layer, [0, 0, 0, strength * alpha], MODE.SUN_SHADOW, foot, scissor);
+        return;
+      }
       const rim = this.rimNext;
       if (rim) {
         this.rimNext = null;
@@ -872,20 +896,25 @@
 
     // Someone standing in the light lays a shadow on the floor: long and dark away from the sun, and faint and short from the
     // lamps above. The picture is laid down flat, its top swung out to where the light would throw it.
-    shadows(corners, uv, rect, tex, layer, foot, alpha) {
+    // tall: how much of the picture's height above its lowest point is really height, for what's seen from above as well as from the
+    // side, as a parked vehicle, whose picture also reaches back along the ground; 1 for someone standing.
+    shadows(corners, uv, rect, tex, layer, foot, alpha, tall = 1) {
       const D = this.view?.detail ?? 1, L = this.light;
       const lay = ([across, down], strength, mode) => {
         // across, down: how far the shadow reaches on the screen for each unit of height.
         const out = [];
         for (let i = 0; i < 4; i++) {
-          const x = corners[i * 2], y = corners[i * 2 + 1], up = (foot[1] - y) / D;
+          const x = corners[i * 2], y = corners[i * 2 + 1], up = ((foot[1] - y) / D) * tall;
           out.push(x + across * up * D, foot[1] + down * up * D);
         }
         this.quad(out, uv, rect, tex, layer, [0, 0, 0, strength * alpha], mode, foot);
       };
-      lay(L.shadowStep, 0.42, MODE.SUN_SHADOW);
-      // The two nearest lamps.
       const v = this.view;
+      // A shadow from the sun only for who stands in it: in a building's shade, there's none to throw.
+      const sx = v ? foot[0] / D + v.camX : 0, sy = v ? foot[1] / D + v.camY : 0;
+      const sun = !v ? 1 : L.space === "screen" ? this.post.sunAt(sx, sy) : this.post.sunAt((sy - v.topPad) + (sx - v.ox) / 2, (sy - v.topPad) - (sx - v.ox) / 2);
+      if (sun > 0.05) lay(L.shadowStep, 0.42 * sun, MODE.SUN_SHADOW);
+      // The two nearest lamps.
       if (!v) return;
       const wx = foot[0] / D + v.camX - v.ox, wy = foot[1] / D + v.camY - v.topPad;
       const px = wy + wx / 2, py = wy - wx / 2;
@@ -941,6 +970,13 @@
       }
     }
     stroke() {}
+
+    // How much sun there is at a point of the world, in its pixels, from the place's light map: 1 where there's none to go by.
+    sunHere(wx, wy) {
+      const L = this.light, v = this.view;
+      if (!L || !v) return 1;
+      return L.space === "screen" ? this.post.sunAt(wx, wy) : this.post.sunAt((wy - v.topPad) + (wx - v.ox) / 2, (wy - v.topPad) - (wx - v.ox) / 2);
+    }
     clip() {
       // A rectangle on the screen round the path, which is all the game clips to.
       let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
