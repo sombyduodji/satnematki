@@ -983,9 +983,20 @@ def placed_sign(name, tx, ty, spec, between=False, along=8):
     x0, y0 = int(left // DETAIL * DETAIL), int(top // DETAIL * DETAIL)
     full = np.zeros((slanted.height + DETAIL * 2, slanted.width + DETAIL * 2, 4), np.uint8)
     full[round(top - y0):round(top - y0) + slanted.height, round(left - x0):round(left - x0) + slanted.width] = np.array(slanted)
+    if not spec.get("across"):
+        return [((tx, ty, "s"), cut_sign(full, x0, y0))]
+    # A banner across the front hangs half on the tile behind, and that half goes with that tile: else someone standing in front of it is drawn under it.
+    split = (16 + spec["front"]) * DETAIL - x0
+    near, far = full.copy(), full.copy()
+    near[:, split:] = 0
+    far[:, :split] = 0
+    return [((tx, ty, "s"), cut_sign(near, x0, y0)), ((tx, ty - 1, "s"), cut_sign(far, x0 - HW * DETAIL, y0 + HH * DETAIL))]
+
+
+def cut_sign(full, x0, y0):
     rows, columns = np.nonzero(full[:, :, 3].any(axis=1))[0], np.nonzero(full[:, :, 3].any(axis=0))[0]
     picture, cx, cy = on_whole_pixels(full, rows, columns)
-    return (tx, ty, "s"), (picture, x0 + cx, y0 + cy)
+    return picture, x0 + cx, y0 + cy
 
 
 def food_picture(sprite):
@@ -1067,10 +1078,10 @@ def main():
         letter = MAP[spots[0][1]][spots[0][0]]
         every = SIGNS[letter]["every"]
         places = [3] if letter == "e" else [1] if len(spots) == 2 else list(range(every // 2, len(spots), every))
-        pictures += [sign_item(sprite, spots, i, letter) for i in places]
+        pictures += [piece for i in places for piece in sign_item(sprite, spots, i, letter)]
     # And the signs for the way in and out. The tiles they go on must match tools/make_map.py.
     # Over the gate, on two posts standing either side of it, high enough to walk under.
-    pictures.append(placed_sign("Sisään", 41, 27, dict(front=8, high=7, posts=38, longest=30, top=45, wide=32), along=-16))
+    pictures += placed_sign("Sisään", 41, 27, dict(front=8, high=7, posts=38, longest=30, top=45, wide=32), along=-16)
     # It all goes into the floor's pictures, drawn just once. A tile is only drawn again over someone behind it. The back walls never need to be.
     columns, rows = max(c for c, _ in floor) + 1, max(r for _, r in floor) + 1
     world = np.zeros((rows * CHUNK, columns * CHUNK, 3), np.uint8)
