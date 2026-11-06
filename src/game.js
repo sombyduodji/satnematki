@@ -126,6 +126,7 @@ const TEXT = {
   begin: "Aloita",
   noTimesYet: "Ei vielä aikoja",
   playAgain: "Pelaa taas",
+  comingLater: "Tulossa myöhemmin",
   modeBoth: "Ääni ja teksti",
   modeAudio: "Vain ääni",
   modeHint: "Sanat kuuluvat vain ääneen, ja ne näkyvät kierroksen lopussa.",
@@ -854,6 +855,7 @@ function shuffled(list) {
 }
 
 function enterTheme(chosenTheme) {
+  if (CLOSED_PLACES.has(chosenTheme.menuPlace ?? chosenTheme.place)) return; // not open yet
   theme = chosenTheme;
   document.body.classList.remove("menu");
   setAmbience(theme.place);
@@ -1436,6 +1438,8 @@ function showPlaces() {
 // Pictures carry it for a child who doesn't read yet.
 // The start page's picture of each place, showing faintly behind its button in the menu.
 const PLACE_MAPS = { home: "koti", forest: "elaimet", city: "parkkipaikka", library: "kirjasto", store: "kauppa", gearstore: "rautakauppa", camp: "laavu", classroom: "luokka", lesson: "oppitunti" };
+// Places shown in the menu but not open yet: greyed out, and they can't be started, as their graphics are still being made.
+const CLOSED_PLACES = new Set(["camp"]);
 // The menu's sections, by how far along the places are. A new place has to be added to one of them to show.
 const MENU_SECTIONS = [
   { heading: "Pelattava demo", places: ["classroom", "forest", "store"], look: "ready" },
@@ -1506,7 +1510,8 @@ const bestText = (option) => (bestOf(option) ? `${TEXT.best} ${formatTime(bestOf
 
 function lastTheme() {
   try {
-    return THEMES.find((option) => option.id === localStorage.getItem("mahtte.last"));
+    const last = THEMES.find((option) => option.id === localStorage.getItem("mahtte.last"));
+    return last && !CLOSED_PLACES.has(last.menuPlace ?? last.place) ? last : undefined;
   } catch {
     return undefined;
   }
@@ -1580,6 +1585,13 @@ function menuPlaces() {
     for (const place of places) {
       const levels = THEMES.filter((option) => (option.menuPlace ?? option.place) === place);
       const played = levels.filter(bestOf).length;
+      if (CLOSED_PLACES.has(place)) {
+        const closed = menuButton({ look: themeLook(levels[0]), title: levels[0].title, small: TEXT.comingLater, map: PLACE_MAPS[place], className: "closed" });
+        closed.disabled = true;
+        closed.setAttribute("aria-disabled", "true");
+        grid.append(closed);
+        continue;
+      }
       grid.append(menuButton({
         look: themeLook(levels[0]),
         title: levels[0].title,

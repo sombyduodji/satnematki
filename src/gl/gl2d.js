@@ -44,9 +44,17 @@
   const sameMatrix = (a, b) => a && b && a[0] === b[0] && a[1] === b[1] && a[2] === b[2] && a[3] === b[3] && a[4] === b[4] && a[5] === b[5];
 
   // ------------------------------------------------------------------ the atlas
+  // On an Adreno GPU (Qualcomm phones) the atlas grows without copying its pages on the GPU (copyTexSubImage3D from a layer):
+  // on a Galaxy S25 (Adreno 830) pictures showed bits of others, as from pages copied wrong. Elsewhere the quicker copy stays.
+  const gpuName = (gl) => {
+    const info = gl.getExtension("WEBGL_debug_renderer_info");
+    return `${gl.getParameter(info ? info.UNMASKED_RENDERER_WEBGL : gl.RENDERER)}`;
+  };
+
   class Atlas {
     constructor(gl, mostLayers) {
       this.gl = gl;
+      this.copyOnGrow = !/adreno/i.test(gpuName(gl));
       this.mostLayers = mostLayers;
       this.layers = 0;
       this.texture = null;
@@ -66,7 +74,7 @@
       gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
       gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
       gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-      if (this.texture) {
+      if (this.texture && this.copyOnGrow) {
         // What's packed already is copied over, page by page.
         const fb = gl.createFramebuffer();
         gl.bindFramebuffer(gl.READ_FRAMEBUFFER, fb);
@@ -77,10 +85,16 @@
         gl.bindFramebuffer(gl.READ_FRAMEBUFFER, null);
         gl.deleteFramebuffer(fb);
         gl.deleteTexture(this.texture);
+        for (let layer = this.layers; layer < layers; layer++) this.shelves.push({ y: 0, rows: [] });
       } else {
-        this.shelves = [];
+        // Without the copy, the bigger texture starts empty and what was packed is packed again as it's drawn, as when the atlas empties.
+        if (this.texture) {
+          gl.deleteTexture(this.texture);
+          this.generation++;
+        }
+        this.shelves = Array.from({ length: layers }, () => ({ y: 0, rows: [] }));
+        this.white = null;
       }
-      for (let layer = this.layers; layer < layers; layer++) this.shelves.push({ y: 0, rows: [] });
       this.texture = texture;
       this.layers = layers;
       // One white texel, for plain fills, so that they needn't break the batch.

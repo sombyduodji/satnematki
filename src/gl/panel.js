@@ -162,7 +162,7 @@
       shownAt = now;
       const parts = [`${times.length} fps`, `pahin ${worst.toFixed(0)} ms`, `piirto ${drawMs.toFixed(1)} ms`, `${canvas.width}×${canvas.height}`];
       if (gpu) {
-        parts.push(`${gpu.stats.drawsShown} piirtokutsua`, `${gpu.stats.quadsShown} kuvaa`, `atlas ${gpu.atlas.layers} sivua`);
+        parts.push(`${gpu.stats.drawsShown} piirtokutsua`, `${gpu.stats.quadsShown} kuvaa`, `atlas ${gpu.atlas.layers} sivua${gpu.atlas.copyOnGrow ? "" : " (Adreno: ei kopiota)"}`);
         if (gpu.post.gpuMs !== null) parts.push(`GPU ${gpu.post.gpuMs.toFixed(2)} ms`);
         if (qualityEl.value !== String(gpu.post.quality)) qualityEl.value = String(gpu.post.quality);
         // Only where the place has its light baked: elsewhere there's nothing for the effects to do yet.
