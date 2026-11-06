@@ -1670,8 +1670,8 @@ function draw(now) {
   for (const chair of chairs) {
     const chairBox = [isoX(chair.x, chair.y) - 14, isoY(chair.x, chair.y) - 22, isoX(chair.x, chair.y) + 14, isoY(chair.x, chair.y) + 14];
     scene.push({ d: chair.x + chair.y - 0.01, box: chairBox, paint: () => drawChairSeat(chair) });
-    // Whoever sits leans against the back, so it goes behind them; otherwise it stands in front of the seat.
-    scene.push({ d: chair.x + chair.y + (chair === me.sittingOn ? -0.005 : 0.01), box: chairBox, paint: () => drawChairBack(chair) });
+    // Whoever sits leans against the back, and it's in front of them, as it's nearer. In a lesson every chair has someone.
+    scene.push({ d: chair.x + chair.y + (chair === me.sittingOn || theme?.lesson ? 0.2 : 0.01), box: chairBox, paint: () => drawChairBack(chair) });
   }
   for (const t of treeMap) {
     // Only what can reach the view, with room for its lean. Tall trees were too many of those to draw just in case.
@@ -1850,16 +1850,13 @@ function draw(now) {
   if (me.sittingOn) {
     const since = now - me.sitAt;
     sheet = sheetFor(look);
-    row = SIT_ROW;
+    row = LESSON_SIT_ROW; // facing the desk, as in a lesson: the side view sat beside the chair
     flip = false;
     const hand = theme?.lesson ? lessonSeatFrame(now) : null;
     if (hand !== null) {
       row = LESSON_HAND_ROW;
       frameCol = hand;
-    } else if (theme?.lesson) {
-      row = LESSON_SIT_ROW;
-      frameCol = lesson ? lessonSeatColumn(now) : 0;
-    }
+    } else if (theme?.lesson) frameCol = lesson ? lessonSeatColumn(now) : 0;
     else if (since < SIT.downMs || since > SIT.downMs + SIT.lookMs) frameCol = 0;
     else frameCol = 1 + Math.floor((since - SIT.downMs) / SIT.swingMs) % 6; // the legs swing from the seat's edge
   } else if (me.slideAt !== null) {
@@ -1917,8 +1914,8 @@ function draw(now) {
     row = DIAGONAL_ROWS + ((me.moving ? 2 : 0) + (facingName.startsWith("N") ? 1 : 0)) * 5 + sway + 2;
   }
   if (!me.hidden) scene.push({ d: me.x + me.y, box: [footX - 20, footY - 46, footX + 20, footY + 10], paint: () => {
-    // Sitting, the drawing already has them at seat height; it moves forward off the chair's back.
-    const cx = footX + (me.sittingOn ? SIT.forward : 0), ground = footY, cy = footY - Math.round(me.height);
+    // Sitting, the drawing already has them at seat height.
+    const cx = footX, ground = footY, cy = footY - Math.round(me.height) - (me.sittingOn ? SIT.seatUp : 0);
     ctx.fillStyle = SHADOW;
     // In the air the shadow stays on the ground, and gets smaller and fainter.
     ctx.globalAlpha = 0.34 - me.height * 0.01;

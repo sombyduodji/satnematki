@@ -368,7 +368,6 @@ const RUN_ROWS = 62;
 const RUN_SWAYS = 7;
 const RUN_FACING = { S: 0, N: 1, E: 2, W: 2, SE: 3, SW: 3, NE: 4, NW: 4 };
 const SLIDE_ROW = 97;
-const SIT_ROW = 98;
 const LESSON_HAND_ROW = 104, LESSON_SIT_ROW = 105;
 // lookAhead: a straight run into something within this many tiles dives in time. pathWidth: how close to the runner's
 // centre line it must be. contact: how much of a step being pushed back by anything counts as hitting it, so only
@@ -702,6 +701,7 @@ function enterTheme(chosenTheme) {
   theme = chosenTheme;
   document.body.classList.remove("menu");
   setAmbience(theme.place);
+  stopAnnouncement(); // and the next one is a while away
   try {
     localStorage.setItem("mahtte.last", theme.id);
   } catch {
@@ -1255,6 +1255,7 @@ function showPlaces() {
   showPrompt();
   document.body.classList.add("menu");
   stopVoice();
+  stopAnnouncement();
   setAmbience(null);
   menuPlaces();
   buildPlacesAhead();
@@ -3897,6 +3898,54 @@ function updateStocker(dt) {
   }
 }
 
+// Announcements over Ruokakauppa's loudspeaker, in Sunná's voice, now and then: 45 to 120 seconds apart, so some rounds hear none and some two,
+// and never the same one twice running. They're made in tools/store3d/make_announcements.py. They go over whoever is speaking, as a real one
+// would, and nothing done in the game cuts one off; only leaving the store does.
+const ANNOUNCEMENTS = ["pa-staff-till", "pa-staff-bottles", "pa-car-lights", "pa-licence"];
+const ANNOUNCER = { fromS: 45, toS: 120, level: 0.6, fadeS: 0.4 };
+const announcer = { wait: 0, last: null, playing: null };
+const nextAnnouncement = () => (ANNOUNCER.fromS + Math.random() * (ANNOUNCER.toS - ANNOUNCER.fromS)) * 1000;
+
+async function announce() {
+  const choices = ANNOUNCEMENTS.filter((name) => name !== announcer.last);
+  announcer.last = choices[Math.floor(Math.random() * choices.length)];
+  announcer.playing = true; // until it ends, or it couldn't play
+  const buffer = sound && await lineBuffer(`audio/${announcer.last}.wav`);
+  if (!buffer || placeName !== "store" || announcer.playing !== true) {
+    announcer.playing = null;
+    return;
+  }
+  const source = sound.createBufferSource();
+  source.buffer = buffer;
+  const gain = sound.createGain();
+  gain.gain.value = ANNOUNCER.level;
+  source.connect(gain).connect(sound.destination);
+  source.onended = () => {
+    if (announcer.playing?.source === source) announcer.playing = null;
+  };
+  source.start(sound.currentTime + SOUND_AHEAD);
+  announcer.playing = { source, gain };
+}
+
+function updateAnnouncer(dt) {
+  if (placeName !== "store" || !theme || announcer.playing) return; // only called while the game isn't paused
+  announcer.wait -= dt;
+  if (announcer.wait <= 0) {
+    announcer.wait = nextAnnouncement();
+    announce();
+  }
+}
+
+function stopAnnouncement() {
+  announcer.wait = nextAnnouncement();
+  const playing = announcer.playing;
+  announcer.playing = null;
+  if (!playing?.source) return;
+  const now = sound.currentTime;
+  playing.gain.gain.setTargetAtTime(0, now, ANNOUNCER.fadeS / 3);
+  playing.source.stop(now + ANNOUNCER.fadeS);
+}
+
 function updateShoppers(dt) {
   if (!isShop(placeName)) return;
   LANES.forEach((_, lane) => {
@@ -4042,7 +4091,7 @@ function animalPose(o, now) {
 
 // ---------------------------------------------------- chairs
 // Each desk has a fixed chair. C at a chair sits down, looks at the desk's number and gets up again.
-const SIT = { reach: 0.75, walkUpTo: 0.5, downMs: 180, lookMs: 950, upMs: 180, swingMs: 130, forward: 2 };
+const SIT = { reach: 0.75, walkUpTo: 0.5, downMs: 180, lookMs: 950, upMs: 180, swingMs: 130, seatUp: 3 }; // seatUp: a standing picture's feet are drawn this much below where someone stands, a sitting one's hips go over the seat's middle
 let chairs = [];
 
 function setChairs() {
@@ -4352,6 +4401,7 @@ function frame(now) {
   if (!paused) {
     updateAnimals(dt, now);
     updateShoppers(dt);
+    updateAnnouncer(dt);
   }
   if (timer.running && !paused) {
     timer.ms += dt;

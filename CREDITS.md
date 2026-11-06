@@ -51,6 +51,10 @@ Norway), voices **Máhtte and Biret**, and **Sunná** for the classroom's teache
 answers, the names of things and the numbers are generated once and included in [`audio/`](audio/) by
 [`tools/fetch_voices.py`](tools/fetch_voices.py). The game itself makes no requests.
 
+Ruokakauppa's loudspeaker announcements are spoken by Sunná too (`audio/announce-*.wav`). The chime, the cheap speaker, the
+hall's echo and the crackle of static are added by [`tools/store3d/make_announcements.py`](tools/store3d/make_announcements.py)
+(`audio/pa-*.wav`).
+
 Divvun's permission to keep generated samples covers Sátni FST. It has not yet been confirmed for this game,
 which is for now a technology demo.
 

@@ -116,6 +116,17 @@ TEACHER_LINES = {
 }
 
 
+# Ruokakauppa's announcements over its loudspeaker, in Sunná's voice. Drafts, translated by Claude from the user's Finnish: for the
+# user to check. Must match ANNOUNCEMENTS in src/game.js.
+ANNOUNCER = "sunna"
+ANNOUNCEMENTS = {
+    "announce-staff-till": "Bargit dárbbašuvvojit kássas.",  # Henkilökuntaa tarvitaan kassalla.
+    "announce-staff-bottles": "Bargit dárbbašuvvojit bohttaliid máhcahanbáikkis.",  # ... pullonpalautuspisteellä.
+    "announce-car-lights": "Almmuhus! Alit biilla eaiggát: din biilla čuovggat leat báhcán buollit.",  # Sinisen auton valot jääneet päälle.
+    "announce-licence": "Vuodjinkoarta lea gávdnon mielkehildu ovddas. Dan sáhttá viežžat kássas.",  # Ajokortti löytynyt maitohyllyn edestä.
+}
+
+
 # Everyone the teacher can praise by name: the two characters and the classmates' names in src/lesson.js.
 TEACHER_PRAISES_NAMES = ["Máhtte", "Biret",
     "Máret", "Elle", "Ánne", "Inga", "Márjá", "Sárá", "Rávdná", "Risten", "Áile", "Gáddjá",
@@ -205,6 +216,10 @@ def main():
         path = OUT / f"{line}.wav"
         if not path.exists():
             jobs.append((path, TEACHER, text))
+    for line, text in ANNOUNCEMENTS.items():
+        path = OUT / f"{line}.wav"
+        if not path.exists():
+            jobs.append((path, ANNOUNCER, text))
     # Whole places first: home, then other plain names, before the many colour phrases and numbers.
     home = {word["sprite"] for word in load_words() if word["theme"] == "home"}
     def order(job):

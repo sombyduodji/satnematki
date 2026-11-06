@@ -82,7 +82,7 @@ def _flag():
 
 
 def _cover():
-    """A Sámi language book stood up to be seen, with the flag's colours on its cover."""
+    """A Sámi language book's cover, with the flag's colours on it."""
     picture = Image.new("RGB", (200, 260), "#f4eeda")
     draw = ImageDraw.Draw(picture)
     for i, tone in enumerate(("#dc241f", "#007229", "#ffce00", "#0035ad")):
@@ -393,16 +393,16 @@ def desk_things(room):
     things.append((lambda p: np.maximum(np.hypot(p[:, 0] - px, p[:, 1] - py) - 1.6, np.maximum(top - p[:, 2], p[:, 2] - top - 3)), lambda p: np.tile(colour("#d8a040"), (len(p), 1))))
     if room.name != "lesson":
         return things
-    # A book stood up to be seen, its pages' side towards the back.
-    bx, by = tx0 + 21, ty0 + 7
+    # A book lying on the desk, its cover up, the top of the cover towards the back.
+    bx, by, bw, bd, bh = tx0 + 21, ty0 + 2, 10, 13, 1.2
     def cover(p):
-        out = np.tile(colour("#f4eeda"), (len(p), 1))
-        front = p[:, 1] > by + 0.8
-        u, v = np.clip((p[:, 0] - bx) / 12, 0, 0.999), np.clip((top + 15 - p[:, 2]) / 15, 0, 0.999)
-        out[front] = COVER[(v[front] * 260).astype(int), (u[front] * 200).astype(int)]
+        out = np.tile(colour("#f4f1e8"), (len(p), 1))  # the pages' edges
+        out[p[:, 2] < top + 0.2] = colour("#20307a")  # the back cover
+        up = p[:, 2] > top + bh - 0.12
+        u, v = np.clip((p[:, 0] - bx) / bw, 0, 0.999), np.clip((p[:, 1] - by) / bd, 0, 0.999)
+        out[up] = COVER[(v[up] * 260).astype(int), (u[up] * 200).astype(int)]
         return out
-    things.append((lambda p: box(p, (bx, by, top), (bx + 12, by + 1, top + 15)), cover))
-    things.append((lambda p: box(p, (bx + 2, by - 3, top), (bx + 10, by, top + 0.5)), lambda p: np.tile(colour("#6a4426"), (len(p), 1))))
+    things.append((lambda p: box(p, (bx, by, top), (bx + bw, by + bd, top + bh)), cover))
     things += pile(tx0 + 36, ty0 + 5, ("#ecb92e", "#2450a6"))
     # The flag on a little stand.
     fx, fy = tx1 - 16, ty0 + 7

@@ -431,14 +431,14 @@ function lessonScene(scene, now, seen) {
     const up = now >= someone.handAt && now < someone.handUntil;
     const [column, row] = up ? [handFrame(now - someone.handAt), 0] : [someone.swingUntil > now ? 1 + Math.floor(now / SIT.swingMs) % 6 : 0, 1];
     const { x, y } = someone.chair;
-    scene.push({ d: x + y + 0.15, box: [isoX(x, y) - 18, isoY(x, y) - 42, isoX(x, y) + 22, isoY(x, y) + 10], paint: () => { // over the chair's back, so that they can be seen
-      const cx = Math.round(isoX(x, y)) + SIT.forward, cy = Math.round(isoY(x, y));
+    scene.push({ d: x + y + 0.15, box: [isoX(x, y) - 18, isoY(x, y) - 42, isoX(x, y) + 22, isoY(x, y) + 10], paint: () => { // the chair's back goes in front of them
+      const cx = Math.round(isoX(x, y)), cy = Math.round(isoY(x, y));
       ctx.fillStyle = SHADOW;
       ctx.globalAlpha = 0.3;
       castShadow(ctx, cx - 3, cy + 2, 19, 7);
       ctx.globalAlpha = 1;
       const sheet = classmateSheet(someone.look);
-      if (sheet.complete) ctx.drawImage(sheet, column * FRAME_W * SHEET_DETAIL, row * FRAME_H * SHEET_DETAIL, FRAME_W * SHEET_DETAIL, FRAME_H * SHEET_DETAIL, cx - 12, cy + 4 - FRAME_H, FRAME_W, FRAME_H);
+      if (sheet.complete) ctx.drawImage(sheet, column * FRAME_W * SHEET_DETAIL, row * FRAME_H * SHEET_DETAIL, FRAME_W * SHEET_DETAIL, FRAME_H * SHEET_DETAIL, cx - 12, cy + 4 - FRAME_H - SIT.seatUp, FRAME_W, FRAME_H);
     } });
   }
   // Everyone's backpack on the floor beside their desk.

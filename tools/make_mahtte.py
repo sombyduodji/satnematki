@@ -98,6 +98,19 @@ def plain(material):
     return lambda p: np.full(len(p), M[material])
 
 
+# The classrooms' chair, as in tools/make_classrooms.py: its seat's top and half its width. Sitting on it, the hips are over its middle and the back
+# against its back, and what would sink into the seat lies on it instead: the gákti lies on it, and behind hangs down past its edge.
+SEAT_TOP, SEAT_HALF = 6.8, 4.8
+
+
+def on_seat(shape):
+    def distance(p):
+        d = shape.distance(p)
+        over = (np.abs(p[:, 0]) < SEAT_HALF) & (np.abs(p[:, 1]) < SEAT_HALF)
+        return np.where(over, np.maximum(d, SEAT_TOP - p[:, 2]), d)
+    return Shape(distance, shape.paint, shape.group)
+
+
 def ball(at, radii, paint, group="body", cut=None):
     at, radii = np.array(at, float), np.array(radii, float)
     def distance(p):
@@ -704,6 +717,8 @@ def model(facing, *, up=0, left=(0, 0), right=(0, 0), swing=0, blink=False, hop=
     if look.get("risku"):
         shapes.append(ball((0, 3.75, collar - 2.6), (1.5, 0.45, 1.5), lambda p: np.where(np.hypot(p[:, 0], p[:, 2] - (collar - 2.6)) < 0.7, M["sclera"], M["silver"])))
         shapes += [ball((x, 3.8, collar - 4.3 + abs(x) * 0.4), (0.5, 0.22, 0.5), "silver") for x in (-1.05, 0, 1.05)]
+    if seated:
+        shapes = [on_seat(shape) for shape in shapes]
     return shapes, yaw, neck, head_pitch
 
 
