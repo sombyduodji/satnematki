@@ -10,7 +10,8 @@ const isShop = (place) => SHOPS.has(place);;
 // Food stands in its fixture, this far above the floor.
 const RAISED = { pallet: 15, meat: 11, shelf: 11, fridge: 8, freezer: 10, produce: 8, desk: 9, bookshelf: 13, table: 10, tools: 3, fishing: 3, clothes: 4, platform: 3 };
 const canvas = document.getElementById("world");
-const ctx = canvas.getContext("2d", { alpha: false }); // nothing shows through it, and knowing that saves the browser work
+// In kauppa-gl.html the GPU draws instead (src/gl/), through a stand-in that takes the same calls. Elsewhere, or without WebGL 2, the 2D canvas.
+const ctx = (window.SATNE_GL && window.makeGLContext?.(canvas)) || canvas.getContext("2d", { alpha: false }); // nothing shows through it, and knowing that saves the browser work
 const ANIMALS = new Set(["gumpe", "geatki", "albbas", "boazu", "beana", "njoammil", "loddi", "guovza", "rieban", "oarri", "sahpan", "gahttu", "savza", "gussa", "spiidni", "vuonccis", "cuoppu", "skuolfi", "beaiveloddi", "rievssat", "goahppil", "garanas", "njukca", "goaskin", "jievjaskuolfi", "beahceloddi"]);
 const FLOATING = new Set(["guolli", "fanas"]);
 
@@ -518,6 +519,8 @@ function loadPlace(name) {
   treeMap = trees = placeThings();
   worldImage = builtWorlds.get(name) || null;
   lastDraw = null;
+  // The GPU lights what moves by the light baked for the place, where there is one.
+  if (ctx.gpu) ctx.useLight(window.MAHTTE_LIGHTS?.[name] ?? null, `art/${name}/light.png`);
 }
 
 // Sun from the upper left, so shadows fall long to the lower right.
@@ -1453,7 +1456,9 @@ const CHAIR_PICTURE = { w: 28, h: 36, foot: 22 };
 const chairPictures = {};
 function drawMadeChair(chair, part) {
   chairPictures[part] ??= Object.assign(new Image(), { src: `art/classroom/chair-${part}.png` });
+  ctx.lit = false; // made with its light in, as the room was
   if (chairPictures[part].complete) ctx.drawImage(chairPictures[part], isoX(chair.x, chair.y) - CHAIR_PICTURE.w / 2, isoY(chair.x, chair.y) - CHAIR_PICTURE.foot, CHAIR_PICTURE.w, CHAIR_PICTURE.h);
+  ctx.lit = true;
 }
 
 function drawChairSeat(chair) {
@@ -1635,15 +1640,18 @@ function draw(now) {
   const camX = Math.round(cam.x * CANVAS_DETAIL) / CANVAS_DETAIL, camY = Math.round(cam.y * CANVAS_DETAIL) / CANVAS_DETAIL;
   const seen = (x, y, pad = 60) => x > camX - pad && x < camX + VIEW_W + pad && y > camY - pad && y < camY + VIEW_H + pad;
 
+  if (ctx.gpu) ctx.setView({ camX, camY, detail: CANVAS_DETAIL, zoom: VIEW_ZOOM, ox: OX, topPad: TOP_PAD });
   ctx.save();
   ctx.scale(CANVAS_DETAIL, CANVAS_DETAIL);
   const shrinking = CANVAS_DETAIL < 4; // the fine pictures come out even when they're smoothed down to fit
   ctx.imageSmoothingEnabled = shrinking && !!MADE_GROUNDS[placeName];
   ctx.translate(-camX, -camY);
+  ctx.lit = false; // the floor's pictures have their light already
   if (MADE_GROUNDS[placeName]) paintMadeGround(camX, camY, MADE_GROUNDS[placeName]);
   else if (viewDetail > 1) ctx.drawImage(doubledImage(worldImage), camX * 2, camY * 2, VIEW_W * 2, VIEW_H * 2, camX, camY, VIEW_W, VIEW_H);
   else ctx.drawImage(worldImage, camX, camY, VIEW_W, VIEW_H, camX, camY, VIEW_W, VIEW_H);
 
+  ctx.lit = true;
   if (placeName === "forest") paintForestLife(now, seen);
   // River glints along the flow, and grass moving in the wind.
   if (!MADE_GROUNDS[placeName]) for (let ty = 0; ty < HEIGHT; ty++) for (let tx = 0; tx < WIDTH; tx++) {
@@ -1689,10 +1697,13 @@ function draw(now) {
     const madeBox = t.made && [t.x - 16 + t.made[4] / 4, t.y - 62 + t.made[5] / 4, t.x - 16 + (t.made[4] + t.made[2]) / 4, t.y - 62 + (t.made[5] + t.made[3]) / 4];
     (t.made ? madeTilesNow : scene).push({ d: t.mx + t.my, box: madeBox, paint: () => {
       if (covers || hidesThing) ctx.globalAlpha = placeName === "forest" ? 0.1 : placeName === "store" ? 0.3 : 0.5;
+      ctx.lit = false; // trees and fixtures have their light painted in already
       if (t.made) {
         const { ready, plain } = madeSheet(), sheet = ready ?? plain, scale = ready ? CANVAS_DETAIL / 4 : 1;
         const [sx, sy, w, h, ox, oy] = t.made;
+        ctx.lit = false;
         if (sheet) ctx.drawImage(sheet, sx * scale, sy * scale, w * scale, h * scale, t.x - 16 + ox / 4, t.y + 2 - 64 + oy / 4, w / 4, h / 4);
+        ctx.lit = true;
       } else if (t.block) {
         if (viewDetail > 1) paintImage(doubledImage(t.image), t.x - 16, t.y + 2 - t.image.height);
         else ctx.drawImage(t.image, t.x - 16, t.y + 2 - t.image.height);
@@ -1704,6 +1715,7 @@ function draw(now) {
         drawLiving(t.image, t.x - Math.floor(t.image.width / 2), t.y + 2 - t.image.height, { lean: wind });
         if (placeName === "camp") campRim(t.image, 0, 0, t.image.width, t.image.height, t.x - Math.floor(t.image.width / 2), t.y + 2 - t.image.height, t.image.width, t.image.height, t.mx, t.my);
       }
+      ctx.lit = true;
       ctx.globalAlpha = 1;
     }});
   }
@@ -1724,10 +1736,12 @@ function draw(now) {
       scene.push({ d: behind ? Math.max(church.depth, mine + 0.02) : Math.min(church.depth, mine - 0.02), paint: () => {
         // Whoever walks round behind it can still be seen.
         if (behind && near) ctx.globalAlpha = 0.72;
+        ctx.lit = false;
         ctx.drawImage(churchNow, left, top, church.w, church.h);
+        ctx.lit = true;
         ctx.globalAlpha = 1;
       } });
-      if (fenceNow) scene.push({ d: mine + (inYard ? 0.03 : -0.03), paint: () => ctx.drawImage(fenceNow, left, top, church.w, church.h) });
+      if (fenceNow) scene.push({ d: mine + (inYard ? 0.03 : -0.03), paint: () => { ctx.lit = false; ctx.drawImage(fenceNow, left, top, church.w, church.h); ctx.lit = true; } });
     }
   }
   for (const o of objects) {
@@ -1792,6 +1806,7 @@ function draw(now) {
         const pose = animalPose(o, now);
         const bob = onWater ? Math.round(Math.sin((now + o.phase) / 520)) : 0;
         ctx.globalAlpha = o.fade ?? 1;
+        if (ctx.gpu && !pose.lift && !onWater) ctx.casting = true; // standing on the ground, it has a shadow in the light
         paintImage(modelImage(o.word.sprite, pose.facing, pose.frame, pose.head, o.word.colour), Math.round(cx) - MODEL_ANCHOR.x, Math.round(cy) - MODEL_ANCHOR.y - pose.lift - bob);
         if (pose.asleep) paintSleepZ(cx, cy, now, o.phase);
         ctx.globalAlpha = 1;
@@ -1830,6 +1845,7 @@ function draw(now) {
         ctx.globalAlpha = 1;
         return;
       }
+      if (ctx.gpu) ctx.casting = true; // the GPU lays their shadow in the light
       paintImage(modelImage(thing.sprite, thing.facing, thing.frame, thing.facing, thing.carrying), cx - MODEL_ANCHOR.x, cy - MODEL_ANCHOR.y);
       const carried = carriedImage(thing.sprite, thing.facing, thing.frame, thing.carrying);
       if (carried) paintImage(carried, cx - MODEL_ANCHOR.x, cy - MODEL_ANCHOR.y);
@@ -1925,6 +1941,7 @@ function draw(now) {
     const carried = carriedBasket();
     if (carried && !carried[2]) paintCarried(cx, cy, carried);
     ctx.imageSmoothingEnabled = shrinking;
+    if (ctx.gpu) ctx.casting = true;
     if (flip) {
       ctx.save();
       ctx.translate(cx + 12, cy + 4 - FRAME_H);
@@ -2008,7 +2025,7 @@ function draw(now) {
   }
   if (placeName === "camp") paintCampNight(now, camX, camY);
   if (location.hash === "#fps") paintFrameRate(now, camX, camY);
-  if (MADE_GROUNDS[placeName]) keepItSmooth(now);
+  if (MADE_GROUNDS[placeName] && !ctx.gpu) keepItSmooth(now); // the GPU turns its effects down instead
   if (placeName === "lesson") paintLessonWarmth(camX, camY);
   ctx.restore();
   // Home has a warm light over everything.
@@ -2016,6 +2033,7 @@ function draw(now) {
     ctx.fillStyle = "rgba(255, 176, 96, 0.08)";
     ctx.fillRect(0, 0, VIEW_W, VIEW_H);
   }
+  if (ctx.gpu) ctx.present();
 }
 
 loadPlace("forest");

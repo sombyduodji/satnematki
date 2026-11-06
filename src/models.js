@@ -938,6 +938,9 @@ const PERSON_LOOKS = {
   cashier: { k: 1, w: 1, legs: "#30384a", top: "#f4f1e8", apron: "#2f5fa8", badge: "#f2c14e", hair: "bun", hairColour: "#5a3a22" },
   butcher: { k: 1.1, w: 1.12, legs: "#30384a", top: "#f4f1e8", apron: "#c9ccd2", stripe: "#7a2f3a", hair: "cap", hairColour: "#f4f1e8", beard: "#5a3a22", knife: true },
   stocker: { k: 1.08, w: 1.02, legs: "#30384a", top: "#f4f1e8", apron: "#2f5fa8", badge: "#f2c14e", hair: "short", hairColour: "#2e2620", beard: "#2e2620", pace: 1.2 },
+  // Two more of the grocery store's basket workers, in the staff's shirt and apron, so that the four by the tills aren't all alike.
+  porter_woman: { k: 0.98, w: 0.96, legs: "#30384a", top: "#f4f1e8", apron: "#2f5fa8", badge: "#f2c14e", hair: "long", hairColour: "#7a4a26", pace: 1.15 },
+  porter_young: { k: 1.04, w: 0.9, legs: "#2b3a5c", top: "#f4f1e8", apron: "#2f5fa8", badge: "#f2c14e", hair: "fringe", hairColour: "#d9b45a", pace: 1.25 },
 };
 
 const GEAR_GOODS = { milk: "parcel", bread: "rope", cheese: "parcel", apple: "mitten", orange: "rope", greens: "mitten" };

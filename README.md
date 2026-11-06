@@ -1,6 +1,6 @@
 # Sátnemátki
 
-*Sátnemátki* means "word journey" in Northern Sámi. Version 0.2.5.5, a technology demo.
+*Sátnemátki* means "word journey" in Northern Sámi. Version 0.2.6, a technology demo.
 
 A Northern Sámi word game for children. The player creates a character, Máhtte or Biret, chooses a place, and
 walks around it in an isometric view with a camera that follows: furniture and family at home, animals in the forest, coloured books on the shelves and
@@ -45,6 +45,32 @@ python3 tools/make_mahtte.py
 ```
 
 This draws the base models and every sprite sheet. See [art/mahtte/README.md](art/mahtte/README.md).
+
+## Drawing on the GPU (a test)
+
+The game can draw with WebGL 2 instead of the 2D canvas, in every place, with the same pictures, words and sounds. It needs
+the game served, as a browser won't hand pictures from files to WebGL: `python3 tools/serve.py`, then
+<http://127.0.0.1:8000/peli.html>. It draws with the GPU unless told otherwise: Grafiikka, among the links under the game,
+switches between the GPU and the basic 2D canvas (after asking, as the round starts again), and the browser keeps the choice;
+`?gl` and `?gl=0` on the address do the same. Opened as a file, or
+where WebGL is done by the CPU, the game uses the 2D canvas (`?gl=force` tries the GPU anyway). Suorituskyky, on at first and kept as
+it's left, shows a line with the frames a second and how long a frame takes, and the effects, from 0 (none) to 3. `kauppa-gl.html` goes straight into the
+grocery store, and `?canvas` on it draws the same with the 2D canvas, for comparing.
+
+The code is in `src/gl/`. `gl2d.js` takes the drawing calls the game already makes and gathers them into a few batched
+draws: every picture goes once into a texture atlas, trimmed to what shows, and a place's whole picture of the world into a
+texture of its own. The camp's dark, firelight and glow are drawn by the GPU itself. `post.js` adds light where a place has
+its light baked: the grocery store, the forest and both classrooms. People and animals are lit by where they stand and cast
+shadows from the sun (and in the store the lamps), with light shafts through the windows or between the trees, a glow round
+what's bright and a slight colour mood. Elsewhere the effects are greyed out for now. In every place the zoom is eased, and a
+slow device turns the effects down by itself. The light comes from each place's own geometry and sun, baked by
+
+```bash
+python3 tools/make_light.py
+```
+
+into `art/<place>/light.png` and `light.js`. Run it again after `tools/make_store.py`, `tools/make_classrooms.py` or
+`tools/make_forest.py` changes a place.
 
 ## Sound
 

@@ -325,6 +325,27 @@ body.menu #view, body.menu #pad, body.menu #in-game { display: none; }
   #card.chooser { grid-template-columns: 1fr; gap: 12px; padding: 22px 12px 12px; }
   #card.chooser figure canvas { width: 84px; height: 140px; }
 }
+/* Passport photos: who set a best time, and the players saved on this device. */
+.portrait { display: inline-block; width: 28px; height: 28px; flex: none; image-rendering: pixelated; background: #dde7ec; border: 2px solid #f4f1e8; border-radius: 3px; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.35); }
+.portrait.none { background: #dde7ec linear-gradient(transparent 62%, #b3c2ca 62%); }
+.best-list { display: flex; flex-direction: column; gap: 3px; width: 100%; margin: 6px 0 0; padding: 0; list-style: none; font-size: 14px; font-variant-numeric: tabular-nums; }
+.best-list li { display: grid; grid-template-columns: 28px 1fr auto; align-items: center; gap: 6px; text-align: left; }
+.best-list li.none { display: block; text-align: center; opacity: 0.7; }
+.best-list .who-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.best-time { font-weight: 700; }
+#results ol li { display: grid; grid-template-columns: 28px minmax(0, 1fr) auto; align-items: center; gap: 8px; margin: 2px 0; }
+#results ol { padding-left: 24px; }
+#card.chooser .saved-players { grid-column: 1 / -1; }
+#card.chooser .saved-players h3 { margin: 0 0 8px; color: var(--sami-yellow); }
+.player-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+#card.chooser .player-grid button.player { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px 8px; color: #f4f1e8; background: #0a2f6c;
+  border: 1px solid #3f6cb8; border-radius: 8px; cursor: pointer; font: inherit; }
+#card.chooser .player-grid button.player:hover { background: #164a9e; }
+.player .portrait { width: 64px; height: 64px; border-width: 3px; }
+.player .who-name { font-size: 18px; font-weight: 700; color: var(--sami-yellow); }
+.player .bests { width: 100%; margin: 2px 0 0; padding: 0; list-style: none; font-size: 13px; font-variant-numeric: tabular-nums; }
+.player .bests li { display: flex; justify-content: space-between; gap: 6px; text-align: left; }
+#card.chooser .saved-players > .note { margin: 8px 0 0; }
 #card.answered { flex-wrap: wrap; }
 #card.answered .bubble { flex: 1 1 14em; margin-top: 0; }
 #card.greeting { align-items: flex-start; }
@@ -364,7 +385,7 @@ body.menu #view, body.menu #pad, body.menu #in-game { display: none; }
   border: 2px solid #3b5564;
   border-radius: 8px;
 }
-#change-outfit, #change-place, #help-toggle {
+#change-outfit, #change-place, #help-toggle, #perf-toggle, #graphics-toggle {
   font: inherit;
   padding: 0;
   border: 0;

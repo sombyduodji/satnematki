@@ -111,4 +111,5 @@ under the [SIL Open Font License 1.1](art/fonts/OFL.txt). It has all of Northern
 ## Game
 
 © 2026 Juha Somby, satni@somby.fi. The code and pixel art are licensed under the
-[GNU General Public License v3.0](LICENSE). The game uses no third-party code.
+[GNU General Public License v3.0](LICENSE). The game uses no third-party code. Drawing with the GPU uses the browser's own
+WebGL 2; its light maps (`art/*/light.png`) are made by [`tools/make_light.py`](tools/make_light.py) from the places' own 3D models.

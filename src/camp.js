@@ -928,7 +928,7 @@ const campLightNow = () => {
 // Lights what's near the fire on the side that faces it and darkens the other, through its own shape.
 // Going through a canvas of its own for each of up to a hundred things, every frame, is too much for a phone. So what stands still
 // keeps a few ready-lit pictures, by the fire's direction and strength, and only the character and the dog are lit anew each frame.
-const campRimCanvas = document.createElement("canvas");
+const campRimCanvas = Object.assign(document.createElement("canvas"), { glLive: true }); // drawn anew each time: the GPU sends it again
 const CAMP_RIM = { turns: 8, levels: 5, buildsPerFrame: 3, mostPixels: 6000000 };
 let campRimPictures = new Map(), campRimPixels = 0, campRimBuilds = 0;
 
@@ -941,6 +941,10 @@ function campRim(image, sx, sy, sw, sh, dx, dy, dw, dh, worldX, worldY, flip = f
   if (strength < 0.02) return;
   const screenX = isoX(light.x, light.y) - isoX(worldX, worldY), screenY = isoY(light.x, light.y) - isoY(worldX, worldY) + dh * 0.35;
   const size = Math.hypot(screenX, screenY) || 1;
+  if (ctx.gpu) { // the GPU lights the picture itself, as it's drawn
+    ctx.drawRim(image, sx, sy, sw, sh, dx, dy, dw, dh, screenX / size, screenY / size, strength, flip);
+    return;
+  }
   const w = Math.ceil(dw * CANVAS_DETAIL), h = Math.ceil(dh * CANVAS_DETAIL);
   if (live || sx || sy || flip) {
     if (campRimCanvas.width < w) campRimCanvas.width = w;
@@ -1194,7 +1198,38 @@ function campPaintHeld(cx, cy, now, flip) {
 }
 
 // Over the finished scene: smoke and sparks, then the evening's dark with the fire's light taken out of it.
-const campNightCanvas = document.createElement("canvas");
+const campNightCanvas = Object.assign(document.createElement("canvas"), { glLive: true }); // as is this, every frame
+// The evening's dark on a canvas of its own, at the place's detail, with the fire's light taken out of it: hole is where the fire
+// is on it and how far its light reaches, or null.
+function paintCampDark(camX, camY, [r, g, b, a], hole) {
+  const w = VIEW_W * viewDetail, h = VIEW_H * viewDetail;
+  if (campNightCanvas.width !== w) {
+    campNightCanvas.width = w;
+    campNightCanvas.height = h;
+  }
+  const n = campNightCanvas.getContext("2d");
+  n.globalCompositeOperation = "source-over";
+  n.clearRect(0, 0, w, h);
+  n.fillStyle = `rgba(${r}, ${g}, ${b}, ${a})`;
+  n.fillRect(0, 0, w, h);
+  if (hole) {
+    const [lightX, lightY, glow] = hole;
+    n.globalCompositeOperation = "destination-out";
+    n.save();
+    n.translate(lightX, lightY);
+    n.scale(1, 0.62);
+    const fade = n.createRadialGradient(0, 0, glow * 0.05, 0, 0, glow);
+    fade.addColorStop(0, "rgba(0, 0, 0, 1)");
+    fade.addColorStop(0.42, "rgba(0, 0, 0, 0.82)");
+    fade.addColorStop(0.75, "rgba(0, 0, 0, 0.3)");
+    fade.addColorStop(1, "rgba(0, 0, 0, 0)");
+    n.fillStyle = fade;
+    n.fillRect(-glow, -glow, glow * 2, glow * 2);
+    n.restore();
+  }
+  ctx.drawImage(campNightCanvas, camX, camY, VIEW_W, VIEW_H);
+}
+
 function paintCampNight(now, camX, camY) {
   if (!camp) return;
   for (const part of camp.smoke) {
@@ -1214,44 +1249,22 @@ function paintCampNight(now, camX, camY) {
     ctx.fillStyle = part.colour;
     ctx.fillRect(isoX(part.x, part.y) + since * part.dx, isoY(part.x, part.y) - 12 - since * part.up + since * since * 0.00018, 1, 1);
   }
-  const w = VIEW_W * viewDetail, h = VIEW_H * viewDetail;
-  if (campNightCanvas.width !== w) {
-    campNightCanvas.width = w;
-    campNightCanvas.height = h;
-  }
-  const g = campNightCanvas.getContext("2d");
   const dark = camp.dark;
   // From a low orange sun to deep blue night.
   const mix = (a, b) => Math.round(a + (b - a) * dark);
-  g.globalCompositeOperation = "source-over";
-  g.clearRect(0, 0, w, h);
-  g.fillStyle = `rgba(${mix(214, 12)}, ${mix(104, 16)}, ${mix(58, 50)}, ${0.2 + 0.62 * dark})`;
-  g.fillRect(0, 0, w, h);
   const light = campLightNow();
-  const lightX = light ? (isoX(light.x, light.y) - camX) * viewDetail : 0, lightY = light ? (isoY(light.x, light.y) - 4 - camY) * viewDetail : 0;
-  const glow = light ? light.reach * 15 * camp.flicker * viewDetail : 0;
-  if (light) {
-    g.globalCompositeOperation = "destination-out";
-    g.save();
-    g.translate(lightX, lightY);
-    g.scale(1, 0.62);
-    const hole = g.createRadialGradient(0, 0, glow * 0.05, 0, 0, glow);
-    hole.addColorStop(0, "rgba(0, 0, 0, 1)");
-    hole.addColorStop(0.42, "rgba(0, 0, 0, 0.82)");
-    hole.addColorStop(0.75, "rgba(0, 0, 0, 0.3)");
-    hole.addColorStop(1, "rgba(0, 0, 0, 0)");
-    g.fillStyle = hole;
-    g.fillRect(-glow, -glow, glow * 2, glow * 2);
-    g.restore();
-  }
-  ctx.drawImage(campNightCanvas, camX, camY, VIEW_W, VIEW_H);
+  const fireX = light ? isoX(light.x, light.y) : 0, fireY = light ? isoY(light.x, light.y) - 4 : 0;
+  const glow = light ? light.reach * 15 * camp.flicker : 0; // in the world's pixels
+  const colour = [mix(214, 12), mix(104, 16), mix(58, 50), 0.2 + 0.62 * dark];
+  if (ctx.gpu) ctx.nightOverlay(camX, camY, VIEW_W, VIEW_H, [colour[0] / 255, colour[1] / 255, colour[2] / 255, colour[3]], fireX, fireY, glow); // the same, in one go
+  else paintCampDark(camX, camY, colour, light ? [(fireX - camX) * viewDetail, (fireY - camY) * viewDetail, glow * viewDetail] : null);
   if (light) {
     // And the warmth of it on the ground.
     ctx.save();
-    ctx.translate(lightX / viewDetail + camX, lightY / viewDetail + camY);
+    ctx.translate(fireX, fireY);
     ctx.scale(1, 0.62);
     ctx.globalCompositeOperation = "lighter";
-    const reach = glow / viewDetail * 0.8;
+    const reach = glow * 0.8;
     const warm = ctx.createRadialGradient(0, 0, 0, 0, 0, reach);
     warm.addColorStop(0, `rgba(255, 150, 60, ${0.3 * light.strength})`);
     warm.addColorStop(0.5, `rgba(255, 110, 40, ${0.12 * light.strength})`);

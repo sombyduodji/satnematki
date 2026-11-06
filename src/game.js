@@ -121,6 +121,10 @@ const TEXT = {
   choosePlace: (name) => (name ? `Hei, ${name}! Minne mennään?` : "Minne mennään?"),
   mainMenu: "Päävalikkoon",
   changePlayer: "Vaihda pelaajaa",
+  choosePlayer: "Valitse pelaaja",
+  orMakeNew: "tai tee uusi hahmo alla",
+  begin: "Aloita",
+  noTimesYet: "Ei vielä aikoja",
   playAgain: "Pelaa taas",
   modeBoth: "Ääni ja teksti",
   modeAudio: "Vain ääni",
@@ -436,6 +440,7 @@ function recolourSheet(sheet, hair, eyes) {
     for (const at of sheet.keyPlaces[i]) data[at] = colour;
   });
   g.putImageData(pixels, 0, 0);
+  sheet.glVersion = (sheet.glVersion ?? 0) + 1; // for the GPU, which keeps its own copy
   sheet.hair = hair;
   sheet.eyes = eyes;
 }
@@ -576,6 +581,132 @@ function loadName() {
   }
 }
 
+// ------------------------------------------------------------- players
+// Everyone who has played on this device: a name, a look and a portrait, so that a player can be picked again instead of made anew,
+// and their best times show with their face. The one playing now is also in mahtte.look and mahtte.name, as before.
+const PLAYERS_MOST = 12;
+let makingNewPlayer = false; // from "Vaihda pelaajaa": the next name given is someone new
+const lookKey = (l) => [l.gender, l.outfit, l.length, Number(l.hair).toFixed(2), Number(l.eyes).toFixed(2)].join("/");
+
+function loadPlayers() {
+  try {
+    const saved = JSON.parse(localStorage.getItem("mahtte.players"));
+    return Array.isArray(saved) ? saved.filter((p) => p && typeof p.name === "string" && p.look) : [];
+  } catch {
+    return [];
+  }
+}
+
+function savePlayers(players) {
+  try {
+    localStorage.setItem("mahtte.players", JSON.stringify(players.slice(0, PLAYERS_MOST)));
+  } catch {
+    // Private windows may refuse; this visit still knows who's playing.
+  }
+}
+
+// The portraits, one for each look, as small PNG pictures: a time remembers the look it was made with.
+function loadPortraits() {
+  try {
+    return JSON.parse(localStorage.getItem("mahtte.portraits")) || {};
+  } catch {
+    return {};
+  }
+}
+
+function portraitOf(key) {
+  return key ? loadPortraits()[key] ?? null : null;
+}
+
+// Head and shoulders from the character's own front view, as in a passport photo, at the sheet's own pixels.
+function makePortrait() {
+  const sheet = sheetFor(look);
+  if (!sheet.complete || !sheet.width) return null;
+  const w = FRAME_W * SHEET_DETAIL, h = FRAME_H * SHEET_DETAIL;
+  const sx = sheetX(0, IDLE_ROW.down), sy = sheetY(IDLE_ROW.down);
+  const { data } = sheet.getContext("2d").getImageData(sx, sy, w, h);
+  const solid = (x, y) => data[(y * w + x) * 4 + 3] > 40;
+  let top = -1, bottom = -1;
+  for (let y = 0; y < h && top < 0; y++) for (let x = 0; x < w; x++) if (solid(x, y)) { top = y; break; }
+  for (let y = h - 1; y >= 0 && bottom < 0; y--) for (let x = 0; x < w; x++) if (solid(x, y)) { bottom = y; break; }
+  if (top < 0) return null;
+  const size = Math.round((bottom - top) * 0.48);
+  // The middle of the head, from the upper rows only.
+  let left = w, right = 0;
+  for (let y = top; y < top + size * 0.6; y++) for (let x = 0; x < w; x++) if (solid(x, y)) { left = Math.min(left, x); right = Math.max(right, x); }
+  const middle = (left + right) / 2, from = Math.round(top - size * 0.08);
+  const c = document.createElement("canvas");
+  c.width = c.height = size;
+  const g = c.getContext("2d");
+  g.fillStyle = "#dde7ec"; // a passport photo's plain pale background
+  g.fillRect(0, 0, size, size);
+  g.imageSmoothingEnabled = false;
+  g.drawImage(sheet, sx + Math.round(middle - size / 2), sy + from, size, size, 0, 0, size, size);
+  return c.toDataURL("image/png");
+}
+
+// Remembers the player as they are now, with their portrait. A new one goes first; one picked again moves to the front.
+function rememberPlayer(name) {
+  const key = lookKey(look);
+  const portrait = makePortrait();
+  if (portrait) {
+    const portraits = loadPortraits();
+    portraits[key] = portrait;
+    // Only the portraits still used by a player or a best time are kept.
+    const used = new Set(loadPlayers().map((p) => lookKey(p.look)).concat(key));
+    Object.keys(localStorage).filter((k) => k.startsWith("mahtte.times.")).forEach((k) => {
+      try { JSON.parse(localStorage.getItem(k)).forEach((t) => t.face && used.add(t.face)); } catch { /* not a list */ }
+    });
+    for (const k of Object.keys(portraits)) if (!used.has(k)) delete portraits[k];
+    try { localStorage.setItem("mahtte.portraits", JSON.stringify(portraits)); } catch { /* full or refused */ }
+  }
+  let players = loadPlayers();
+  let id = null;
+  try { id = localStorage.getItem("mahtte.player"); } catch { /* none yet */ }
+  const same = makingNewPlayer ? null : players.find((p) => p.id === id) ?? players.find((p) => p.name === name && lookKey(p.look) === key);
+  const me_ = same ?? { id: `p${Date.now().toString(36)}${Math.floor(Math.random() * 1e4)}` };
+  Object.assign(me_, { name, look: { ...look } });
+  players = [me_, ...players.filter((p) => p.id !== me_.id)];
+  savePlayers(players);
+  try { localStorage.setItem("mahtte.player", me_.id); } catch { /* this visit only */ }
+  makingNewPlayer = false;
+}
+
+// A saved player, picked in the chooser: their look and name become the ones playing.
+function pickPlayer(player) {
+  Object.assign(look, player.look);
+  if (look.gender in STYLES) look.length = styleFor(look.gender, look.length);
+  chosen = true;
+  makingNewPlayer = false;
+  saveLook();
+  saveName(player.name);
+  try { localStorage.setItem("mahtte.player", player.id); } catch { /* this visit only */ }
+  savePlayers([player, ...loadPlayers().filter((p) => p.id !== player.id)]);
+  greeted = true;
+  sayHello(player.name);
+}
+
+// A player's own best time in each place and level they've played, as text lines: the title, the level, the time.
+function playerBests(player) {
+  const lines = [];
+  for (const option of THEMES) {
+    const mine = loadTimes(option.id).filter((t) => (t.player ? t.player === player.id : t.name === player.name));
+    if (mine.length) lines.push([`${option.activity ?? option.title}${option.level ? ` (${option.level})` : ""}`, formatTime(mine[0].ms)]);
+  }
+  return lines;
+}
+
+// A small passport photo, or an empty frame for a time from before they were kept.
+function portraitImage(key) {
+  const img = document.createElement("img");
+  img.className = "portrait";
+  img.alt = "";
+  const src = portraitOf(key);
+  if (src) img.src = src;
+  else img.classList.add("none");
+  return img;
+}
+
 function saveName(name) {
   try {
     localStorage.setItem("mahtte.name", name);
@@ -610,7 +741,9 @@ function loadTimes(themeId) {
 
 // Adds a time and returns the best ones, with the new one marked.
 function addTime(ms, name, themeId) {
-  const entry = { ms, name };
+  let player = null;
+  try { player = localStorage.getItem("mahtte.player"); } catch { /* none */ }
+  const entry = { ms, name, face: lookKey(look), player };
   const times = [...loadTimes(themeId), entry].sort((a, b) => a.ms - b.ms).slice(0, BEST_TIMES);
   try {
     localStorage.setItem(timesKey(themeId), JSON.stringify(times));
@@ -649,6 +782,7 @@ async function finishRound(name, speech) {
   crouching = false;
   announcement++;
   document.getElementById("announce")?.remove();
+  rememberPlayer(name ?? ""); // their portrait as they look now, for the times
   const { times, place } = addTime(timer.ms, name, theme.id);
   const mine = ++roundEnding;
   await Promise.all([speech, new Promise((resolve) => setTimeout(resolve, ANNOUNCE_PAUSE_MS))]);
@@ -682,7 +816,8 @@ function showResults(times, place) {
   times.forEach((time, i) => {
     const row = document.createElement("li");
     if (i === place) row.className = "new";
-    row.textContent = time.name ? `${formatTime(time.ms)}  ${time.name}` : formatTime(time.ms);
+    row.append(portraitImage(time.face), Object.assign(document.createElement("span"), { className: "who-name", textContent: time.name || "" }),
+      Object.assign(document.createElement("span"), { className: "best-time", textContent: formatTime(time.ms) }));
     results.querySelector("ol").append(row);
   });
   document.body.append(results);
@@ -857,6 +992,9 @@ function newRound() {
 // On the harder level's list things are in their object form after the number, as in a real shopping list: "5 × mielkki".
 const listWord = (word) => (!theme?.counts ? word.lemma : word.forms[word.sprite === "egg" || PLURAL_ONLY[word.sprite] ? "Pl+Acc" : "Sg+Acc"][0]);
 
+// On the grocery store's harder level the price is typed in from what the cashier says, so the list doesn't give it away beforehand.
+const listShowsPrices = () => !(theme?.counts && placeName === "store");
+
 function paperList() {
   const paper = document.createElement("ul");
   paper.className = "paper-list";
@@ -867,9 +1005,11 @@ function paperList() {
     const left = targets.filter((other) => other === word).length;
     const row = document.createElement("li");
     row.textContent = `${wanted > 1 ? `${wanted} × ` : ""}${listWord(word)}`;
-    const price = document.createElement("small");
-    price.textContent = `${SHOP_PRICES[word.sprite]} ${TEXT.euro}`;
-    row.append(price);
+    if (listShowsPrices()) {
+      const price = document.createElement("small");
+      price.textContent = `${SHOP_PRICES[word.sprite]} ${TEXT.euro}`;
+      row.append(price);
+    }
     if (!left) row.className = "bought";
     else if (left < wanted) row.dataset.left = `${wanted - left}/${wanted}`;
     paper.append(row);
@@ -923,7 +1063,7 @@ function showPrompt() {
       list.lang = "se";
       shoppingList.forEach((word) => {
         const row = document.createElement("li");
-        row.textContent = `${theme.counts ? `${cart.want.get(word)} × ` : ""}${listWord(word)} ${SHOP_PRICES[word.sprite]} ${TEXT.euro}`;
+        row.textContent = `${theme.counts ? `${cart.want.get(word)} × ` : ""}${listWord(word)}${listShowsPrices() ? ` ${SHOP_PRICES[word.sprite]} ${TEXT.euro}` : ""}`;
         if (!targets.includes(word)) row.className = "bought";
         else if (word === targets[0]) row.className = "now";
         list.append(row);
@@ -1223,6 +1363,7 @@ function askName() {
     event.preventDefault();
     const name = cleanName(input.value);
     saveName(name);
+    rememberPlayer(name);
     sayHello(name);
   });
   bubble.append(form);
@@ -1240,7 +1381,11 @@ async function sayHello(name) {
     new Promise((resolve) => setTimeout(resolve, BUBBLE_MIN_MS)),
     playVoice(`audio/bures-${VOICES[look.gender]}.wav`),
   ]);
-  if (mine === greeting) showPlaces();
+  if (mine !== greeting) return;
+  // By now the character's sheet has come for the greeting: who's playing is remembered with their portrait, someone who played
+  // before players were kept among them.
+  if (!makingNewPlayer) rememberPlayer(name);
+  showPlaces();
 }
 
 // The menu of places: at the start, after a round, or whenever the player asks.
@@ -1420,13 +1565,35 @@ function menuPlaces() {
         title: levels[0].title,
         small: levels.length > 1 ? `${"●".repeat(played)}${"○".repeat(levels.length - played)} ${TEXT.levels(levels.length)}` : bestText(levels[0]),
         map: PLACE_MAPS[place],
-        onClick: () => (levels[0].activity ? menuActivities(levels[0].title, levels) : levels.length > 1 ? menuLevels(levels[0].title, levels) : enterTheme(levels[0])),
+        // A place of one level still opens its own page, with its best times and a button to begin; the camp has no clock and begins at once.
+        onClick: () => (levels[0].activity ? menuActivities(levels[0].title, levels) : levels.length > 1 || !levels[0].camp ? menuLevels(levels[0].title, levels) : enterTheme(levels[0])),
       }));
     }
     section.append(title, grid);
     cardEl.append(section);
   }
   cardEl.querySelector("button.continue, .menu-grid button").focus();
+}
+
+// The three best times of a level, each with the player's passport photo and name.
+const BEST_SHOWN = 3;
+function bestList(option) {
+  const times = option.camp ? [] : loadTimes(option.id).slice(0, BEST_SHOWN);
+  const list = document.createElement("ol");
+  list.className = "best-list";
+  if (!times.length && !option.camp) {
+    const none = document.createElement("li");
+    none.className = "none";
+    none.textContent = TEXT.noTimesYet;
+    list.append(none);
+  }
+  for (const time of times) {
+    const row = document.createElement("li");
+    row.append(portraitImage(time.face), Object.assign(document.createElement("span"), { className: "who-name", textContent: time.name || "" }),
+      Object.assign(document.createElement("span"), { className: "best-time", textContent: formatTime(time.ms) }));
+    list.append(row);
+  }
+  return list;
 }
 
 // A place with different things to do asks which first, and then how hard.
@@ -1467,7 +1634,7 @@ function menuActivities(title, levels) {
 }
 
 function menuLevels(title, levels, goBack = menuPlaces) {
-  promptEl.innerHTML = `<span>${escapeText(title)}: ${TEXT.chooseLevel}</span>`;
+  promptEl.innerHTML = `<span>${escapeText(title)}${levels.length > 1 ? `: ${TEXT.chooseLevel}` : ""}</span>`;
   preview = null;
   cardEl.className = "places";
   cardEl.innerHTML = "";
@@ -1478,14 +1645,15 @@ function menuLevels(title, levels, goBack = menuPlaces) {
   const grid = document.createElement("div");
   grid.className = "menu-grid levels";
   levels.forEach((option, index) => {
-    grid.append(menuButton({
+    const button = menuButton({
       look: themeLook(option),
-      title: `${TEXT.level} ${index + 1}: ${option.level}`,
+      title: option.level ? `${TEXT.level} ${index + 1}: ${option.level}` : TEXT.begin,
       example: option.example,
-      small: bestText(option),
       map: PLACE_MAPS[option.place],
       onClick: () => enterTheme(option),
-    }));
+    });
+    button.append(bestList(option));
+    grid.append(button);
   });
   cardEl.append(back, ...(levels[0].lesson ? [lessonSpeechSwitches()] : []), grid);
   grid.querySelector("button").focus();
@@ -1530,6 +1698,7 @@ async function buildPlacesAhead() {
 
 // A new player: the character chooser, then the name question with nothing filled in.
 function changePlayer() {
+  makingNewPlayer = true;
   try {
     localStorage.removeItem("mahtte.name");
   } catch {
@@ -1583,6 +1752,41 @@ function showChooser() {
   stopVoice();
   cardEl.className = "chooser";
   cardEl.innerHTML = "";
+  // Someone new, or the first time here: those who have played before can be picked as they are.
+  const players = makingNewPlayer || !chosen ? loadPlayers() : [];
+  if (players.length) {
+    const saved = document.createElement("section");
+    saved.className = "saved-players";
+    saved.innerHTML = `<h3>${TEXT.choosePlayer}</h3>`;
+    const grid = document.createElement("div");
+    grid.className = "player-grid";
+    for (const player of players) {
+      const button = document.createElement("button");
+      button.className = "player";
+      const name = document.createElement("span");
+      name.className = "who-name";
+      name.textContent = player.name || NAMES[player.look.gender];
+      button.append(portraitImage(lookKey(player.look)), name);
+      const bests = playerBests(player);
+      if (bests.length) {
+        const list = document.createElement("ul");
+        list.className = "bests";
+        for (const [place, time] of bests) {
+          const row = document.createElement("li");
+          row.append(Object.assign(document.createElement("span"), { textContent: place }), Object.assign(document.createElement("b"), { textContent: time }));
+          list.append(row);
+        }
+        button.append(list);
+      } else button.append(Object.assign(document.createElement("span"), { className: "note", textContent: TEXT.noTimesYet }));
+      button.addEventListener("click", () => pickPlayer(player));
+      grid.append(button);
+    }
+    const or = document.createElement("p");
+    or.className = "note";
+    or.textContent = TEXT.orMakeNew;
+    saved.append(grid, or);
+    cardEl.append(saved);
+  }
   const figure = document.createElement("figure");
   const canvasEl = document.createElement("canvas");
   canvasEl.width = FRAME_W * SHEET_DETAIL;
@@ -3142,6 +3346,8 @@ const storeLane = (x) => ({
   queue: [[x - 1, 23.2], [x - 1, 22.2], [x - 1, 21.2], [x - 1, 20.2], [x - 2, 20.2], [x - 3, 20.2]], unload: [x - 1, 24.2], pay: [x - 1, 26.5], takeBag: [x - 1, 27.9], zone: [23.3, 29, x - 1.5, x + 0.05],
   cashier: [x + 1.1, 25.5], belt: [x, 25.2], beltTiles: [24], beltFrom: 23.9, beltTo: 25.9, register: [x, 26.4], bag: [x, 27.3],
   basketSpot: [x, 23.05], porterHome: [x + 1.1, 22.4], porterAtBasket: [x + 1.05, 23.1],
+  // Where the lane's basket workers stand about while they wait, on the staff's side of the queue: they move between these now and then.
+  porterSpots: [[x + 1.1, 22.4], [x + 2, 21.6], [x + 1.6, 20.8], [x + 2.2, 23.3]],
 });
 const STORE_LANES = [storeLane(24), storeLane(20)];
 // The way into the store, at these tiles of the barrier: once inside there's no going back out through it. Must match tools/make_map.py.
@@ -3162,13 +3368,16 @@ function useLane(lane) {
   till = tills[lane];
 }
 // Each customer has a look for each kind of shop, with that shop's goods in the basket.
-const customerLooks = () => Object.keys(PERSON_LOOKS).filter((name) => !["cashier", "stocker", "butcher"].includes(name) && !/^(teacher|classmate|store_cashier|cashier_man)/.test(name) && name.startsWith("gear_") === (placeName === "gearstore"));
+const customerLooks = () => Object.keys(PERSON_LOOKS).filter((name) => !["cashier", "stocker", "butcher"].includes(name) && !/^(teacher|classmate|store_cashier|cashier_man|porter)/.test(name) && name.startsWith("gear_") === (placeName === "gearstore"));
 const DISPLAY_TILES = new Set("SRZPOU");
 let shoppers = [];
 const newLaneState = (stacks) => ({ queue: [], current: null, goods: [], bag: null, scanning: false, counterBasket: null, get baskets() { return stacks.fresh; }, set baskets(n) { stacks.fresh = n; } });
 let tills = [newLaneState({ used: 0, fresh: 0 })], till = tills[0];
 let stocker = null;
-let porters = []; // one basket worker for each till
+let porters = []; // the basket workers by the tills
+// How many, and in what looks: in the grocery store four, two to each till, so that an emptied basket is soon taken. The hardware
+// store has one till and little room by it, and one worker.
+const PORTERS = { store: 4, perTill: 1, looks: ["stocker", "porter_woman", "cashier_man", "porter_young"], idleMs: 4000, moreIdleMs: 6000 };
 let wantedShoppers = 0, nextShopperIn = 0;
 
 const betweenMs = (least, more) => least + Math.random() * more;
@@ -3406,7 +3615,10 @@ function landOnBelt(now) {
   playImpact("brush");
 }
 
+// On the grocery store's harder level the cashier says the sum again every so often, until it's typed in right.
+const PRICE_AGAIN_MS = 10000;
 function sayPrice(remind = false) {
+  cart.priceAgainIn = PRICE_AGAIN_MS;
   playVoice({ src: `audio/store-price-${cart.total}-${cashierVoice()}.wav`, rate: cashierRate() }, ...(remind ? [`audio/${STORE_HINTS.pay.line}-${VOICES[look.gender]}.wav`] : []));
 }
 
@@ -3508,6 +3720,12 @@ function storeHint() {
 
 // The cashier's work on the player's shopping, and the bag at the end of it.
 function scanForPlayer(dt) {
+  if (cart.stage === "price" && theme?.counts && placeName === "store") {
+    // Waiting for the sum to be typed in: it's said again ten seconds after the last time, once nothing else is being said.
+    cart.priceAgainIn = (cart.priceAgainIn ?? PRICE_AGAIN_MS) - dt;
+    if (cart.priceAgainIn <= 0 && !voiceBusy) sayPrice();
+    return;
+  }
   if (till.current || cart.stage !== "pay") return;
   const first = till.goods[0];
   till.scanning = !!first;
@@ -3645,7 +3863,15 @@ function setupShoppers() {
   tills = LANES.map(() => newLaneState(stacks));
   useLane(0);
   stocker = null;
-  porters = isShop(placeName) ? LANES.map((lane, i) => ({ lane: i, x: lane.porterHome[0], y: lane.porterHome[1], facing: lane.upright ? 3 : 2, path: [], arrived: null, clock: 0, wait: 0, then: null, carrying: "none", doing: "wait", alpha: 1, speed: SHOPPING.walk * PERSON_LOOKS.stocker.pace })) : [];
+  const count = !isShop(placeName) ? 0 : placeName === "store" ? PORTERS.store : LANES.length * PORTERS.perTill;
+  porters = Array.from({ length: count }, (_, i) => {
+    const home = i % LANES.length, lane = LANES[home];
+    const spots = lane.porterSpots ?? [lane.porterHome];
+    const [x, y] = spots[Math.floor(i / LANES.length) % spots.length];
+    const look = PORTERS.looks[i % PORTERS.looks.length];
+    return { lane: home, home, look, x, y, facing: lane.upright ? 3 : 2, path: [], arrived: null, clock: 0, wait: 0, then: null, carrying: "none", doing: "wait",
+      idle: betweenMs(PORTERS.idleMs, PORTERS.moreIdleMs), alpha: 1, speed: SHOPPING.walk * (PERSON_LOOKS[look].pace ?? 1) };
+  });
   wantedShoppers = 0;
   if (!isShop(placeName)) return;
   wantedShoppers = SHOPPING.least + Math.floor(Math.random() * (SHOPPING.most - SHOPPING.least + 1));
@@ -3863,8 +4089,41 @@ function pauseThen(s, facing, thenDo) {
   s.then = thenDo;
 }
 
-// Each till's basket worker waits by its counter's start. An emptied basket there, the player's or a customer's, they take to the stack by
-// the way in, and come back to wait for the next.
+// The basket workers wait by the tills. An emptied basket at a counter's start, the player's or a customer's, the nearest free one takes
+// to the stack by the way in, and comes back to wait for the next.
+// Whoever of them is free and nearest goes for a basket emptied at either till; the others wait, and now and then move a little.
+function sendPorters() {
+  LANES.forEach((lane, i) => {
+    const basket = tills[i].counterBasket;
+    if (!basket?.empty || basket.taker) return;
+    const [bx, by] = lane.porterAtBasket;
+    const free = porters.filter((p) => (p.doing === "wait" || p.doing === "wander") && p.wait <= 0);
+    if (!free.length) return;
+    const p = free.reduce((best, q) => (Math.hypot(q.x - bx, q.y - by) < Math.hypot(best.x - bx, best.y - by) ? q : best));
+    basket.taker = p;
+    p.lane = i;
+    p.doing = "go";
+  });
+}
+
+// A place to stand by the porter's own till that nobody else stands at or is on the way to.
+function porterSpot(p) {
+  const lane = LANES[p.home], spots = lane.porterSpots ?? [lane.porterHome];
+  const taken = (x, y) => porters.some((q) => q !== p && Math.hypot((q.goalX ?? q.x) - x, (q.goalY ?? q.y) - y) < 0.7);
+  return shuffled(spots).find(([x, y]) => !taken(x, y) && Math.hypot(p.x - x, p.y - y) > 0.3) ?? [p.x, p.y];
+}
+
+function porterBack(p) {
+  const [x, y] = porterSpot(p);
+  p.goalX = x; p.goalY = y;
+  walkShopper(p, x, y, () => {
+    p.facing = LANES[p.home].upright ? 3 : 2;
+    p.doing = "wait";
+    p.goalX = p.goalY = null;
+    p.idle = betweenMs(PORTERS.idleMs, PORTERS.moreIdleMs);
+  });
+}
+
 function updatePorter(p, dt) {
   if (p.wait > 0) {
     p.wait -= dt;
@@ -3875,13 +4134,27 @@ function updatePorter(p, dt) {
     }
     return;
   }
+  if (p.doing === "go") {
+    p.doing = "fetch";
+    p.goalX = p.goalY = null;
+    walkShopper(p, ...TILL.porterAtBasket, () => takeCounterBasket(p));
+  }
   if (p.path.length) {
     walkAlong(p, dt);
     return;
   }
-  if (p.doing !== "wait" || !till.counterBasket?.empty) return;
-  p.doing = "fetch";
-  walkShopper(p, ...TILL.porterAtBasket, () => pauseThen(p, TILL.upright ? 3 : 2, () => {
+  if (p.doing === "wait" && (p.idle -= dt) <= 0) {
+    // Stood long enough: a few steps to another place by the till.
+    porterBack(p);
+    p.doing = "wander";
+  }
+}
+
+// At the counter's start: the emptied basket, the player's or a customer's, to the stack by the way in, and then back by the till.
+function takeCounterBasket(p) {
+  useLane(p.lane);
+  pauseThen(p, TILL.upright ? 3 : 2, () => {
+    useLane(p.lane);
     if (till.counterBasket?.player) {
       cart.setDown = null;
       cart.has = false;
@@ -3889,14 +4162,13 @@ function updatePorter(p, dt) {
     till.counterBasket = null;
     p.carrying = "one";
     walkShopper(p, ...TILL.staffAtDoor, () => pauseThen(p, 0, () => {
-      till.baskets++;
+      till.baskets++; // the stack is shared by both lanes
       p.carrying = "none";
-      walkShopper(p, ...TILL.porterHome, () => {
-        p.facing = TILL.upright ? 3 : 2;
-        p.doing = "wait";
-      });
+      p.lane = p.home;
+      p.doing = "back";
+      porterBack(p);
     }));
-  }));
+  });
 }
 
 function pushTrolley(s, spot) {
@@ -4029,6 +4301,7 @@ function updateShoppers(dt) {
   landOnBelt(performance.now());
   scanForPlayer(dt);
   updateStocker(dt);
+  sendPorters();
   for (const p of porters) {
     useLane(p.lane);
     updatePorter(p, dt);
@@ -4127,7 +4400,7 @@ function shopGoings(things, now, flying, onCounter) {
   });
   for (const p of porters) {
     const frame = p.path.length ? 1 + (Math.floor(p.clock / SHOPPING.stepMs) % 2) : p.wait > 0 ? 3 : 0;
-    things.push({ sprite: "person_stocker", x: p.x, y: p.y, facing: p.facing, frame, carrying: p.carrying, alpha: p.alpha, shadow: true });
+    things.push({ sprite: `person_${p.look}`, x: p.x, y: p.y, facing: p.facing, frame, carrying: p.carrying, alpha: p.alpha, shadow: true });
   }
   for (const s of shoppers) {
     const walking = s.path.length > 0;

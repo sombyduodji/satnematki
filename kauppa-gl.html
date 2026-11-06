@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="fi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sátnemátki – GPU-kauppa (testi)</title>
+<link rel="stylesheet" href="src/style.css">
+</head>
+<body>
+<main>
+  <h1 id="game-title" lang="se">Sátnemátki <small>v0.2.6</small></h1>
+  <header id="prompt" aria-live="polite"></header>
+  <aside id="note"></aside>
+  <div id="top-hint" aria-live="polite"></div>
+  <div id="view">
+    <canvas id="world" width="304" height="190" aria-label="Pelimaailma"></canvas>
+    <div id="timer" hidden>0:00.0</div>
+    <div id="hint" hidden></div>
+    <div id="zoom" role="group" aria-label="Zoomaus" hidden><button data-zoom="1">1×</button><button data-zoom="2">2×</button><button data-zoom="3">3×</button><button data-zoom="4">4×</button></div>
+    <aside id="guide-box" hidden><button id="guide-close" aria-label="Sulje ohje">×</button><div></div></aside>
+  </div>
+  <section id="card" aria-live="polite"></section>
+  <div id="pad" aria-label="Liikkuminen">
+    <button data-dir="up" aria-label="Ylös">▲</button>
+    <button data-dir="left" aria-label="Vasemmalle">◀</button>
+    <button data-dir="down" aria-label="Alas">▼</button>
+    <button data-dir="right" aria-label="Oikealle">▶</button>
+    <button id="run" class="action">Juokse</button>
+    <button id="jump" class="action">Hyppää</button>
+    <button id="use" class="action">Ota</button>
+    <button id="crouch" class="action">Kyykky</button>
+    <button id="camp-pack" class="action" hidden>Reppu</button>
+    <button id="camp-drop" class="action" hidden>Laske</button>
+  </div>
+  <footer>
+    Sanat: GiellaLT / Divvun / Giellatekno (CC BY 4.0). Taivutusmuodot: lang-sme (GPL-3.0). Puhe: Divvun / Giellatekno.
+    <a href="index.html">Tietoa pelistä</a> ·
+    <a href="CREDITS.md">Tekijät ja lisenssit</a>
+    <span id="in-game">·
+      <button id="change-outfit">Muuta hahmoa</button> ·
+      <button id="help-toggle" class="help-switch link">Ohjekuplat: päällä</button> ·
+      <button id="change-place" class="link">Päävalikko</button>
+    </span>
+  </footer>
+</main>
+<script>
+  // This page draws with the GPU unless ?canvas is on the address, to compare with the 2D canvas.
+  window.SATNE_GL = !new URLSearchParams(location.search).has("canvas");
+  window.SATNE_GL_AUTOSTART = true;
+</script>
+<script src="src/gl/post.js"></script>
+<script src="src/gl/gl2d.js"></script>
+<script src="art/store/light.js"></script>
+<script src="art/forest/light.js"></script>
+<script src="art/classroom/light.js"></script>
+<script src="art/lesson/light.js"></script>
+<script src="data/starter-words.js"></script>
+<script src="data/map.js"></script>
+<script src="data/numbers.js"></script>
+<script src="art/mahtte/mouths.js"></script>
+<script src="art/animals/animals.js"></script>
+<script src="art/store/fixtures.js"></script>
+<script src="art/classroom/fixtures.js"></script>
+<script src="src/sprites.js"></script>
+<script src="src/models.js"></script>
+<script src="src/world.js"></script>
+<script src="src/camp.js"></script>
+<script src="src/lesson.js"></script>
+<script src="src/game.js"></script>
+<script src="src/gl/panel.js"></script>
+</body>
+</html>

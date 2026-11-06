@@ -409,7 +409,7 @@ function lessonScene(scene, now, seen) {
   if (!lesson) return;
   scene.push({ d: 1000, paint: () => paintLessonBubbles(now) });
   // After the wall behind it, and before the teacher in front of it.
-  scene.push({ d: LESSON_BOARD_DEPTH, box: [isoX(LESSON.boardFrom, 2), isoY(LESSON.boardFrom, 2) - 32, isoX(LESSON.boardTo, 2), isoY(LESSON.boardTo, 2) - 8], paint: () => lessonPaintBoard() });
+  scene.push({ d: LESSON_BOARD_DEPTH, box: [isoX(LESSON.boardFrom, 2), isoY(LESSON.boardFrom, 2) - 32, isoX(LESSON.boardTo, 2), isoY(LESSON.boardTo, 2) - 8], paint: () => { ctx.lit = false; lessonPaintBoard(); ctx.lit = true; } }); // the board has its light painted in
   const person = (sprite, x, y, facing, frame, inFront = 0) => {
     const cx = isoX(x, y), cy = isoY(x, y);
     if (!seen(cx, cy, 90)) return;
@@ -418,6 +418,7 @@ function lessonScene(scene, now, seen) {
       ctx.globalAlpha = 0.2;
       castShadow(ctx, Math.round(cx) - 3, Math.round(cy) + 1, 9, 5);
       ctx.globalAlpha = 1;
+      if (ctx.gpu) ctx.casting = true; // the GPU lays their shadow in the sun
       paintImage(modelImage(sprite, facing, frame, facing, "none"), Math.round(cx) - MODEL_ANCHOR.x, Math.round(cy) - MODEL_ANCHOR.y);
     } });
   };
@@ -438,6 +439,7 @@ function lessonScene(scene, now, seen) {
       castShadow(ctx, cx - 3, cy + 2, 19, 7);
       ctx.globalAlpha = 1;
       const sheet = classmateSheet(someone.look);
+      if (ctx.gpu && sheet.complete) ctx.casting = true;
       if (sheet.complete) ctx.drawImage(sheet, column * FRAME_W * SHEET_DETAIL, row * FRAME_H * SHEET_DETAIL, FRAME_W * SHEET_DETAIL, FRAME_H * SHEET_DETAIL, cx - 12, cy + 4 - FRAME_H - SIT.seatUp, FRAME_W, FRAME_H);
     } });
   }
