@@ -921,8 +921,8 @@ SHOW = {
     "M": dict(size=0.72, tallest=10, widest=12, copies=[(8, 8, MEAT_H)]),
     "e": dict(size=0.56, tallest=8, widest=13, copies=[(8, 8, 15.2)]),
 }
-# Its sign, in Finnish. Standing on the fixture, on posts, or as a banner hanging from its edge: where it is in the tile (along, in from the back, how high its
-# top is), how tall, how long its posts are, how long it may be, and on which of a food's tiles. These are the Finnish names in tools/starter_words.tsv.
+# Its sign: an empty board that the game writes the word on, in the player's language (SIGNS in src/world.js). Standing on the fixture, on posts, or as a banner hanging from its edge: where it is in the tile (along, in from the back, how high its
+# top is), how tall, how long its posts are, how long it is, and on which of a food's tiles. Every board of a kind is as long as the longest word needs.
 SIGNS = {
     "R": dict(front=13.4, top=FRIDGE_H + 8, high=7, posts=0.6, longest=30, every=2),
     "S": dict(front=8, top=SHELF_H + 9.5, high=6.5, posts=3, longest=28, every=4),
@@ -931,26 +931,20 @@ SIGNS = {
     "e": dict(front=15, top=15.4, high=9, posts=0, longest=26, every=4, banner=True),
     "M": dict(front=16, top=MEAT_H - 0.2, high=7, posts=0, longest=30, every=2, banner=True, across=True),
 }
-FINNISH = {}
-for _line in (ROOT / "tools/starter_words.tsv").read_text(encoding="utf-8").splitlines():
-    _cols = _line.split("\t")
-    if not _line.startswith("#") and len(_cols) >= 7 and _cols[6] == "food":
-        FINNISH[_cols[4]] = _cols[2].split(",")[0].strip()
-_bold = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
+# Where each board is, for the game to write on: filled in as the signs are placed, written out with the tiles.
+SIGN_SPOTS = []
 
 
-def sign_picture(name, spec):
-    """A sign as a picture, slanted to go along the fixture, and how long it is in the world."""
+def board_length(spec):
+    """How long a board is in the picture's pixels: as long as its kind allows, whatever word goes on it."""
+    wide = round(spec.get("wide", spec["longest"]) * DETAIL)
+    return wide + -wide % DETAIL
+
+
+def sign_picture(spec):
+    """An empty sign as a picture, slanted to go along the fixture, and how long it is in the world."""
     high = round(spec["high"] * DETAIL)
-    text = name[:1].upper() + name[1:]
-    size = round(high * (0.56 if spec.get("banner") else 0.62))
-    font = ImageFont.truetype(_bold, size)
-    room = spec["longest"] * DETAIL - 8
-    while font.getlength(text) > room and size > 8:
-        size -= 1
-        font = ImageFont.truetype(_bold, size)
-    wide = max(int(font.getlength(text)) + 14, round(spec.get("wide", 0) * DETAIL))
-    wide += -wide % DETAIL
+    wide = board_length(spec)
     posts = round(spec["posts"] * DETAIL)
     board = Image.new("RGBA", (wide, high + posts), (0, 0, 0, 0))
     d = ImageDraw.Draw(board)
@@ -959,12 +953,10 @@ def sign_picture(name, spec):
         d.rectangle((0, 0, wide - 1, high - 1), fill="#f4eeda")
         d.rectangle((0, 0, wide - 1, 3), fill="#3f6b4f")
         d.rectangle((0, high - 3, wide - 1, high - 1), fill="#bb2a2d")
-        d.text((wide / 2, high / 2 + 1), text, font=font, fill="#1d2b4a", anchor="mm")
     else:
         for x in ((3, wide - 4) if spec.get("wide") else (wide // 5, wide - wide // 5)):  # a sign over a way through stands on its edges
             d.rectangle((x - 2, high - 2, x + 1, high + posts), fill="#39424a")
         d.rounded_rectangle((0, 0, wide - 1, high - 1), 5, fill="#2f5a44", outline="#d8c070", width=2)
-        d.text((wide / 2, high / 2), text, font=font, fill="#fbf4d8", anchor="mm")
     across = spec.get("across")
     total = high + posts + wide // 2
     shear = (1, 0, 0, 0.5, 1, -wide / 2) if across else (1, 0, 0, -0.5, 1, 0)
@@ -977,12 +969,12 @@ def sign_item(sprite, spots, index, letter):
     between = len(spots) == 2 or letter == "e"  # across both of its places, from the nearer one so that it isn't covered by the next
     if letter == "R" and not between and [tx + 1, ty] in spots:
         # A fridge's sign sits low on its top and is longer than a door: over the middle one, it goes with the next door, or that one covers its end.
-        return placed_sign(FINNISH[sprite], tx + 1, ty, dict(SIGNS[letter]), along=8 - TILE)
-    return placed_sign(FINNISH[sprite], tx, ty, dict(SIGNS[letter]), between)
+        return placed_sign(sprite, tx + 1, ty, dict(SIGNS[letter]), along=8 - TILE)
+    return placed_sign(sprite, tx, ty, dict(SIGNS[letter]), between)
 
 
-def placed_sign(name, tx, ty, spec, between=False, along=8):
-    slanted, length = sign_picture(name, spec)
+def placed_sign(word, tx, ty, spec, between=False, along=8):
+    slanted, length = sign_picture(spec)
     if spec.get("across"):
         y_left = length / 2
         left, top = (spec["front"] - y_left + 16) * DETAIL, ((spec["front"] + y_left) / 2 - spec["top"] + 48) * DETAIL - slanted.width // 2
@@ -990,6 +982,14 @@ def placed_sign(name, tx, ty, spec, between=False, along=8):
         along = 0 if between else along
         start = along - length / 2
         left, top = (start - spec["front"] + 16) * DETAIL, ((start + spec["front"]) / 2 - spec["top"] + 48) * DETAIL
+    # The board's own top left corner in the world's pixels, before it's slanted: the game writes on it from there.
+    SIGN_SPOTS.append(dict(
+        word=word, tile=[tx, ty],
+        x=round((((tx - ty) * HW + OX - 16) * DETAIL + left) / DETAIL, 2),
+        y=round((((tx + ty) * HH + TOP_PAD + 16 - CELL_H) * DETAIL + top) / DETAIL, 2),
+        wide=slanted.width / DETAIL, high=round(spec["high"] * DETAIL) / DETAIL,
+        **({"banner": True} if spec.get("banner") else {}), **({"across": True} if spec.get("across") else {}),
+    ))
     x0, y0 = int(left // DETAIL * DETAIL), int(top // DETAIL * DETAIL)
     full = np.zeros((slanted.height + DETAIL * 2, slanted.width + DETAIL * 2, 4), np.uint8)
     full[round(top - y0):round(top - y0) + slanted.height, round(left - x0):round(left - x0) + slanted.width] = np.array(slanted)
@@ -1091,7 +1091,7 @@ def main():
         pictures += [piece for i in places for piece in sign_item(sprite, spots, i, letter)]
     # And the signs for the way in and out. The tiles they go on must match tools/make_map.py.
     # Over the gate, on two posts standing either side of it, high enough to walk under.
-    pictures += placed_sign("Sisään", 41, 27, dict(front=8, high=7, posts=38, longest=30, top=45, wide=32), along=-16)
+    pictures += placed_sign("entrance", 41, 27, dict(front=8, high=7, posts=38, longest=30, top=45, wide=32), along=-16)
     # It all goes into the floor's pictures, drawn just once. A tile is only drawn again over someone behind it. The back walls never need to be.
     columns, rows = max(c for c, _ in floor) + 1, max(r for _, r in floor) + 1
     world = np.zeros((rows * CHUNK, columns * CHUNK, 3), np.uint8)
@@ -1126,7 +1126,8 @@ def main():
         sx, sy, pw, ph, _, _ = places[name_of(tx, ty, in_front)]
         sheet[sy:sy + ph, sx:sx + pw] = picture
     Image.fromarray(sheet, "RGBA").save(OUT / "fixtures.webp", quality=90, alpha_quality=100, method=6)
-    (OUT / "fixtures.js").write_text(f"// Generated by tools/make_store.py: where each tile's picture is on the sheet, and where it goes in its {CELL_H * DETAIL}-high cell.\nwindow.MAHTTE_STORE = {json.dumps(places, separators=(',', ':'))};\n", encoding="utf-8")
+    (OUT / "fixtures.js").write_text(f"// Generated by tools/make_store.py: where each tile's picture is on the sheet, and where it goes in its {CELL_H * DETAIL}-high cell.\nwindow.MAHTTE_STORE = {json.dumps(places, separators=(',', ':'))};\n"
+                                    f"// And its signs' empty boards, for the game to write on.\nwindow.MAHTTE_STORE_SIGNS = {json.dumps(SIGN_SPOTS, separators=(',', ':'))};\n", encoding="utf-8")
     print(len(chunks), "pieces of floor and", len(pictures), "tiles written, sheet", sheet.shape)
 
 

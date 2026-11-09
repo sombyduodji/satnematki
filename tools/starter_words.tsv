@@ -52,7 +52,7 @@ banána	N	banaani	banan	banana	produce	food
 láibi	N	leipä	brød	bread	shelf	food
 garraláibi	N	näkkileipä	knekkebrød	crispbread	shelf	food
 rohkaláibi	N	ruisleipä	rugbrød	ryebread	shelf	food
-goarddaláibi	N	paahtoleipä		toast	shelf	food
+goarddaláibi	N	paahtoleipä	loff	toast	shelf	food
 mielki	N	maito	melk	milk	fridge	food
 vuostá	N	juusto	ost	cheese	fridge	food
 monni	N	muna	egg	egg	pallet	food
@@ -69,7 +69,7 @@ gurká	N	kurkku	agurk	cucumber	produce	food
 lávki	N	ruokasipuli	løk	onion	produce	food
 kálla	N	kaali	kål	cabbage	produce	food
 appelsiidna	N	appelsiini	appelsin	orange	produce	food
-beron	N	päärynä		pear	produce	food
+beron	N	päärynä	pære	pear	produce	food
 sitrovdna	N	sitruuna	sitron	lemon	produce	food
 eanamuorji	N	mansikka	jordbær	strawberry	produce	food
 viidnemuorji	N	viinirypäle	drue	grapes	produce	food
@@ -88,7 +88,7 @@ guoppar	N	sieni	sopp	mushroom	produce	food
 jokŋa	N	puolukka	tyttebær	lingonberry	freezer	food
 luomi	N	hilla	molte	cloudberry	freezer	food
 muorjemeastu	N	hillo	syltetøy	jam	shelf	food
-bullá	N	pulla		bun	shelf	food
+bullá	N	pulla	bolle	bun	shelf	food
 bánnogáhkku	N	pannukakku	pannekake	pancake	fridge	food
 ruoksat	A	punainen	rød	red	land	colour
 alit	A	sininen	blå	blue	land	colour

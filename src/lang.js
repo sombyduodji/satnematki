@@ -13,7 +13,7 @@ const LANGS = [
   { id: "nb", name: "Norsk" },
 ];
 // The places a language has; a language not listed has them all.
-const LANG_PLACES = { nb: new Set(["forest"]) };
+const LANG_PLACES = { nb: new Set(["forest", "store"]) };
 const placeInLanguage = (place) => !LANG_PLACES[LANG] || LANG_PLACES[LANG].has(place);
 
 function setLanguage(id) {
@@ -25,9 +25,11 @@ function setLanguage(id) {
   location.reload(); // everything is built in the language it starts with
 }
 
-// Nouns that take "et": "Dette er et ekorn". The rest take "en".
-const NB_NEUTER = new Set(["ekorn", "hus", "tre"]);
-const nbThisIs = (word) => `Dette er ${NB_NEUTER.has(word) ? "et" : "en"} ${word}.`;
+// Nouns that take "et": "Dette er et ekorn", and those said without one, as food often is: "Dette er melk". The rest take "en".
+const NB_NEUTER = new Set(["ekorn", "hus", "tre", "eple", "egg", "brød", "knekkebrød", "rugbrød", "jordbær"]);
+const NB_MASS = new Set(["melk", "ost", "smør", "kaffe", "te", "saft", "brus", "sjokolade", "syltetøy", "iskrem", "kjøttdeig", "reinkjøtt",
+  "røykekjøtt", "svinekjøtt", "kål", "slikkeri", "kjeks", "tyttebær", "molte"]);
+const nbThisIs = (word) => `Dette er ${NB_MASS.has(word) ? "" : NB_NEUTER.has(word) ? "et " : "en "}${word}.`;
 
 // The Norwegian of TEXT in src/game.js, by the same keys. right and wrong give only the Norwegian, in the same order.
 const TEXT_NB = {
@@ -50,6 +52,8 @@ const TEXT_NB = {
   thisPersonFi: (word) => `Dette er ${word}.`,
   guide: {
     goal: {
+      store: "Ta en kurv ved døra med E-tasten, og hent matvarene på handlelista i den rekkefølgen du vil. Gå så til kassa: legg varene på båndet én om gangen med E, ta en pose og gå til døra. Hvis du faller, havner varene på gulvet: gå over dem, så får du dem tilbake.",
+      "store-count": "Ta en kurv ved døra og hent matvarene på handlelista. På lista står det hvor mange du trenger av hver, og E tar én om gangen. I kassa legger du varene på båndet, hører prisen på samisk og taster den inn. Ta så en pose og gå til døra.",
       forest: "Finn dyret som står øverst. Gå bort til det og trykk E, så ser du om det var riktig. Noen dyr sover: snik deg bort til dem ved å holde C nede. Hvis du går eller løper nær dem, våkner dyret og løper sin vei.",
     },
     move: "Gå med piltastene eller WASD, eller trykk på skjermen. På mobilen bruker du knappene.",
@@ -67,6 +71,19 @@ const TEXT_NB = {
     ok: "OK",
   },
   useIt: "Ta eller se",
+  needBasket: "Ta først en kurv ved døra.",
+  notOnList: "Dette står ikke på handlelista.",
+  taken: () => "Dette er allerede i kurven min.",
+  notOnListFi: (word) => `Nei, ${nbThisIs(word.nb).slice(0, -1).replace(/^Dette/, "dette")}, og det står ikke på handlelista.`,
+  shoppingList: "Handleliste",
+  pickFallen: "Plukk opp varene som falt ned.",
+  storePay: "Ta med varene til kassa.",
+  storePrice: "Hør prisen og betal med E.",
+  storePriceTyped: "Hør prisen, tast den inn og trykk E.",
+  wrongPrice: "Ikke helt. Hør en gang til.",
+  storeBag: "Ta en pose ved enden av kassa.",
+  storeDoor: "Gå til døra.",
+  entrance: "Inngang",
   take: "Ta",
   helpOn: "Hjelpebobler: på",
   helpOff: "Hjelpebobler: av",
@@ -93,7 +110,7 @@ const TEXT_NB = {
   notYet: "Ikke ennå. Hør hva vi leter etter.",
   heardWords: "Du hørte disse ordene",
   demoNotice: "Dette er bare en teknologidemo. Funksjoner og spillbarhet kan fortsatt endre seg mye før en eventuell ferdig versjon. Ingen av oversettelsene er kontrollert, og de er laget automatisk.",
-  earlyNotice: "Den norske versjonen er i tidlig utvikling. Foreløpig er bare skogen oversatt. De andre stedene kommer senere.",
+  earlyNotice: "Den norske versjonen er i tidlig utvikling. Foreløpig er bare skogen og matbutikken oversatt. De andre stedene kommer senere.",
   best: "Beste:",
   back: "← Tilbake",
   chooseLevel: "velg nivå",
@@ -101,7 +118,13 @@ const TEXT_NB = {
   level: "Nivå",
   levels: (count) => `${count} nivåer`,
   // Below: what isn't in TEXT itself.
-  titles: { forest: "Skogen" },
+  titles: { forest: "Skogen", store: "Matbutikken" },
+  levelNames: { helppo: "lett", keskitaso: "middels", vaikeampi: "vanskeligere" },
+  // What STORE_HINTS in src/game.js say beside the Sámi.
+  storeHints: {
+    basket: "Ta en kurv", till: "Gå til kassa", wait: "Vent på tur", basketDown: "Sett kurven på disken", basketCloser: "Sett kurven på disken",
+    belt: "Legg den på båndet", full: "Båndet er fullt", pay: "Betal", bag: "Ta en pose", door: "Gå til døra",
+  },
   sections: { "Pelattava demo": "Spillbar demo" },
   choices: {
     Hahmo: "Figur", Poika: "Gutt", Tyttö: "Jente", Hiusväri: "Hårfarge", Hiukset: "Hår", Silmät: "Øyne",

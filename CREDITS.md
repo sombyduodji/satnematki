@@ -95,7 +95,7 @@ The church in the forest is a 3D model of Pielpajärvi's wilderness church near 
 
 ## The grocery store and the classrooms
 
-The rooms, their furniture and what's for sale are 3D models made for this game. The white board's pens and the flags, books and backpacks in the small classroom use the Sámi flag's colours. The backpacks' pictures are drawn for this game, with no characters from any film or show. The letters on the store's sign and on the alphabet above the blackboard are drawn with DejaVu Sans Bold, and the blackboard's writing with Caveat.
+The rooms, their furniture and what's for sale are 3D models made for this game. The white board's pens and the flags, books and backpacks in the small classroom use the Sámi flag's colours. The backpacks' pictures are drawn for this game, with no characters from any film or show. The letters on the store's GÁVPI sign and on the alphabet above the blackboard are drawn with DejaVu Sans Bold, and the blackboard's writing with Caveat.
 
 ## Animals
 
@@ -107,6 +107,13 @@ The dog breeds, wolverine and lynx follow descriptions on Wikipedia ([Norrbotten
 
 The shopping list is written in [Caveat](https://github.com/googlefonts/caveat) by The Caveat Project Authors (`art/fonts/`),
 under the [SIL Open Font License 1.1](art/fonts/OFL.txt). It has all of Northern Sámi's letters.
+
+## Sign font
+
+The words on the grocery store's signs are written by the game, in the player's language, with `art/fonts/satne-sign.woff2`:
+a cut-down copy of [DejaVu Sans Bold](https://dejavu-fonts.github.io/) with only the letters the signs need (Finnish, Norwegian
+and Northern Sámi). As the Bitstream Vera licence asks of changed fonts, the copy has a name of its own, Satne Sign. Licence:
+[art/fonts/DejaVu-LICENSE.txt](art/fonts/DejaVu-LICENSE.txt).
 
 ## Game
 

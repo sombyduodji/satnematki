@@ -484,6 +484,52 @@ function madeSheet() {
   }
   return madeSheets.get(key);
 }
+// The store's signs are empty boards in its pictures (tools/make_store.py), and the word is written on them here, in the player's
+// language and in the font that comes with the game (art/fonts/satne-sign.woff2), so one store serves every language.
+const SIGN_FONT = "SatneSign";
+let signFontReady = false;
+if (window.FontFace) {
+  new FontFace(SIGN_FONT, "url(art/fonts/satne-sign.woff2)", { weight: "700" }).load().then((font) => {
+    document.fonts.add(font);
+    signFontReady = true;
+  }).catch(() => {}); // without it the boards just stay empty
+}
+const signsOn = new Map(); // "tx,ty" -> the signs whose board, or part of it, is in that tile's picture
+for (const sign of window.MAHTTE_STORE_SIGNS ?? []) {
+  const [tx, ty] = sign.tile;
+  for (const key of sign.across ? [`${tx},${ty}`, `${tx},${ty - 1}`] : [`${tx},${ty}`]) signsOn.set(key, [...(signsOn.get(key) ?? []), sign]);
+}
+function signWord(sign) {
+  if (sign.word === "entrance") return TEXT.entrance;
+  const word = window.MAHTTE_WORDS.find((w) => w.sprite === sign.word && w.theme === "food");
+  const text = (word ? translation(word) : "").split(",")[0].trim();
+  return text.slice(0, 1).toUpperCase() + text.slice(1);
+}
+// The word on the board's own plane, slanted as the board is, as big as the baked signs had it and smaller only if it must be to fit.
+function paintSignWord(sign) {
+  if (!signFontReady) return;
+  if (sign.text === undefined) {
+    sign.text = signWord(sign);
+    let size = sign.high * (sign.banner ? 0.56 : 0.62);
+    ctx.font = `700 ${size}px ${SIGN_FONT}`;
+    while (ctx.measureText(sign.text).width > sign.wide - 2.5 && size > 2) ctx.font = `700 ${(size -= 0.25)}px ${SIGN_FONT}`;
+    sign.font = ctx.font;
+  }
+  ctx.save();
+  if (sign.across) ctx.transform(1, -0.5, 0, 1, sign.x, sign.y + sign.wide / 2);
+  else ctx.transform(1, 0.5, 0, 1, sign.x, sign.y);
+  ctx.font = sign.font;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillStyle = sign.banner ? "#1d2b4a" : "#fbf4d8";
+  ctx.fillText(sign.text, sign.wide / 2, sign.high / 2 + (sign.banner ? 0.25 : 0));
+  ctx.restore();
+}
+function paintSignWords(seen) {
+  if (placeName !== "store") return;
+  for (const sign of window.MAHTTE_STORE_SIGNS ?? []) if (seen(sign.x + sign.wide / 2, sign.y + sign.high, 40)) paintSignWord(sign);
+}
+
 function placeThings() {
   const list = [];
   const treeKinds = window.MAHTTE_MAPS[placeName].trees;
@@ -495,7 +541,7 @@ function placeThings() {
       if (place) list.push({ tx, ty, block: true, made: place, image: STORE_CELL, x: isoX(tx, ty), y: isoY(tx, ty) + 14, mx: tx + 0.5, my: ty + 0.5 });
       // A sign over what's for sale, in the same way.
       const sign = madeTiles()[`${tx},${ty}s`];
-      if (sign) list.push({ tx, ty, block: true, made: sign, image: STORE_CELL, x: isoX(tx, ty), y: isoY(tx, ty) + 14, mx: tx + 0.5, my: ty + 0.5 });
+      if (sign) list.push({ tx, ty, block: true, made: sign, signs: signsOn.get(`${tx},${ty}`), image: STORE_CELL, x: isoX(tx, ty), y: isoY(tx, ty) + 14, mx: tx + 0.5, my: ty + 0.5 });
     } else if (BLOCK_TILES.has(tile)) {
       list.push({ tx, ty, block: true, image: blockImage(tile, tx * 3 + ty), x: isoX(tx, ty), y: isoY(tx, ty) + 14, mx: tx + 0.5, my: ty + 0.5 });
     } else if (tile === "t" && madeTiles()?.[`${tx},${ty}`]) {
@@ -1737,7 +1783,10 @@ function draw(now) {
   ctx.imageSmoothingEnabled = shrinking && !!MADE_GROUNDS[placeName];
   ctx.translate(-camX, -camY);
   ctx.lit = false; // the floor's pictures have their light already
-  if (MADE_GROUNDS[placeName]) paintMadeGround(camX, camY, MADE_GROUNDS[placeName]);
+  if (MADE_GROUNDS[placeName]) {
+    paintMadeGround(camX, camY, MADE_GROUNDS[placeName]);
+    paintSignWords(seen);
+  }
   else if (viewDetail > 1) ctx.drawImage(doubledImage(worldImage), camX * 2, camY * 2, VIEW_W * 2, VIEW_H * 2, camX, camY, VIEW_W, VIEW_H);
   else ctx.drawImage(worldImage, camX, camY, VIEW_W, VIEW_H, camX, camY, VIEW_W, VIEW_H);
 
@@ -1776,7 +1825,8 @@ function draw(now) {
     if (t.block ? !seen(t.x, t.y, 70) : t.x + t.image.width / 2 + 3 < camX || t.x - t.image.width / 2 - 3 > camX + VIEW_W || t.y + 4 < camY || t.y - t.image.height > camY + VIEW_H) continue;
     // In front of the character and covering them, a tree turns see-through.
     const left = t.x - t.image.width / 2, top = t.y + 2 - t.image.height + (t.made ? t.made[5] / 4 : 0);
-    const covers = !"CMETHXZD".includes(MAP[t.ty]?.[t.tx]) && t.mx + t.my > me.x + me.y && footX + 8 > left && footX - 8 < left + t.image.width && footY > top && footY - 30 < t.y;
+    // Not in the store: there a shelf, a crate or a sign in front of the character stays solid and hides them, as it would (user, 2026-11-09).
+    const covers = placeName !== "store" && !"CMETHXZD".includes(MAP[t.ty]?.[t.tx]) && t.mx + t.my > me.x + me.y && footX + 8 > left && footX - 8 < left + t.image.width && footY > top && footY - 30 < t.y;
     // In the forest, an animal behind a tree shows through it too, as there it's what's being looked for.
     const hidesThing = placeName === "forest" && !t.block && objects.some((o) => {
       if (o.x + 0.5 + o.y + 0.5 >= t.mx + t.my) return false;
@@ -1793,6 +1843,15 @@ function draw(now) {
         const [sx, sy, w, h, ox, oy] = t.made;
         ctx.lit = false;
         if (sheet) ctx.drawImage(sheet, sx * scale, sy * scale, w * scale, h * scale, t.x - 16 + ox / 4, t.y + 2 - 64 + oy / 4, w / 4, h / 4);
+        if (t.signs && sheet) {
+          // Drawn again over someone behind it, a sign needs its word again, and only on this piece of it: a banner's other half may be behind them.
+          ctx.save();
+          ctx.beginPath();
+          ctx.rect(t.x - 16 + ox / 4, t.y + 2 - 64 + oy / 4, w / 4, h / 4);
+          ctx.clip();
+          for (const sign of t.signs) paintSignWord(sign);
+          ctx.restore();
+        }
         ctx.lit = true;
       } else if (t.block) {
         if (viewDetail > 1) paintImage(doubledImage(t.image), t.x - 16, t.y + 2 - t.image.height);

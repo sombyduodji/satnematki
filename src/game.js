@@ -143,6 +143,7 @@ const TEXT = textInLanguage({
   level: "Taso",
   levels: (count) => `${count} tasoa`,
   take: "Ota",
+  entrance: "Sisään", // the sign over the store's way in
 });
 
 // What a round looks for, and where. A theme hands out the words to find and a few others beside them.
@@ -296,7 +297,12 @@ const THEMES = [
   ...[[9, 4], [20, 16], [100, 42]].map(([most, number]) => ({ id: `lesson-${most}`, title: "Koulu", section: "Numerot ja luvut", activity: "Kirjoita numerot", level: `0–${most}`, place: "lesson", menuPlace: "classroom", number, lesson: true, most, words: () => ({ find: [], extra: [] }) })),
   ...[[9, 6], [20, 14], [100, 86]].map(([most, number]) => ({ id: `lesson-words-${most}`, title: "Koulu", section: "Numerot ja luvut", activity: "Kirjoita sanalla", level: `0–${most}`, place: "lesson", menuPlace: "classroom", number, lesson: true, inWords: true, most, words: () => ({ find: [], extra: [] }) })),
 ];
-if (LANG === "nb") for (const option of THEMES) option.title = TEXT_NB.titles[option.place] ?? option.title;
+if (LANG === "nb") {
+  for (const option of THEMES) {
+    option.title = TEXT_NB.titles[option.place] ?? option.title;
+    option.level = TEXT_NB.levelNames[option.level] ?? option.level;
+  }
+}
 let theme = null;
 let shoppingList = [];
 const translation = (word) => (LANG === "nb" ? word.nb : word.fi);
@@ -3748,6 +3754,7 @@ const STORE_HINTS = {
   bag: { line: "store-bag", sme: "Váldde seahka", fi: "Ota kassi", act: takeBag },
   door: { line: "store-door", sme: "Mana uksii", fi: "Mene ovelle" },
 };
+if (LANG === "nb") for (const [id, hint] of Object.entries(STORE_HINTS)) hint.fi = TEXT_NB.storeHints[id] ?? hint.fi;
 
 // What can be done or should be done next in the store.
 function storeHint() {

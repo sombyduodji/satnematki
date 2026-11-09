@@ -69,6 +69,8 @@ SHOWN_INSTEAD = {("gákti", "N"): {"saamenpuku": "lapinpuku"}}
 # A Finnish translation the game gives where the dictionary has none at all, chosen by the user: only used while satni.db has no Finnish
 # for the word, so that a translation added there later is checked as usual.
 FINNISH_WHERE_NONE = {("dihtorduolbbus", "N"): "tabletti"}
+# The same for Norwegian, for the Norwegian version: suggested 2026-11-09 for the store's foods, for the user to review.
+NORWEGIAN_WHERE_NONE = {("goarddaláibi", "N"): "loff", ("beron", "N"): "pære", ("bullá", "N"): "bolle"}
 
 # Words the translation patterns can't catch.
 BLOCK_LEMMAS = {
@@ -189,7 +191,8 @@ def main():
         given = not word["_all_fi"] and FINNISH_WHERE_NONE.get(key) == s["fi"]
         if not given and SHOWN_INSTEAD.get(key, {}).get(s["fi"], s["fi"]) not in word["_all_fi"]:
             problems.append(f"{key}: fi {s['fi']!r} not in {word['_all_fi']}")
-        if s["nb"] and s["nb"] not in word["_all_nb"]:
+        given_nb = not word["_all_nb"] and NORWEGIAN_WHERE_NONE.get(key) == s["nb"]
+        if s["nb"] and not given_nb and s["nb"] not in word["_all_nb"]:
             problems.append(f"{key}: nb {s['nb']!r} not in {word['_all_nb']}")
         # An abbreviation has no plural in the dictionary, and the card simply leaves it out.
         if s["pos"] == "N" and "Pl+Nom" not in word["forms"] and not s["lemma"].isupper():
