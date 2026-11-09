@@ -13,7 +13,7 @@ const LANGS = [
   { id: "nb", name: "Norsk" },
 ];
 // The places a language has; a language not listed has them all.
-const LANG_PLACES = { nb: new Set(["forest", "store"]) };
+const LANG_PLACES = { nb: new Set(["forest", "store", "classroom"]) };
 const placeInLanguage = (place) => !LANG_PLACES[LANG] || LANG_PLACES[LANG].has(place);
 
 function setLanguage(id) {
@@ -29,7 +29,8 @@ function setLanguage(id) {
 const NB_NEUTER = new Set(["ekorn", "hus", "tre", "eple", "egg", "brød", "knekkebrød", "rugbrød", "jordbær"]);
 const NB_MASS = new Set(["melk", "ost", "smør", "kaffe", "te", "saft", "brus", "sjokolade", "syltetøy", "iskrem", "kjøttdeig", "reinkjøtt",
   "røykekjøtt", "svinekjøtt", "kål", "slikkeri", "kjeks", "tyttebær", "molte"]);
-const nbThisIs = (word) => `Dette er ${NB_MASS.has(word) ? "" : NB_NEUTER.has(word) ? "et " : "en "}${word}.`;
+// A number is said bare: "Dette er 7."
+const nbThisIs = (word) => `Dette er ${NB_MASS.has(word) || /^\d+$/.test(word) ? "" : NB_NEUTER.has(word) ? "et " : "en "}${word}.`;
 
 // The Norwegian of TEXT in src/game.js, by the same keys. right and wrong give only the Norwegian, in the same order.
 const TEXT_NB = {
@@ -54,6 +55,7 @@ const TEXT_NB = {
     goal: {
       store: "Ta en kurv ved døra med E-tasten, og hent matvarene på handlelista i den rekkefølgen du vil. Gå så til kassa: legg varene på båndet én om gangen med E, ta en pose og gå til døra. Hvis du faller, havner varene på gulvet: gå over dem, så får du dem tilbake.",
       "store-count": "Ta en kurv ved døra og hent matvarene på handlelista. På lista står det hvor mange du trenger av hver, og E tar én om gangen. I kassa legger du varene på båndet, hører prisen på samisk og taster den inn. Ta så en pose og gå til døra.",
+      classroom: "Finn riktig tall på en pult. Gå bort til stolen ved pulten og trykk E, så setter du deg og ser på tallet. På mobilen trykker du Sett deg eller på pulten.",
       forest: "Finn dyret som står øverst. Gå bort til det og trykk E, så ser du om det var riktig. Noen dyr sover: snik deg bort til dem ved å holde C nede. Hvis du går eller løper nær dem, våkner dyret og løper sin vei.",
     },
     move: "Gå med piltastene eller WASD, eller trykk på skjermen. På mobilen bruker du knappene.",
@@ -83,6 +85,9 @@ const TEXT_NB = {
   wrongPrice: "Ikke helt. Hør en gang til.",
   storeBag: "Ta en pose ved enden av kassa.",
   storeDoor: "Gå til døra.",
+  startClassroom: "Gå med piltastene eller trykk på skjermen. Hold Shift nede for å løpe. Trykk E ved en stol, så setter du deg og ser på tallet. C huker deg ned.",
+  emptyDesk: "Det er ikke noe tall på denne pulten.",
+  activityNotes: { "Lær tallene": "Grunnleggende", "Skriv tallene": "Middels", "Skriv med ord": "Vanskelig" },
   entrance: "Inngang",
   take: "Ta",
   helpOn: "Hjelpebobler: på",
@@ -110,7 +115,7 @@ const TEXT_NB = {
   notYet: "Ikke ennå. Hør hva vi leter etter.",
   heardWords: "Du hørte disse ordene",
   demoNotice: "Dette er bare en teknologidemo. Funksjoner og spillbarhet kan fortsatt endre seg mye før en eventuell ferdig versjon. Ingen av oversettelsene er kontrollert, og de er laget automatisk.",
-  earlyNotice: "Den norske versjonen er i tidlig utvikling. Foreløpig er bare skogen og matbutikken oversatt. De andre stedene kommer senere.",
+  earlyNotice: "Den norske versjonen er i tidlig utvikling. Foreløpig er skogen, matbutikken og skolen oversatt. De andre stedene kommer senere.",
   best: "Beste:",
   back: "← Tilbake",
   chooseLevel: "velg nivå",
@@ -118,14 +123,15 @@ const TEXT_NB = {
   level: "Nivå",
   levels: (count) => `${count} nivåer`,
   // Below: what isn't in TEXT itself.
-  titles: { forest: "Skogen", store: "Matbutikken" },
+  titles: { forest: "Skogen", store: "Matbutikken", classroom: "Skolen" },
+  activities: { "Opettele numerot": "Lær tallene", "Kirjoita numerot": "Skriv tallene", "Kirjoita sanalla": "Skriv med ord" },
   levelNames: { helppo: "lett", keskitaso: "middels", vaikeampi: "vanskeligere" },
   // What STORE_HINTS in src/game.js say beside the Sámi.
   storeHints: {
     basket: "Ta en kurv", till: "Gå til kassa", wait: "Vent på tur", basketDown: "Sett kurven på disken", basketCloser: "Sett kurven på disken",
     belt: "Legg den på båndet", full: "Båndet er fullt", pay: "Betal", bag: "Ta en pose", door: "Gå til døra",
   },
-  sections: { "Pelattava demo": "Spillbar demo" },
+  sections: { "Pelattava demo": "Spillbar demo", "Numerot ja luvut": "Sifre og tall" },
   choices: {
     Hahmo: "Figur", Poika: "Gutt", Tyttö: "Jente", Hiusväri: "Hårfarge", Hiukset: "Hår", Silmät: "Øyne",
     Platina: "Platina", Vaalea: "Lys", Punainen: "Rød", Ruskea: "Brun", Tumma: "Mørk", Musta: "Svart", Harmaa: "Grå",
@@ -136,6 +142,34 @@ const TEXT_NB = {
     lapinkoira: "finsk lapphund", lapinporokoira: "lapsk vallhund", pystykorva: "finsk spets", pohjanpystykorva: "norrbottenspets",
     hirvikoira: "norsk elghund", karhukoira: "karelsk bjørnehund", husky: "siberian husky", labradori: "labrador retriever",
   },
+};
+
+// The Norwegian of LESSON_TEXT and LESSON_SPEECH in src/lesson.js: what's said keeps its Sámi, with Norwegian under it.
+const LESSON_TEXT_NB = {
+  guide: "Du sitter på plassen din og kan ikke reise deg. Læreren skriver et tall på samisk på tavla. Når du kan det, rekker du opp hånda ved å trykke E eller på Rekk opp hånda, og taster tallet med sifre. Hvis du venter for lenge, svarer en klassekamerat først.",
+  guideAudio: "Du sitter på plassen din og kan ikke reise deg. Læreren sier et tall på samisk. Når du kan det, rekker du opp hånda ved å trykke E eller på Rekk opp hånda, og taster tallet med sifre. Hvis du venter for lenge, svarer en klassekamerat først.",
+  guideWords: "Du sitter på plassen din og kan ikke reise deg. Læreren skriver et tall med sifre på tavla. Når du kan det, rekker du opp hånda ved å trykke E eller på Rekk opp hånda, og skriver tallet med ord på samisk. Du kan skrive i ro: ingen andre svarer imens.",
+  raise: "Rekk opp hånda",
+  promptWords: "Skriv tallet på tavla på samisk",
+  prompt: "Hvilket tall står på tavla?",
+  promptAudio: "Hvilket tall er det?",
+  start: "Se på tavla. Når du kan tallet, rekker du opp hånda.",
+  notYet: "Ikke ennå. Se på tavla og prøv igjen.",
+  beaten: (name, word, number) => `${escapeText(name)} rakk det først: <span lang="se">${escapeText(word)}</span> = ${number}.`,
+  close: "Lukk",
+  wrongWord: "Ikke helt. Rett det og prøv igjen.",
+  speechSe: (on) => `Samisk tekst: ${on ? "på" : "av"}`,
+  speechFi: (on) => `Norsk tekst: ${on ? "på" : "av"}`,
+};
+// Only the Norwegian line; the Sámi beside it stays LESSON_SPEECH's own.
+const LESSON_SPEECH_NB = {
+  hello: "Hei, barn!",
+  wrong: "Det var ikke det.",
+  end: "Takk, barn!",
+  whichDigit: "Hvilket siffer er dette?",
+  whichNumber: "Hvilket tall er dette?",
+  answer: (number) => `Dette er ${number}. Stemmer det?`,
+  praise: ([, sayNb], number, name) => `${sayNb} Dette er ${number}. Bra, ${name}!`,
 };
 
 // The game page's own words, by element id: [text, aria-label].

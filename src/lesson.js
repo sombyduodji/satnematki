@@ -41,6 +41,13 @@ const LESSON_SPEECH = {
   answer: (number) => [`Dát lea ${window.MAHTTE_NUMBERS[number]}. Leago nu?`, `Tämä on ${number}. Onko niin?`],
   praise: ([say, sayFi], number, name) => [`${say} Dát lea ${window.MAHTTE_NUMBERS[number]}. Buorre, ${name}!`, `${sayFi} Tämä on ${number}. Hyvä, ${name}!`],
 };
+if (LANG === "nb") {
+  Object.assign(LESSON_TEXT, LESSON_TEXT_NB);
+  for (const [key, nb] of Object.entries(LESSON_SPEECH_NB)) {
+    const sme = LESSON_SPEECH[key];
+    LESSON_SPEECH[key] = typeof sme === "function" ? (...args) => [sme(...args)[0], nb(...args)] : [sme[0], nb];
+  }
+}
 // Things in the room, by x and y; the last is how high they stand, for one on a desk.
 const LESSON_PLANTS = [["lesson_plant", 2.7, 2.7], ["lesson_plant", 2.7, 11.1], ["flower", 13.2, 2.8], ["flower", 5, 4.6]];
 
@@ -296,7 +303,7 @@ function lessonConfirm() {
     return;
   }
   stars++;
-  heardWords.push({ lemma: word, fi: String(number), number, place: "desk" });
+  heardWords.push({ lemma: word, fi: String(number), nb: String(number), number, place: "desk" });
   sparkles.push({ x: me.x - 0.5, y: me.y - 1, born: now });
   cardEl.className = "right";
   cardEl.innerHTML = `<div>${LESSON_TEXT.right(word, number)}</div>`;

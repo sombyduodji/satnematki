@@ -155,6 +155,7 @@ function numberWords(most, findCount, extraCount) {
   const words = shuffled(Array.from({ length: most + 1 }, (_, number) => ({
     lemma: window.MAHTTE_NUMBERS[number],
     fi: String(number),
+    nb: String(number),
     number,
     place: "desk",
   })));
@@ -299,8 +300,10 @@ const THEMES = [
 ];
 if (LANG === "nb") {
   for (const option of THEMES) {
-    option.title = TEXT_NB.titles[option.place] ?? option.title;
+    option.title = TEXT_NB.titles[option.menuPlace ?? option.place] ?? option.title;
     option.level = TEXT_NB.levelNames[option.level] ?? option.level;
+    option.section = TEXT_NB.sections[option.section] ?? option.section;
+    option.activity = TEXT_NB.activities[option.activity] ?? option.activity;
   }
 }
 let theme = null;
