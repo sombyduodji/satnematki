@@ -3,10 +3,13 @@
 // dictionary's (nb in data/starter-words.js); the help below was written for the game and is not yet checked by a native speaker.
 const LANG = (() => {
   try {
-    return localStorage.getItem("mahtte.lang") === "nb" ? "nb" : "fi";
+    const chosen = localStorage.getItem("mahtte.lang");
+    if (chosen === "nb" || chosen === "fi") return chosen;
   } catch {
-    return "fi";
+    // nothing kept: as for someone who hasn't chosen
   }
+  // Not chosen yet: Norwegian for a browser set to Norwegian, as on the start page.
+  return (navigator.languages || [navigator.language]).some((l) => /^(nb|nn|no)\b/i.test(l)) ? "nb" : "fi";
 })();
 const LANGS = [
   { id: "fi", name: "Suomi" },

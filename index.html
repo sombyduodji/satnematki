@@ -6,20 +6,41 @@
 <title>Sátnemátki: pohjoissaamen sanapeli lapsille</title>
 <meta name="description" content="Sátnemátki on maksuton pohjoissaamen sanapeli lapsille. Tämä on vielä vain teknologiademo.">
 <link rel="stylesheet" href="src/site.css">
+<script>
+// The page's language, as in the game (src/lang.js): the one chosen with the flags, or Norwegian for a browser set to Norwegian.
+// Set before anything is shown, so the other language never flashes up.
+(function () {
+  let chosen = null;
+  try { chosen = localStorage.getItem("mahtte.lang"); } catch { /* none kept */ }
+  const nb = chosen === "nb" || (chosen !== "fi" && (navigator.languages || [navigator.language]).some((l) => /^(nb|nn|no)\b/i.test(l)));
+  document.documentElement.lang = document.documentElement.dataset.lang = nb ? "nb" : "fi";
+})();
+</script>
 </head>
 <body>
 <div class="stripe"></div>
 <header class="hero">
-  <div class="hero-text">
-    <h1 lang="se">Sátnemátki <small>v0.3.6</small></h1>
+  <div class="lang-switch" role="group" aria-label="Kieli / Språk">
+    <button class="flag flag-fi" data-set-lang="fi" title="Suomi" aria-label="Suomi"></button>
+    <button class="flag flag-nb" data-set-lang="nb" title="Norsk" aria-label="Norsk"></button>
+  </div>
+  <div class="hero-text" data-lang="fi">
+    <h1 lang="se">Sátnemátki <small>v0.3.7</small></h1>
     <p class="lead">Pohjoissaamen sanapeli lapsille. Nimi tarkoittaa <em>sanamatkaa</em>: kuljet hahmollasi kodissa, metsässä ja kaupassa ja etsit sen, mitä saamenkielinen sana tarkoittaa.</p>
     <a class="play" href="peli.html">Pelaa selaimessa</a>
     <p class="fine">Maksuton. Ei rekisteröitymistä eikä asennusta.</p>
   </div>
-  <img class="hero-picture" src="art/site/koti.png" width="560" height="380" alt="Koti ylhäältä nähtynä: pelihahmo olohuoneessa, sohvalla äiti ja veli, seinällä televisio ja kirjahylly.">
+  <div class="hero-text" data-lang="nb" lang="nb">
+    <h1 lang="se">Sátnemátki <small>v0.3.7</small></h1>
+    <p class="lead">Et nordsamisk ordspill for barn. Navnet betyr <em>ordreise</em>: du går rundt med figuren din hjemme, i skogen og i butikken og finner det et samisk ord betyr.</p>
+    <a class="play" href="peli.html">Spill i nettleseren</a>
+    <p class="fine">Gratis. Ingen registrering og ingen installasjon.</p>
+  </div>
+  <img class="hero-picture" src="art/site/koti.png" width="560" height="380" alt="Koti ylhäältä nähtynä: pelihahmo olohuoneessa, sohvalla äiti ja veli, seinällä televisio ja kirjahylly." data-alt-nb="Hjemmet sett ovenfra: figuren i stua, mor og bror i sofaen, en TV og en bokhylle på veggen.">
 </header>
 
 <main>
+  <div data-lang="fi">
   <aside class="warning" aria-label="Varoitus käännöksistä">
     <h2>Käännökset ovat konetekoisia, eikä niitä ole tarkistettu</h2>
     <p>Kaikki pelin käännökset ja saamenkieliset lauseet on tehty koneellisesti, eikä kukaan ole tarkistanut niitä. Niissä voi olla virheitä, joten älä käytä peliä vielä kielen oppimisen ainoana lähteenä.</p>
@@ -97,7 +118,7 @@
       <li><strong>Sanat:</strong> Sanat ja suomennokset on poimittu sanakirjoista koneellisesti, ja lauseet on muodostettu koneellisesti. Niitä ei ole tarkistettu.</li>
       <li><strong>Puhe:</strong> Ääni on puhesynteesiä eikä oikean puhujan puhetta, joten ääntämys voi olla paikoin väärä.</li>
       <li><strong>Grafiikka:</strong> Hahmojen ja gáktien yksityiskohtia ei ole tarkistettu kattavasti. Ulkoasu on luonnosmainen.</li>
-      <li><strong>Kieli:</strong> Pelin ohjeet ovat toistaiseksi vain suomeksi.</li>
+      <li><strong>Kieli:</strong> Pelin ohjeet ovat suomeksi ja norjaksi (bokmål). Norjaksi on toistaiseksi käännetty vain Metsä, Ruokakauppa ja Koulu.</li>
       <li><strong>Muutokset:</strong> Paikkoja, tasoja ja sääntöjä voi tulla, muuttua tai poistua. Tallennetut ajat voivat kadota päivityksissä.</li>
     </ul>
   </section>
@@ -108,7 +129,7 @@
   </section>
 
   <section>
-    <h2>Uutta versioissa 0.1.5–0.3.6</h2>
+    <h2>Uutta versioissa 0.1.5–0.3.7</h2>
     <ul class="points">
       <li><strong>Norjankielinen versio aloitettu.</strong> Pelin yläkulman lipuista voi vaihtaa ohjeiden kielen suomesta norjaksi (bokmål). Saame pysyy samana. Norjaksi on toistaiseksi käännetty Metsä, Ruokakauppa molempine tasoineen ja Koulu kaikkine tehtävineen, ja muut paikat tulevat myöhemmin. Ruokakaupan kyltit kirjoitetaan pelaajan kielellä.</li>
       <li><strong>Grafiikka näytönohjaimella.</strong> Peli voi piirtää näytönohjaimella (WebGL 2), ja se on käytössä aina, kun se toimii. Silloin paikoissa on valoa ja varjoja: auringon varjot, valokiilat ikkunoista ja puiden välistä sekä pehmeä hehku. Pelin alla olevasta Grafiikka-valinnasta voi vaihtaa näytönohjaimen ja perusgrafiikan välillä.</li>
@@ -143,6 +164,157 @@
   </section>
 
   <p class="again"><a class="play" href="peli.html">Pelaa selaimessa</a></p>
+  </div>
+
+  <div data-lang="nb" lang="nb">
+  <aside class="warning" aria-label="Advarsel om oversettelsene">
+    <h2>Oversettelsene er maskinlagde og ikke kontrollert</h2>
+    <p>Alle oversettelsene og de samiske setningene i spillet er laget maskinelt, og ingen har kontrollert dem. De kan inneholde feil, så ikke bruk spillet som eneste kilde når du lærer språket ennå.</p>
+  </aside>
+
+  <aside class="demo" aria-label="Viktig merknad">
+    <h2>Dette er bare en teknologidemo</h2>
+    <p>Funksjoner og spillbarhet kan fortsatt endre seg mye før en eventuell ferdig versjon, og det er ikke bestemt om det blir en ferdig versjon.</p>
+  </aside>
+
+  <aside class="demo" aria-label="Den norske versjonen">
+    <h2>Den norske versjonen er i tidlig utvikling</h2>
+    <p>Foreløpig er tre steder oversatt til norsk: Skogen, Matbutikken og Skolen. De andre stedene vises bare når spillet er på finsk, og kommer på norsk senere. Samisken er den samme i begge versjonene. Du bytter språk med flaggene øverst, her og i spillet.</p>
+  </aside>
+
+  <section>
+    <h2>Idé</h2>
+    <p>Sátnemátki prøver ut om man kan lære nordsamiske ord ved å bevege seg på kjente steder og prøve seg fram i ro og mak. Man kan ikke tape, og man trenger ikke å lese flytende, for figuren sier ordene høyt også.</p>
+    <ol class="steps">
+      <li><strong>Spillet gir deg et ord.</strong> Øverst står det for eksempel Finn: <b lang="se">eadni</b>.</li>
+      <li><strong>Gå bort til det og trykk E.</strong> Gå med figuren din til det du tror passer. På mobilen trykker du Ta eller på det.</li>
+      <li><strong>Hør og se hva det var.</strong> Du lærer også av feil svar, for figuren stopper litt og forteller hva det var.</li>
+    </ol>
+  </section>
+
+  <section>
+    <h2>Det nyeste</h2>
+    <p>Skogen, Matbutikken og Skolen er laget på nytt med mer detaljert 3D-grafikk, og i et stort vindu ser du mer av stedet. Alle tre finnes nå også på norsk. Skiltene i Matbutikken skrives på spillerens språk.</p>
+    <div class="places showcase">
+      <figure><img src="art/site/oppitunti.png" width="280" height="190" alt="I klasserommet har læreren skrevet et tall på tavla og spør i en snakkeboble på samisk og finsk hvilket tall det er. Figuren rekker opp hånda og svarer." loading="lazy"><figcaption><b>Time på skolen</b> Læreren skriver et tall på tavla, du rekker opp hånda og svarer. Snakkebobler viser på samisk og norsk hva som blir sagt.</figcaption></figure>
+      <figure><img src="art/site/kauppa.png" width="280" height="190" alt="Figuren går med en kurv forbi frukt- og grøntkassene i Matbutikken. Over kassene henger skilt, og i bakgrunnen står frysere og andre kunder." loading="lazy"><figcaption><b>Matbutikken</b> To kasser, kjøleskap, kjøttdisk og skilt over hver matvare, på ditt eget språk.</figcaption></figure>
+      <figure><img src="art/site/elaimet.png" width="280" height="190" alt="Figuren går på en lysning i skogen bort til en rein. I bakgrunnen er det granskog og en sti." loading="lazy"><figcaption><b>Skogen</b> En stor skog der dyrene beveger seg, sover og flykter.</figcaption></figure>
+    </div>
+  </section>
+
+  <section>
+    <h2>Steder</h2>
+    <p class="note">Steder merket <i>på finsk</i> finnes foreløpig bare i den finske versjonen.</p>
+    <div class="places">
+      <figure><img src="art/site/koti.png" width="280" height="190" alt="" loading="lazy"><figcaption><b>Hjemme</b> <i>på finsk</i> Fem rom, møbler og familien: 24 ord.</figcaption></figure>
+      <figure><img src="art/site/elaimet.png" width="280" height="190" alt="" loading="lazy"><figcaption><b>Skogen</b> I skogen beveger 20 dyr seg, fra rein til ørn.</figcaption></figure>
+      <figure><img src="art/site/parkkipaikka.png" width="280" height="190" alt="" loading="lazy"><figcaption><b>Parkeringsplassen</b> <i>på finsk</i> Kjøretøy og farger på tre nivåer.</figcaption></figure>
+      <figure><img src="art/site/kirjasto.png" width="280" height="190" alt="" loading="lazy"><figcaption><b>Biblioteket</b> <i>på finsk</i> Bøker, penner og skrivebøker på tre nivåer.</figcaption></figure>
+      <figure><img src="art/site/kauppa.png" width="280" height="190" alt="" loading="lazy"><figcaption><b>Matbutikken</b> Kurv, handleliste, kasse og dør på to nivåer: 44 matvarer.</figcaption></figure>
+      <figure><img src="art/site/rautakauppa.png" width="280" height="190" alt="" loading="lazy"><figcaption><b>Jernvarehandelen</b> <i>på finsk</i> Verktøy, fiskeutstyr, klær og en utstillingsplass på to nivåer: 27 varer.</figcaption></figure>
+      <figure><img src="art/site/luokka.png" width="280" height="190" alt="" loading="lazy"><figcaption><b>Skolen</b> Lær tallene: finn riktig tall på en pult.</figcaption></figure>
+      <figure><img src="art/site/oppitunti.png" width="280" height="190" alt="" loading="lazy"><figcaption><b>Time på skolen</b> Skriv tallene og Skriv med ord: tallene 0–100 på tre nivåer.</figcaption></figure>
+      <figure><img src="art/site/laavu.png" width="280" height="190" alt="" loading="lazy"><figcaption><b>Lavvoen</b> <i>på finsk</i> En rolig kveld ved bålet med hunden, uten klokke.</figcaption></figure>
+    </div>
+  </section>
+
+  <section>
+    <h2>Hva spillet øver på</h2>
+    <ul class="points">
+      <li><strong>Ord fra hverdagen.</strong> Familie, hjem, dyr, mat, kjøretøy, skolesaker og tall.</li>
+      <li><strong>Å høre og lese ordet samtidig.</strong> Hvert ord vises og høres, og oversettelsen står ved siden av.</li>
+      <li><strong>Grammatikk ett steg om gangen.</strong> Fargen knyttes først til ordet i grunnform (<span lang="se">biila: vielgat</span>) og så foran ordet (<span lang="se">vilges biila</span>).</li>
+      <li><strong>Flertall.</strong> Ordkortet viser også flertall, for eksempel <span lang="se">eadni – eatnit</span>.</li>
+      <li><strong>Korte setninger.</strong> <span lang="se">Dát lea girji. Son lea eadni.</span></li>
+      <li><strong>Å lære ved å prøve.</strong> Et feil valg koster ingenting, bare litt tid. Vil du ha en utfordring, tar klokka tiden, og de beste tidene blir husket.</li>
+    </ul>
+    <p class="note">Dette er målene med spillet. Om man faktisk lærer av det, er ikke undersøkt.</p>
+  </section>
+
+  <section>
+    <h2>Slik spiller du</h2>
+    <dl class="controls">
+      <div><dt>Gå</dt><dd>Piltastene eller WASD, eller trykk i verdenen</dd></div>
+      <div><dt>Løp</dt><dd>Hold Shift nede. Hvis du krasjer, faller du eller sklir på magen!</dd></div>
+      <div><dt>Hopp</dt><dd>Mellomrom</dd></div>
+      <div><dt>Ta eller se</dt><dd>E når du er nær. På skolen setter E deg på stolen</dd></div>
+      <div><dt>Huk deg ned</dt><dd>C. På skolen setter C deg også på stolen</dd></div>
+    </dl>
+    <p class="note">Mens du spiller, viser hjelpebobler når du kan bruke E, og i butikken viser piler veien til kurven, kassa og døra. Hjelpeboblene er på fra starten og kan slås av i menyen eller under spillet.</p>
+    <p class="note">Spillet fungerer best på datamaskin. På mobilen har det egne knapper, men de er ikke prøvd på en ekte mobil ennå.</p>
+  </section>
+
+  <section>
+    <h2>Hva demo betyr i praksis</h2>
+    <ul class="points">
+      <li><strong>Ord:</strong> Ordene og oversettelsene er hentet maskinelt fra ordbøker, og setningene er laget maskinelt. De er ikke kontrollert.</li>
+      <li><strong>Tale:</strong> Stemmen er talesyntese og ikke en ekte person som snakker, så uttalen kan noen steder være feil.</li>
+      <li><strong>Grafikk:</strong> Detaljene på figurene og koftene er ikke grundig kontrollert. Utseendet er skisseaktig.</li>
+      <li><strong>Språk:</strong> Instruksjonene finnes på finsk og norsk (bokmål). På norsk er foreløpig bare Skogen, Matbutikken og Skolen oversatt, og den norske teksten er ikke lest av en som har norsk som morsmål.</li>
+      <li><strong>Endringer:</strong> Steder, nivåer og regler kan komme, endre seg eller forsvinne. Lagrede tider kan bli borte ved oppdateringer.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Personvern</h2>
+    <p>Spillet har ingen reklame, ingen sporing og ingen brukerkontoer. Navnet, figuren og de beste tidene lagres bare i din egen nettleser og sendes ikke noe sted.</p>
+  </section>
+
+  <section>
+    <h2>Nytt i versjon 0.1.5–0.3.7</h2>
+    <ul class="points">
+      <li><strong>Norsk versjon påbegynt.</strong> Med flaggene øverst bytter du språket på instruksjonene mellom finsk og norsk (bokmål). Samisken er den samme. Foreløpig er Skogen, Matbutikken med begge nivåene og Skolen med alle oppgavene oversatt, og de andre stedene kommer senere. Skiltene i Matbutikken skrives på spillerens språk.</li>
+      <li><strong>Grafikk med skjermkortet.</strong> Spillet kan tegne med skjermkortet (WebGL 2), og det brukes alltid når det fungerer. Da har stedene lys og skygge: skygger fra sola, lysstriper fra vinduene og mellom trærne og en myk glød. Under spillet kan du bytte mellom skjermkort og enkel grafikk med Grafikk-valget.</li>
+      <li><strong>Fornyede steder.</strong> Biblioteket, Hjemme, Parkeringsplassen og Jernvarehandelen er laget på nytt som 3D-modeller. Biblioteket har en egen hylle for hver farge og lesebord, rundt Parkeringsplassen ligger butikkene og leilighetene i en liten by, og i Jernvarehandelen har hver vare sin egen plass.</li>
+      <li><strong>Flere ord.</strong></li>
+      <li><strong>Spillere og beste tider.</strong> Alle som har spilt på enheten, blir husket med et passbilde av figuren sin, og hver av dem har sine egne beste tider. På nivåsiden vises de tre beste tidene med spillernes bilder.</li>
+      <li><strong>3D-grafikk.</strong> Máhtte, Biret, Skogen, Matbutikken og begge klasserommene er laget på nytt som 3D-modeller. Figurene har ni frisyrer, glidebrytere for hår- og øyenfarge og en munn som beveger seg.</li>
+      <li><strong>Større skog.</strong> Skogen er omtrent dobbelt så stor, og der står Pielpajärvi kirke. Dyrene har nye bevegelser, noen sover og flykter hvis du ikke sniker deg innpå, og ulv, jerv og gaupe er nye.</li>
+      <li><strong>Ny matbutikk.</strong> Butikken har to kasser og en port, kjøleskap og frysere, en kjøttdisk og skilt. Hver matvare har sin egen plass, og knekkebrød, rugbrød, loff, røykekjøtt og te er nye. Hvis kurven faller, havner varene tilbake på handlelista til du plukker dem opp igjen.</li>
+      <li><strong>Større spillvindu.</strong> I Matbutikken, på Skolen og i Skogen viser et stort nettleservindu mer av stedet, og du kan velge zoom. Handlelista er en huskelapp, og instruksjonene står i en boks som kan lukkes.</li>
+      <li><strong>Nytt klasserom.</strong> Et lite, solfylt klasserom der læreren skriver tall på tavla. I oppgaven Skriv tallene leser du tallet på samisk og taster det med sifre, og i den vanskeligere oppgaven Skriv med ord skriver du tallet som ord med samisk tastatur. Klassekameratene rekker opp hånda hvis du venter for lenge, og læreren takker den som svarer, ved navn.</li>
+      <li><strong>Snakkebobler på skolen.</strong> Når noen snakker i klasserommet, vises det som blir sagt i en snakkeboble på samisk og på instruksjonenes språk. Hvert av språkene kan slås av når du velger nivå.</li>
+      <li><strong>Kassa i butikken.</strong> I Matbutikken er kassereren en kvinne eller en mann hver runde, i butikkens egne klær, og de andre kundene står i kø ved begge kassene.</li>
+      <li><strong>Jernvarehandelen.</strong> En ny butikk med verktøy, fiskeutstyr, klær og en egen utstillingsplass for store ting som båt og snøskuter. Den er ikke ferdig: du kan prøve den, men utviklingen har så vidt begynt.</li>
+      <li><strong>Lavvoen.</strong> En rolig kveld uten klokke: felle en bjørk, kløyve ved, tenne bål, lage mat, leke med hunden og legge seg når bålet slukner. Den er grå i menyen inntil den nye grafikken er ferdig.</li>
+      <li><strong>Deler i menyen.</strong> Menyen i spillet har to deler: spillbar demo og uferdige steder. Butikken heter nå Matbutikken.</li>
+      <li><strong>Bilder av stedene.</strong> I menyen vises et svakt bilde av stedet bak knappen. Stedet Dyr heter nå Skogen.</li>
+      <li><strong>Handletur.</strong> Ta en kurv, hent varene etter en håndskrevet liste i den rekkefølgen du vil, still deg i kø ved kassa, betal, ta en pose og gå ut døra. I butikken er det andre kunder, en kasserer, en kjøttdisk og en ansatt som fyller hyllene.</li>
+      <li><strong>Vanskeligere butikknivå.</strong> Du henter flere av samme vare og taster prisen selv. Det er nå mange flere matvarer.</li>
+      <li><strong>Mer detaljert grafikk.</strong> Alle stedene, menneskene og dyrene der og spillerens figur er tegnet mer detaljert.</li>
+      <li><strong>Telle høyt.</strong> På det vanskeligere butikknivået teller figuren varene høyt: <span lang="se">Okta. Guokte. Ja golbma. Doarvái mielkki.</span> Handlelista er skrevet som en ekte handleliste: <span lang="se">5 × mielkki</span>.</li>
+      <li><strong>Dyrene reagerer.</strong> Du kan klappe dyrene, katten maler, hunden peser, sommerfuglen setter seg på hånda og fuglene flyr sin vei.</li>
+      <li><strong>Feil valg stopper deg.</strong> Etter et feil valg står figuren stille i tre sekunder og forteller hva det var.</li>
+      <li><strong>Beste tider på nytt.</strong> I versjon 0.1.7 ble alle beste tider nullstilt én gang, fordi rundene hadde endret seg mye. Navn og figur ble beholdt.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Takk og kilder</h2>
+    <p>Ordene og språkteknologien kommer fra det samiske språkteknologimiljøet: <a href="https://giellalt.github.io/">GiellaLT</a>, <a href="https://divvun.no/">Divvun</a> og <a href="https://giellatekno.uit.no/">Giellatekno</a> (UiT Norges arktiske universitet). Talen er laget med Divvuns og Giellateknos talesyntese. Ordene kommer til spillet gjennom ordboka <a href="https://github.com/sombyduodji/satni-fst">Sátni FST</a>.</p>
+    <p>Grafikken og koden er laget for dette spillet med hjelp av kunstig intelligens. Laget av Juha Somby, <a href="mailto:satni@somby.fi">satni@somby.fi</a>. Lisens GPL-3.0. <a href="CREDITS.md">Skapere og lisenser (på engelsk)</a> · <a href="https://github.com/sombyduodji/satnematki">Kildekode</a> · <a href="https://github.com/sombyduodji/satnematki/issues">Gi tilbakemelding</a></p>
+  </section>
+
+  <p class="again"><a class="play" href="peli.html">Spill i nettleseren</a></p>
+  </div>
 </main>
+<script>
+// The flags: the same choice as in the game, kept in the browser.
+(function () {
+  const titles = { fi: document.title, nb: "Sátnemátki: et nordsamisk ordspill for barn" };
+  const picture = document.querySelector(".hero-picture"), alts = { fi: picture.alt, nb: picture.dataset.altNb };
+  const show = (lang) => {
+    document.documentElement.lang = document.documentElement.dataset.lang = lang;
+    document.title = titles[lang];
+    picture.alt = alts[lang];
+    document.querySelectorAll("[data-set-lang]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.setLang === lang)));
+  };
+  document.querySelectorAll("[data-set-lang]").forEach((b) => b.addEventListener("click", () => {
+    try { localStorage.setItem("mahtte.lang", b.dataset.setLang); } catch { /* this visit only */ }
+    show(b.dataset.setLang);
+  }));
+  show(document.documentElement.dataset.lang);
+})();
+</script>
 </body>
 </html>
