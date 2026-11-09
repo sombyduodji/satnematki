@@ -570,3 +570,16 @@ footer a { color: #cfe3ee; }
   #guide-box { position: relative; top: auto; left: auto; max-width: none; margin-top: 8px; background: #2d4350; text-shadow: none; }
   body:not(.menu) #card:empty { display: none; }
 }
+
+/* The title and, beside it, the flags that choose the language of the help. Only in the menus, like the title. */
+#title-row { display: none; align-items: center; justify-content: space-between; gap: 12px; }
+body.menu #title-row { display: flex; }
+#lang-switch { display: flex; gap: 6px; }
+#lang-switch .flag { width: 36px; height: 26px; padding: 0; border: 2px solid transparent; border-radius: 4px; cursor: pointer; opacity: 0.55; }
+#lang-switch .flag[aria-pressed=true] { border-color: var(--sami-yellow); opacity: 1; }
+#lang-switch .flag:hover, #lang-switch .flag:focus-visible { opacity: 1; }
+.flag-fi { background: linear-gradient(#0000 38%, #002f6c 38% 62%, #0000 62%), linear-gradient(90deg, #0000 28%, #002f6c 28% 46%, #0000 46%), #fff; }
+.flag-nb { background:
+  linear-gradient(#0000 43%, #00205b 43% 57%, #0000 57%), linear-gradient(90deg, #0000 31%, #00205b 31% 41%, #0000 41%),
+  linear-gradient(#0000 35%, #fff 35% 65%, #0000 65%), linear-gradient(90deg, #0000 26%, #fff 26% 46%, #0000 46%), #ba0c2f; }
+.demo-notice .early-notice { display: block; margin-top: 4px; }

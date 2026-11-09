@@ -147,7 +147,7 @@ def name_file(name):
 def teacher_lines():
     """The teacher's lines, as (file name, text): what she says, and every number on its own."""
     numbers = json.loads(re.search(r"=\s*(\[.*\])", (OUT.parent / "data/numbers.js").read_text(encoding="utf-8"), re.S).group(1))
-    return [*TEACHER_LINES.items(), *((f"teacher-good-{name_file(name)}", f"Buorre, {name}!") for name in TEACHER_PRAISES_NAMES), *((f"teacher-praise-{i}", text) for i, text in enumerate(line for line in PRAISE if line != "Gávdnet dan!")), *((f"teacher-number-{n}", f"{word[0].upper()}{word[1:]}.") for n, word in enumerate(numbers))]
+    return [*TEACHER_LINES.items(), *((f"teacher-good-{name_file(name)}", f"Buorre {name}!") for name in TEACHER_PRAISES_NAMES), *((f"teacher-praise-{i}", text) for i, text in enumerate(line for line in PRAISE if line != "Gávdnet dan!")), *((f"teacher-number-{n}", f"{word[0].upper()}{word[1:]}.") for n, word in enumerate(numbers))]
 
 
 def wanted_lines():

@@ -10,7 +10,7 @@ const BEST_TIMES = 10;
 // Foods bought as a mass stay singular in a shopping list's object form (mielkki, vuoja); the rest are plural (moniid, tomáhtaid).
 // Must match UNCOUNTED_FOODS in tools/fetch_voices.py.
 const UNCOUNTED_FOODS = new Set(["bread", "milk", "cheese", "butter", "guolli", "icecream", "coffee", "juice", "chocolate", "cake", "soda", "jam"]);
-const TEXT = {
+const TEXT = textInLanguage({
   find: "Etsi:",
   found: "Löysit sen!",
   thisIs: "Tämä on",
@@ -142,7 +142,8 @@ const TEXT = {
   activityNotes: { "Opettele numerot": "Perustaso", "Kirjoita numerot": "Keskivaikea", "Kirjoita sanalla": "Vaikea" },
   level: "Taso",
   levels: (count) => `${count} tasoa`,
-};
+  take: "Ota",
+});
 
 // What a round looks for, and where. A theme hands out the words to find and a few others beside them.
 const wordsOfTheme = (theme) => window.MAHTTE_WORDS.filter((w) => w.theme === theme);
@@ -295,9 +296,10 @@ const THEMES = [
   ...[[9, 4], [20, 16], [100, 42]].map(([most, number]) => ({ id: `lesson-${most}`, title: "Koulu", section: "Numerot ja luvut", activity: "Kirjoita numerot", level: `0–${most}`, place: "lesson", menuPlace: "classroom", number, lesson: true, most, words: () => ({ find: [], extra: [] }) })),
   ...[[9, 6], [20, 14], [100, 86]].map(([most, number]) => ({ id: `lesson-words-${most}`, title: "Koulu", section: "Numerot ja luvut", activity: "Kirjoita sanalla", level: `0–${most}`, place: "lesson", menuPlace: "classroom", number, lesson: true, inWords: true, most, words: () => ({ find: [], extra: [] }) })),
 ];
+if (LANG === "nb") for (const option of THEMES) option.title = TEXT_NB.titles[option.place] ?? option.title;
 let theme = null;
 let shoppingList = [];
-const translation = (word) => word.fi;
+const translation = (word) => (LANG === "nb" ? word.nb : word.fi);
 // Words that are only plural, as buvssat: "Dát leat buvssat", and their object form is the plural's. Must match PLURAL_ONLY in tools/fetch_voices.py.
 const PLURAL_ONLY = { trousers: { sme: "Dát leat buvssat.", fi: "Nämä ovat housut." }, scissors: { sme: "Dát leat skárrit.", fi: "Nämä ovat sakset." } };
 const thisIs = (word) => word.thisWord || PLURAL_ONLY[word.sprite]?.sme || TEXT.thisWord(word.lemma);
@@ -313,6 +315,13 @@ const CHOICES = [
   // These two are a place along the list, with every shade between: see rampAt.
   { key: "eyes", label: "Silmät", slider: true, options: [["blue", "Sininen"], ["green", "Vihreä"], ["gray", "Harmaa"], ["pink", "Pinkki"], ["lilac", "Liila"], ["brown", "Ruskea"], ["black", "Musta"]] },
 ];
+if (LANG === "nb") {
+  const say = (text) => TEXT_NB.choices[text] ?? text;
+  for (const choice of CHOICES) {
+    choice.label = say(choice.label);
+    choice.options = choice.options?.map(([value, text]) => [value, say(text)]);
+  }
+}
 // Each gender's own, numbered, in the same order as HAIR_STYLES in tools/make_mahtte.py.
 const numberedStyles = (styles) => styles.map((id, i) => [id, String(i + 1)]);
 const STYLES = {
@@ -855,7 +864,7 @@ function shuffled(list) {
 }
 
 function enterTheme(chosenTheme) {
-  if (CLOSED_PLACES.has(chosenTheme.menuPlace ?? chosenTheme.place)) return; // not open yet
+  if (CLOSED_PLACES.has(chosenTheme.menuPlace ?? chosenTheme.place) || !placeInLanguage(chosenTheme.menuPlace ?? chosenTheme.place)) return; // not open yet, or not in this language
   theme = chosenTheme;
   document.body.classList.remove("menu");
   setAmbience(theme.place);
@@ -879,7 +888,7 @@ function enterTheme(chosenTheme) {
 
 // In the classroom the on-screen pad's crouch button sits at a chair.
 function setPadForTheme() {
-  document.getElementById("use").textContent = theme?.lesson ? LESSON_TEXT.raise : theme?.desks ? TEXT.sit : "Ota";
+  document.getElementById("use").textContent = theme?.lesson ? LESSON_TEXT.raise : theme?.desks ? TEXT.sit : TEXT.take;
   document.getElementById("pad").classList.toggle("seated", !!theme?.lesson);
   for (const id of ["camp-pack", "camp-drop"]) document.getElementById(id).hidden = !theme?.camp;
 }
@@ -1444,7 +1453,8 @@ const CLOSED_PLACES = new Set(["camp"]);
 const MENU_SECTIONS = [
   { heading: "Pelattava demo", places: ["classroom", "forest", "store"], look: "ready" },
   { heading: "Keskeneräiset kentät – näitä voi testata, mutta niiden kehitys on vasta alkamassa", places: ["home", "city", "library", "gearstore", "camp"], look: "partly" },
-];
+].map((section) => ({ ...section, heading: (LANG === "nb" && TEXT_NB.sections[section.heading]) || section.heading, places: section.places.filter(placeInLanguage) }))
+  .filter((section) => section.places.length); // a language without a place hides it
 
 // A finer picture for the menu than the one on a word's card: built again at double detail where it's made of round shapes, and
 // otherwise doubled.
@@ -1511,7 +1521,7 @@ const bestText = (option) => (bestOf(option) ? `${TEXT.best} ${formatTime(bestOf
 function lastTheme() {
   try {
     const last = THEMES.find((option) => option.id === localStorage.getItem("mahtte.last"));
-    return last && !CLOSED_PLACES.has(last.menuPlace ?? last.place) ? last : undefined;
+    return last && !CLOSED_PLACES.has(last.menuPlace ?? last.place) && placeInLanguage(last.menuPlace ?? last.place) ? last : undefined;
   } catch {
     return undefined;
   }
@@ -1538,6 +1548,7 @@ function menuPlaces() {
   const notice = document.createElement("p");
   notice.className = "demo-notice";
   notice.textContent = TEXT.demoNotice;
+  if (TEXT.earlyNotice) notice.append(Object.assign(document.createElement("strong"), { className: "early-notice", textContent: TEXT.earlyNotice }));
   const modes = document.createElement("div");
   modes.className = "modes";
   modes.setAttribute("role", "group");
@@ -1904,7 +1915,7 @@ function showCard(word, right, count = 1) {
   } else cardEl.innerHTML = `<div>
       <div class="note">${right ? TEXT.found : FAMILY.has(word.sprite) ? TEXT.thisIsPerson : TEXT.thisIs}</div>
       <div><span class="word" lang="se">${escapeText(count > 1 ? TEXT.enough(word) : word.lemma)}</span>
-        <span class="translation">= ${count > 1 ? `${count} × ` : ""}${escapeText(translation(word))}${word.sprite === "beana" && placeName === "forest" ? ` (${DOG_BREEDS[dogBreed]})` : ""}</span></div>
+        <span class="translation">= ${count > 1 ? `${count} × ` : ""}${escapeText(translation(word))}${word.sprite === "beana" && placeName === "forest" ? ` (${(LANG === "nb" ? TEXT_NB.dogBreeds : DOG_BREEDS)[dogBreed]})` : ""}</span></div>
       ${plural && count === 1 ? `<div class="note">${TEXT.plural} <span lang="se">${escapeText(plural)}</span></div>` : ""}
     </div>`;
   const picture = document.createElement("canvas");

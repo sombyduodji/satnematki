@@ -43,7 +43,7 @@
   toggle.className = "link";
   const show = () => {
     panel.hidden = !shown;
-    toggle.textContent = `Suorituskyky: ${shown ? "päällä" : "pois"}`;
+    toggle.textContent = LANG === "nb" ? `Ytelse: ${shown ? "på" : "av"}` : `Suorituskyky: ${shown ? "päällä" : "pois"}`;
     toggle.setAttribute("aria-pressed", String(shown));
   };
   toggle.addEventListener("click", (event) => {
@@ -65,7 +65,9 @@
   let wanted = false;
   try { wanted = localStorage.getItem("mahtte.gl") !== "0"; } catch { wanted = true; }
   if (testPage) wanted = !!ctx.gpu;
-  graphics.textContent = `Grafiikka: ${ctx.gpu ? "GPU" : wanted ? "perus (GPU ei toimi tässä)" : "perus"}`;
+  graphics.textContent = LANG === "nb"
+    ? `Grafikk: ${ctx.gpu ? "GPU" : wanted ? "enkel (GPU virker ikke her)" : "enkel"}`
+    : `Grafiikka: ${ctx.gpu ? "GPU" : wanted ? "perus (GPU ei toimi tässä)" : "perus"}`;
   graphics.title = ctx.gpu ? "Piirrä perusgrafiikalla. Sivu alkaa alusta." : "Piirrä näytönohjaimella (GPU). Sivu alkaa alusta.";
   const RESUME_KEY = "mahtte.resume";
   const switchGraphics = () => {
