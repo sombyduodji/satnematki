@@ -1006,3 +1006,13 @@ body.touch-ui.seated #prompt.quest .slots { display: none; }
 #corner #fullscreen.on { opacity: 0.6; }
 /* The help on a phone: under the "?", beside the top bar rather than under it, and narrow. */
 body.touch-ui:not(.menu) #guide-box { position: absolute; top: 62px; left: 10px; max-width: min(34%, 300px); margin: 0; font-size: 13px; background: rgba(20, 33, 45, 0.82); }
+/* The window of instructions on a touch screen: the goal, the controls as pictures, and OK always in sight. */
+body.touch-ui #results .panel { display: flex; flex-direction: column; max-height: calc(100vh - 24px); }
+body.touch-ui #results .panel > ul { overflow-y: auto; min-height: 0; margin: 4px 0 0; font-size: 15px; }
+body.touch-ui #results .panel > .buttons { flex: none; margin-top: 10px; }
+.touch-guide { flex: none; display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 6px; margin-top: 10px; }
+.touch-guide > div { display: grid; grid-template-columns: 38px 1fr; grid-template-rows: auto auto; column-gap: 8px; align-items: center; padding: 6px 8px; border-radius: 12px;
+  background: rgba(255, 255, 255, 0.1); text-align: left; }
+.touch-guide .icon { grid-row: span 2; display: grid; place-items: center; width: 38px; height: 38px; border-radius: 50%; border: 2px solid rgba(255, 255, 255, 0.7); font-size: 18px; color: #fff; background: #14213d; border-color: #14213d; }
+.touch-guide b { font-size: 14px; line-height: 1.1; }
+.touch-guide small { font-size: 12px; line-height: 1.15; opacity: 0.85; }

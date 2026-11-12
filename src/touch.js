@@ -33,7 +33,29 @@
     ? [[/trykk E\b/g, "trykk Ta"], [/med E-tasten/g, "med Ta-knappen"], [/med E\b/g, "med Ta"], [/og E tar/g, "og Ta tar"], [/ved å holde C nede/g, "med pila (huk)"], [/ På mobilen trykker du Sett deg eller på pulten\./g, ""]]
     : [[/paina E\b/g, "paina Ota"], [/E-näppäimellä/g, "Ota-painikkeella"], [/E:llä/g, "Ota-painikkeella"], [/ja E ottaa/g, "ja Ota ottaa"], [/pitämällä C pohjassa/g, "nuolinapilla"], [/ Puhelimessa paina Istu tai napauta pulpettia\./g, ""]];
   for (const [place, line] of Object.entries(TEXT.guide.goal)) TEXT.guide.goal[place] = keysToButtons.reduce((text, [from, to]) => text.replace(from, to), line);
+  for (const key of ["guide", "guideAudio", "guideWords"]) {
+    LESSON_TEXT[key] = LESSON_TEXT[key].replace("painamalla E tai Viittaa-painiketta", "Viittaa-painikkeella").replace("ved å trykke E eller på Rekk opp hånda", "med Rekk opp hånda-knappen");
+  }
   for (const place of Object.keys(TEXT.guide.jump)) TEXT.guide.jump[place] = TEXT.guide.jump[place].replace(/^Hyppää: välilyönti\./, "Hyppää: Hyppy-painike.").replace(/^Hopp: mellomrom\./, "Hopp: Hopp-knappen.");
+
+  // The controls as pictures in the window of instructions, short enough to fit a phone lying sideways.
+  const GUIDE = LANG === "nb" ? {
+    stick: ["🕹️", "Gå med spaken", "Helt ut: løp"], use: ["✋", "Ta", "Tar det som er nær"], jump: ["⤒", "Hopp", "Ikke rett på trær!"],
+    crouch: ["⬇", "Huk", "Snik deg bort til sovende dyr"], sit: ["⬇", "Sett deg", "ved en stol"], raise: ["✋", LESSON_TEXT.raise, "når du kan tallet"], pause: ["⏸", "Pause", "eller tilbake-knappen"],
+  } : {
+    stick: ["🕹️", "Liiku tatilla", "Reunaan asti: juokse"], use: ["✋", "Ota", "Ottaa sen, mikä on lähellä"], jump: ["⤒", "Hyppy", "Älä hyppää päin puuta!"],
+    crouch: ["⬇", "Kyykky", "Hiivi nukkuvien eläinten luo"], sit: ["⬇", "Istu", "tuolin luona"], raise: ["✋", LESSON_TEXT.raise, "kun tiedät luvun"], pause: ["⏸", "Tauko", "tai takaisin-painike"],
+  };
+  window.touchGuide = () => {
+    const keys = theme?.lesson ? ["raise", "pause"] : theme?.desks ? ["stick", "use", "sit", "pause"] : ["stick", "use", "jump", "crouch", "pause"];
+    const grid = document.createElement("div");
+    grid.className = "touch-guide";
+    for (const key of keys) {
+      const [icon, name, what] = GUIDE[key];
+      grid.insertAdjacentHTML("beforeend", `<div><span class="icon" aria-hidden="true">${icon}</span><b>${name}</b><small>${what}</small></div>`);
+    }
+    return grid;
+  };
 
   // Fullscreen, as a browser shows its bars otherwise. Browsers allow it only from a tap, so it's asked for with the first touch
   // in a round, and the ⛶ button in the corner does it again after leaving it. Lying sideways is held as well where that's allowed.
@@ -46,8 +68,18 @@
     Promise.resolve(asked).then(() => screen.orientation?.lock?.("landscape").catch(() => {})).catch(() => {});
   };
   document.addEventListener("pointerdown", (event) => {
-    if (event.pointerType !== "mouse" && theme && !document.body.classList.contains("menu")) goFull();
+    if (event.pointerType !== "mouse" && theme && !document.body.classList.contains("menu")) {
+      goFull();
+      if (isFull()) screen.orientation?.lock?.("landscape").catch(() => {}); // held sideways again, back in a round
+    }
   }, true);
+  // The menus are ordinary pages to read and scroll: there the phone's own bars come back and it may turn freely, so fullscreen
+  // and the sideways lock are let go as soon as one opens. The next round asks for them again with its first touch.
+  new MutationObserver(() => {
+    if (!document.body.classList.contains("menu")) return;
+    screen.orientation?.unlock?.();
+    if (isFull()) Promise.resolve((document.exitFullscreen ?? document.webkitExitFullscreen)?.call(document)).catch(() => {});
+  }).observe(document.body, { attributes: true, attributeFilter: ["class"] });
   if (canFull) {
     const full = document.createElement("button");
     full.id = "fullscreen";

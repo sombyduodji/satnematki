@@ -982,10 +982,8 @@ function showGuide() {
     ...(audioOnly ? [guide.listen] : []),
     ...(theme.lesson ? [theme.inWords ? LESSON_TEXT.guideWords : audioOnly ? LESSON_TEXT.guideAudio : LESSON_TEXT.guide] : [
       ...(theme.camp ? [CAMP_TEXT.guide, CAMP_TEXT.keys] : audioOnly && !inClassroom ? [] : [guide.goal[inClassroom ? "classroom" : theme.id]]),
-      guide.move,
-      guide.run,
-      guide.jump[theme.place] || guide.jump.indoors,
-      inClassroom ? guide.crouchClassroom : guide.crouch,
+      // On a touch screen the controls are shown as pictures instead (src/touch.js), so that the window fits a phone.
+      ...(TOUCH_UI ? [] : [guide.move, guide.run, guide.jump[theme.place] || guide.jump.indoors, inClassroom ? guide.crouchClassroom : guide.crouch]),
     ]),
   ];
   const level = theme.level ? ` (${theme.level})` : "";
@@ -999,6 +997,7 @@ function showGuide() {
     row.textContent = line;
     panel.querySelector("ul").append(row);
   }
+  if (TOUCH_UI && typeof touchGuide === "function") panel.querySelector("ul").after(touchGuide());
   document.body.append(panel);
   const ok = panel.querySelector("#guide-ok");
   ok.addEventListener("click", startRound);
