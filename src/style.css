@@ -987,7 +987,9 @@ body.touch-ui #prompt.quest .ask b { font-size: 15px; }
 body.touch-ui #prompt.quest .slots { flex-wrap: nowrap; gap: 3px; }
 body.touch-ui #prompt.quest .slot { flex: none; width: 20px; height: 20px; }
 body.touch-ui #prompt.quest .slot canvas { max-width: 16px; max-height: 14px; }
-body.touch-ui:not(.menu) .paper-list { font-size: 15px; line-height: 1.15; padding: 8px 12px 10px; }
+body.touch-ui:not(.menu) .paper-list { font-size: 20px; line-height: 1.12; padding: 8px 14px 10px; columns: 2; column-gap: 18px; }
+body.touch-ui:not(.menu) .paper-list li { break-inside: avoid; }
+body.touch-ui:not(.menu) .paper-list small, body.touch-ui:not(.menu) .paper-list li[data-left]::after { font-size: 15px; }
 #turn-phone { display: none; }
 @media (orientation: portrait) {
   body.touch-ui:not(.menu) #turn-phone { position: fixed; inset: 0; z-index: 40; display: grid; place-items: center; padding: 24px; text-align: center; color: #fff;

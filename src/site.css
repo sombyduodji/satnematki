@@ -67,3 +67,46 @@ html:not([data-lang="nb"]) [data-lang="nb"], html[data-lang="nb"] [data-lang="fi
   linear-gradient(#0000 35%, #fff 35% 65%, #0000 65%), linear-gradient(90deg, #0000 26%, #fff 26% 46%, #0000 46%), #ba0c2f; }
 .hero { padding-top: 56px; } /* room above the picture for the flags */
 .demo + .demo { margin-top: 14px; }
+
+/* ---------- The facelift (v0.4): the same rounded, cream-and-blue look as the game's menus and cards. ---------- */
+body { background: radial-gradient(ellipse at 50% 0, #2b4252 0, #20303a 60%); }
+.hero-picture { border-radius: 18px; box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45); }
+h1 { font-weight: 800; letter-spacing: -0.5px; }
+.play { padding: 15px 34px; border-radius: 99px; color: #14213d; background: var(--yellow); box-shadow: 0 4px 0 #c99a00, 0 10px 24px rgba(0, 0, 0, 0.3); transition: transform 0.1s; }
+.play:hover { background: #ffd93d; transform: translateY(-2px); }
+.play:active { transform: translateY(2px); box-shadow: 0 2px 0 #c99a00; }
+.warning, .demo { border-radius: 16px; }
+.warning { border-width: 0; box-shadow: inset 0 0 0 3px #14213d; }
+section { padding: 22px 22px 24px; border-radius: 22px; background: rgba(10, 47, 108, 0.35); }
+section > h2 { margin-bottom: 14px; }
+h3 { margin: 18px 0 10px; font-size: 18px; letter-spacing: 1px; text-transform: uppercase; color: var(--soft); }
+section > h3:first-of-type { margin-top: 4px; }
+.steps li { border-radius: 16px; background: var(--blue); box-shadow: 0 4px 0 rgba(0, 0, 0, 0.25); }
+.steps li::before { width: 40px; height: 40px; margin-bottom: 8px; border-radius: 50%; display: grid; place-items: center; font-size: 22px; color: #14213d; background: var(--yellow); }
+figure { padding: 0; overflow: hidden; border-radius: 18px; background: #fdf6e3; color: #14213d; box-shadow: 0 6px 0 rgba(0, 0, 0, 0.25); }
+figure img { border-radius: 0; }
+figcaption { padding: 12px 14px 14px; font-size: 15px; }
+figcaption b { color: #7a2e1f; }
+figcaption i { color: #6b7690; }
+.showcase { grid-template-columns: repeat(4, 1fr); }
+.places.small { grid-template-columns: repeat(5, 1fr); }
+.places.small figcaption { font-size: 14px; }
+.places.small figcaption b { font-size: 16px; }
+figure.soon img { filter: grayscale(1); opacity: 0.6; }
+.howto { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.device { padding: 16px; border-radius: 18px; background: rgba(255, 255, 255, 0.06); }
+.device h3 { margin-top: 0; text-transform: none; letter-spacing: 0; font-size: 20px; color: var(--ink); }
+.device .controls { grid-template-columns: 1fr; gap: 8px; }
+.controls div { border-radius: 12px; }
+.points li::marker { color: var(--yellow); }
+.again .play { font-size: 22px; }
+@media (max-width: 960px) {
+  .showcase { grid-template-columns: repeat(2, 1fr); }
+  .places.small { grid-template-columns: repeat(3, 1fr); }
+}
+@media (max-width: 720px) {
+  section { padding: 16px 14px 18px; border-radius: 18px; }
+  .showcase, .howto { grid-template-columns: 1fr; }
+  .places.small { grid-template-columns: repeat(2, 1fr); }
+}
+@media (prefers-reduced-motion: reduce) { .play { transition: none; } }

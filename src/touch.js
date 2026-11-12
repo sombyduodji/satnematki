@@ -42,12 +42,14 @@
   const GUIDE = LANG === "nb" ? {
     stick: ["🕹️", "Gå med spaken", "Helt ut: løp"], use: ["✋", "Ta", "Tar det som er nær"], jump: ["⤒", "Hopp", "Ikke rett på trær!"],
     crouch: ["⬇", "Huk", "Snik deg bort til sovende dyr"], sit: ["⬇", "Sett deg", "ved en stol"], raise: ["✋", LESSON_TEXT.raise, "når du kan tallet"], pause: ["⏸", "Pause", "eller tilbake-knappen"],
+    zoom: ["🔍", "Zoom", "i pausemenyen ⏸, blir husket"],
   } : {
     stick: ["🕹️", "Liiku tatilla", "Reunaan asti: juokse"], use: ["✋", "Ota", "Ottaa sen, mikä on lähellä"], jump: ["⤒", "Hyppy", "Älä hyppää päin puuta!"],
     crouch: ["⬇", "Kyykky", "Hiivi nukkuvien eläinten luo"], sit: ["⬇", "Istu", "tuolin luona"], raise: ["✋", LESSON_TEXT.raise, "kun tiedät luvun"], pause: ["⏸", "Tauko", "tai takaisin-painike"],
+    zoom: ["🔍", "Zoomaus", "taukovalikosta ⏸, jää muistiin"],
   };
   window.touchGuide = () => {
-    const keys = theme?.lesson ? ["raise", "pause"] : theme?.desks ? ["stick", "use", "sit", "pause"] : ["stick", "use", "jump", "crouch", "pause"];
+    const keys = theme?.lesson ? ["raise", "pause"] : theme?.desks ? ["stick", "use", "sit", "pause", "zoom"] : ["stick", "use", "jump", "crouch", "pause", "zoom"];
     const grid = document.createElement("div");
     grid.className = "touch-guide";
     for (const key of keys) {

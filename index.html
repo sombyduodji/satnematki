@@ -33,18 +33,18 @@
     <button class="flag flag-nb" data-set-lang="nb" title="Norsk" aria-label="Norsk"></button>
   </div>
   <div class="hero-text" data-lang="fi">
-    <h1 lang="se">Sátnemátki <small>v0.4.2</small></h1>
+    <h1 lang="se">Sátnemátki <small>v0.4.3</small></h1>
     <p class="lead">Pohjoissaamen sanapeli lapsille. Nimi tarkoittaa <em>sanamatkaa</em>: kuljet hahmollasi kodissa, metsässä ja kaupassa ja etsit sen, mitä saamenkielinen sana tarkoittaa.</p>
     <a class="play" href="peli.html">Pelaa selaimessa</a>
-    <p class="fine">Maksuton. Ei rekisteröitymistä eikä asennusta.</p>
+    <p class="fine">Maksuton. Ei rekisteröitymistä eikä asennusta. Toimii tietokoneella ja puhelimessa.</p>
   </div>
   <div class="hero-text" data-lang="nb" lang="nb">
-    <h1 lang="se">Sátnemátki <small>v0.4.2</small></h1>
+    <h1 lang="se">Sátnemátki <small>v0.4.3</small></h1>
     <p class="lead">Et nordsamisk ordspill for barn. Navnet betyr <em>ordreise</em>: du går rundt med figuren din hjemme, i skogen og i butikken og finner det et samisk ord betyr.</p>
     <a class="play" href="peli.html">Spill i nettleseren</a>
-    <p class="fine">Gratis. Ingen registrering og ingen installasjon.</p>
+    <p class="fine">Gratis. Ingen registrering og ingen installasjon. Fungerer på datamaskin og mobil.</p>
   </div>
-  <img class="hero-picture" src="art/site/koti.png" width="560" height="380" alt="Koti ylhäältä nähtynä: pelihahmo olohuoneessa, sohvalla äiti ja veli, seinällä televisio ja kirjahylly." data-alt-nb="Hjemmet sett ovenfra: figuren i stua, mor og bror i sofaen, en TV og en bokhylle på veggen.">
+  <img class="hero-picture" src="art/site/kierros.png" data-src-nb="art/site/kierros-nb.png" width="560" height="380" alt="Metsässä hahmo on juuri löytänyt lehmän. Puhekuplassa lukee saameksi ja suomeksi, että vastaus oli oikein, ja alhaalla kortissa on lehmän kuva ja sana gussa." data-alt-nb="I skogen har figuren nettopp funnet ei ku. I snakkeboblen står det på samisk og norsk at svaret var riktig, og nederst viser et kort et bilde av kua og ordet gussa.">
 </header>
 
 <main>
@@ -64,33 +64,38 @@
     <p>Sátnemátki kokeilee, voisiko pohjoissaamen sanoja oppia liikkumalla tutuissa paikoissa ja kokeilemalla rauhassa. Sitä ei voi hävitä, eikä lukemaan tarvitse osata sujuvasti, koska hahmo sanoo sanat myös ääneen.</p>
     <ol class="steps">
       <li><strong>Peli antaa sanan.</strong> Ylhäällä lukee esimerkiksi <span lang="se">Etsi: <b>eadni</b></span>.</li>
-      <li><strong>Mene sen luo ja paina E.</strong> Kulje hahmollasi sen luo, joka mielestäsi sopii. Puhelimessa paina Ota tai napauta sitä.</li>
+      <li><strong>Mene sen luo ja ota se.</strong> Kulje hahmollasi sen luo, joka mielestäsi sopii, ja paina E tai puhelimessa Ota-painiketta. Kahden väärän arvauksen jälkeen ylhäällä näkyy etsittävän varjo.</li>
       <li><strong>Kuule ja näe, mikä se oli.</strong> Väärästäkin arvauksesta oppii, koska hahmo pysähtyy hetkeksi ja kertoo, mikä se oli.</li>
     </ol>
   </section>
 
   <section>
     <h2>Uusimmat lisäykset</h2>
-    <p>Versiossa 0.2.5 Metsä, Ruokakauppa ja Luokka ovat saaneet kasvojenkohotuksen: ne on tehty uudelleen tarkemmalla 3D-grafiikalla, ja niissä näkyy isossa ikkunassa enemmän paikkaa. Muut paikat ovat toistaiseksi jääneet jälkeen, ja niitä kannattaa nyt kokeilla vain vikojen etsimiseen.</p>
+    <p>Versio 0.4 tuo pelaajalle oman sanakirjan, uuden ulkoasun ja ohjaimet puhelimeen. Metsä, Ruokakauppa ja Koulu ovat valmiimpia paikkoja, ja muita kannattaa toistaiseksi kokeilla vain vikojen etsimiseen.</p>
     <div class="places showcase">
-      <figure><img src="art/site/oppitunti.png" width="280" height="190" alt="Luokassa opettaja on kirjoittanut luvun taululle ja kysyy puhekuplassa saameksi ja suomeksi, mikä luku se on. Hahmo viittaa ja vastaa." loading="lazy"><figcaption><b>Luokan oppitunti</b> Opettaja kirjoittaa luvun taululle, sinä viittaat ja vastaat. Puhekuplat kertovat saameksi ja suomeksi, mitä sanotaan.</figcaption></figure>
-      <figure><img src="art/site/kauppa.png" width="280" height="190" alt="Hahmo kävelee korin kanssa Ruokakaupan hedelmä- ja vihanneslaatikoiden ohi. Laatikoiden yllä on suomenkieliset kyltit, ja taustalla on pakastimia ja muita asiakkaita." loading="lazy"><figcaption><b>Uusi Ruokakauppa</b> Kaksi kassaa, kylmäkaapit, lihatiski ja suomenkieliset kyltit jokaisen ruoan yllä.</figcaption></figure>
-      <figure><img src="art/site/elaimet.png" width="280" height="190" alt="Hahmo kävelee metsäaukealla poron luo. Taustalla on kuusimetsää ja polku." loading="lazy"><figcaption><b>Isompi Metsä</b> Kaksi kertaa isompi metsä, jossa eläimet liikkuvat, nukkuvat ja pakenevat.</figcaption></figure>
+      <figure><img src="art/site/sanakirja.png" width="280" height="190" alt="Sátnegirji-sanakirjan Metsä-sivu: löydetyt eläimet kuvineen, saamenkielinen sana ja suomennos, ja tähdet sen mukaan, montako kertaa sana on löydetty." loading="lazy"><figcaption><b>Sátnegirji</b> Jokainen löydetty sana tallentuu omaan sanakirjaan. Usein löydetty sana saa tähtiä.</figcaption></figure>
+      <figure><img src="art/site/sanasivu.png" width="280" height="190" alt="Sanakirjassa auki koira-sanan sivu: koira liikkuu, ja alla lukee beana, koira ja monikko beatnagat." loading="lazy"><figcaption><b>Sana elää</b> Sanaa koskettamalla eläin liikkuu, heiluttaa häntää tai lentää, ja ääni sanoo sanan.</figcaption></figure>
+      <figure><img src="art/site/mitali.png" width="280" height="190" alt="Kierroksen loppu: kultamitali, aika, kierroksella löydetyt sanat kuvineen ja uudet sanat merkittyinä." loading="lazy"><figcaption><b>Mitalit</b> Kierroksen lopussa näkyvät löydetyt sanat, ja parhaista ajoista saa kulta-, hopea- tai pronssimitalin.</figcaption></figure>
+      <figure><img src="art/site/puhelin.png" width="280" height="190" alt="Puhelin vaakatasossa: Ruokakauppa, vasemmalla tatti ja oikealla pyöreät painikkeet." loading="lazy"><figcaption><b>Puhelimessa</b> Tatti ja painikkeet kuin peleissä. Pelin voi lisätä aloitusnäyttöön omana kuvakkeenaan.</figcaption></figure>
     </div>
   </section>
 
   <section>
     <h2>Paikat</h2>
+    <h3>Pelattava demo</h3>
     <div class="places">
+      <figure><img src="art/site/elaimet.png" width="280" height="190" alt="" loading="lazy"><figcaption><b>Metsä</b> Metsässä liikkuu 23 eläintä poroista kotkiin. Jotkin nukkuvat, ja niiden luo hiivitään.</figcaption></figure>
+      <figure><img src="art/site/kauppa.png" width="280" height="190" alt="" loading="lazy"><figcaption><b>Ruokakauppa</b> Kori, ostoslista, kassa ja ovi kahdella tasolla: 43 ruokaa.</figcaption></figure>
+      <figure><img src="art/site/luokka.png" width="280" height="190" alt="" loading="lazy"><figcaption><b>Koulu</b> Opettele numerot pulpeteilta, ja oppitunneilla kirjoita luvut 0–100 numeroin tai sanoin.</figcaption></figure>
+    </div>
+    <h3>Keskeneräiset paikat</h3>
+    <p class="note">Näitä voi kokeilla tietokoneella. Puhelimessa näkyvät vain yllä olevat kolme paikkaa.</p>
+    <div class="places small">
       <figure><img src="art/site/koti.png" width="280" height="190" alt="" loading="lazy"><figcaption><b>Koti</b> Viisi huonetta, huonekalut ja perhe: 24 sanaa.</figcaption></figure>
-      <figure><img src="art/site/elaimet.png" width="280" height="190" alt="" loading="lazy"><figcaption><b>Metsä</b> Metsässä liikkuu 20 eläintä poroista kotkiin.</figcaption></figure>
       <figure><img src="art/site/parkkipaikka.png" width="280" height="190" alt="" loading="lazy"><figcaption><b>Parkkipaikka</b> Ajoneuvot ja värit kolmella tasolla.</figcaption></figure>
       <figure><img src="art/site/kirjasto.png" width="280" height="190" alt="" loading="lazy"><figcaption><b>Kirjasto</b> Kirjat, kynät ja vihot kolmella tasolla.</figcaption></figure>
-      <figure><img src="art/site/kauppa.png" width="280" height="190" alt="" loading="lazy"><figcaption><b>Ruokakauppa</b> Kori, ostoslista, kassa ja ovi kahdella tasolla: 44 ruokaa.</figcaption></figure>
-      <figure><img src="art/site/rautakauppa.png" width="280" height="190" alt="" loading="lazy"><figcaption><b>Rautakauppa</b> Työkalut, kalastustarvikkeet, vaatteet ja näyttelytila kahdella tasolla: 27 tavaraa.</figcaption></figure>
-      <figure><img src="art/site/luokka.png" width="280" height="190" alt="" loading="lazy"><figcaption><b>Luokka</b> Opettele numerot: etsi oikea numero pulpetilta.</figcaption></figure>
-      <figure><img src="art/site/oppitunti.png" width="280" height="190" alt="" loading="lazy"><figcaption><b>Luokan oppitunti</b> Kirjoita numerot ja Kirjoita sanalla: luvut 0–100 kolmella tasolla.</figcaption></figure>
-      <figure><img src="art/site/laavu.png" width="280" height="190" alt="" loading="lazy"><figcaption><b>Laavu</b> Rauhallinen ilta nuotiolla koiran kanssa, ilman kelloa.</figcaption></figure>
+      <figure><img src="art/site/rautakauppa.png" width="280" height="190" alt="" loading="lazy"><figcaption><b>Rautakauppa</b> Työkalut, kalastustarvikkeet ja vaatteet: 28 tavaraa.</figcaption></figure>
+      <figure class="soon"><img src="art/site/laavu.png" width="280" height="190" alt="" loading="lazy"><figcaption><b>Laavu</b> Tulossa myöhemmin: rauhallinen ilta nuotiolla koiran kanssa.</figcaption></figure>
     </div>
   </section>
 
@@ -102,6 +107,7 @@
       <li><strong>Kielioppia askel kerrallaan.</strong> Väri liitetään sanaan ensin perusmuodossa (<span lang="se">biila: vielgat</span>) ja sitten sanan edessä (<span lang="se">vilges biila</span>).</li>
       <li><strong>Monikko.</strong> Sanakortti näyttää myös monikon, esimerkiksi <span lang="se">eadni – eatnit</span>.</li>
       <li><strong>Lyhyet lauseet.</strong> <span lang="se">Dát lea girji. Son lea eadni.</span></li>
+      <li><strong>Oma sanakirja.</strong> Löydetyt sanat jäävät talteen, ja niitä voi kuunnella uudelleen. Tähdet näyttävät, mitkä sanat ovat jo tuttuja.</li>
       <li><strong>Kokeilemalla oppiminen.</strong> Väärästä valinnasta ei menetä mitään, vain hetken aikaa. Jos haluaa haastetta, kello ottaa aikaa ja parhaat ajat jäävät muistiin.</li>
     </ul>
     <p class="note">Nämä ovat pelin tavoitteita. Oppimisvaikutusta ei ole tutkittu.</p>
@@ -109,15 +115,30 @@
 
   <section>
     <h2>Näin pelaat</h2>
-    <dl class="controls">
-      <div><dt>Liiku</dt><dd>Nuolet tai WASD, tai napauta maailmaa</dd></div>
-      <div><dt>Juokse</dt><dd>Shift pohjassa. Törmätessä kaadut tai liu'ut mahallasi!</dd></div>
-      <div><dt>Hyppää</dt><dd>Välilyönti</dd></div>
-      <div><dt>Ota tai katso</dt><dd>E, kun olet lähellä. Luokassa E istuttaa tuolille</dd></div>
-      <div><dt>Kyykisty</dt><dd>C. Luokassa C myös istuttaa tuolille</dd></div>
-    </dl>
-    <p class="note">Pelin aikana puhekuplat kertovat, milloin E:tä voi käyttää, ja kaupassa nuolet näyttävät tien korille, kassalle ja ovelle. Ohjekuplat ovat aluksi päällä, ja ne voi kytkeä pois päävalikosta.</p>
-    <p class="note">Puhelimessa ja tabletissa pelataan omilla ohjaimilla: vasemmalla tatti, jolla liikutaan (reunaan asti työnnettynä juostaan), ja oikealla Ota-, Hyppy- ja kyykkypainikkeet. Käännä puhelin vaakatasoon. Selaimen valikosta pelin voi lisätä aloitusnäyttöön, jolloin se aukeaa koko näytölle.</p>
+    <div class="howto">
+      <div class="device">
+        <h3>💻 Tietokoneella</h3>
+        <dl class="controls">
+          <div><dt>Liiku</dt><dd>Nuolet tai WASD, tai napsauta maailmaa</dd></div>
+          <div><dt>Juokse</dt><dd>Shift pohjassa</dd></div>
+          <div><dt>Hyppää</dt><dd>Välilyönti</dd></div>
+          <div><dt>Ota tai katso</dt><dd>E, kun olet lähellä</dd></div>
+          <div><dt>Kyykisty</dt><dd>C pohjassa</dd></div>
+          <div><dt>Tauko</dt><dd>Esc</dd></div>
+        </dl>
+      </div>
+      <div class="device">
+        <h3>📱 Puhelimessa ja tabletissa</h3>
+        <dl class="controls">
+          <div><dt>Liiku</dt><dd>Tatti vasemmalla. Reunaan asti työnnettynä juokset</dd></div>
+          <div><dt>Ota</dt><dd>Iso painike oikealla. Se näyttää, mikä on lähellä</dd></div>
+          <div><dt>Hyppy ja kyykky</dt><dd>Painikkeet sen vieressä</dd></div>
+          <div><dt>Tauko</dt><dd>⏸ yläkulmassa tai takaisin-painike</dd></div>
+        </dl>
+        <p class="note">Käännä puhelin vaakatasoon. Selaimen valikosta pelin voi lisätä aloitusnäyttöön, jolloin se aukeaa koko näytölle.</p>
+      </div>
+    </div>
+    <p class="note">Päävalikon kytkimistä voi valita, näkyykö teksti vai pelataanko pelkän äänen varassa, ovatko ohjekuplat päällä ja otetaanko aikaa. Kaupassa nuolet näyttävät tien korille, kassalle ja ovelle.</p>
   </section>
 
   <section>
@@ -133,11 +154,11 @@
 
   <section>
     <h2>Yksityisyys</h2>
-    <p>Pelissä ei ole mainoksia, seurantaa eikä käyttäjätilejä. Nimi, hahmo ja parhaat ajat tallentuvat vain omaan selaimeesi, eikä niitä lähetetä minnekään.</p>
+    <p>Pelissä ei ole mainoksia, seurantaa eikä käyttäjätilejä. Nimi, hahmo, sanakirja ja parhaat ajat tallentuvat vain omaan selaimeesi, eikä niitä lähetetä minnekään.</p>
   </section>
 
   <section>
-    <h2>Uutta versioissa 0.1.5–0.4.2</h2>
+    <h2>Uutta versioissa 0.1.5–0.4.3</h2>
     <ul class="points">
       <li><strong>Sátnegirji, oma sanakirja.</strong> Jokainen löydetty sana tallentuu pelaajan omaan sanakirjaan kuvan ja käännöksen kanssa. Sanaa koskettamalla eläin liikkuu ja ääni sanoo sanan. Sana saa tähden, kun se on löydetty 3, 10 ja 25 kertaa, ja ensimmäinen sana juhlitaan fanfaarilla.</li>
       <li><strong>Uusi ulkoasu.</strong> Päävalikossa on kuvalliset kytkimet tekstille, ohjeille ja kellolle. Kellon voi kytkeä pois, jolloin aikaa ja parhaita aikoja ei näytetä. Pelissä etsittävä sana näkyy ylhäällä kysymysmerkkinä, ja kahden väärän arvauksen jälkeen siinä näkyy sen varjo. Hahmo puhuu puhekuplissa, ja kierroksen lopussa parhaasta ajasta saa mitalin.</li>
@@ -206,28 +227,23 @@
 
   <section>
     <h2>Det nyeste</h2>
-    <p>Skogen, Matbutikken og Skolen er laget på nytt med mer detaljert 3D-grafikk, og i et stort vindu ser du mer av stedet. Alle tre finnes nå også på norsk. Skiltene i Matbutikken skrives på spillerens språk.</p>
+    <p>Versjon 0.4 gir spilleren en egen ordbok, et nytt utseende og kontroller for mobilen. Skogen, Matbutikken og Skolen er de mest ferdige stedene, og alle tre finnes på norsk.</p>
     <div class="places showcase">
-      <figure><img src="art/site/oppitunti.png" width="280" height="190" alt="I klasserommet har læreren skrevet et tall på tavla og spør i en snakkeboble på samisk og finsk hvilket tall det er. Figuren rekker opp hånda og svarer." loading="lazy"><figcaption><b>Time på skolen</b> Læreren skriver et tall på tavla, du rekker opp hånda og svarer. Snakkebobler viser på samisk og norsk hva som blir sagt.</figcaption></figure>
-      <figure><img src="art/site/kauppa.png" width="280" height="190" alt="Figuren går med en kurv forbi frukt- og grøntkassene i Matbutikken. Over kassene henger skilt, og i bakgrunnen står frysere og andre kunder." loading="lazy"><figcaption><b>Matbutikken</b> To kasser, kjøleskap, kjøttdisk og skilt over hver matvare, på ditt eget språk.</figcaption></figure>
-      <figure><img src="art/site/elaimet.png" width="280" height="190" alt="Figuren går på en lysning i skogen bort til en rein. I bakgrunnen er det granskog og en sti." loading="lazy"><figcaption><b>Skogen</b> En stor skog der dyrene beveger seg, sover og flykter.</figcaption></figure>
+      <figure><img src="art/site/sanakirja-nb.png" width="280" height="190" alt="Skogen-siden i ordboka Sátnegirji: dyrene du har funnet, med bilde, det samiske ordet og den norske oversettelsen, og stjerner etter hvor mange ganger ordet er funnet." loading="lazy"><figcaption><b>Sátnegirji</b> Hvert ord du finner, lagres i din egen ordbok. Ord du finner ofte, får stjerner.</figcaption></figure>
+      <figure><img src="art/site/sanasivu-nb.png" width="280" height="190" alt="Ordboka er åpen på siden for hund: hunden beveger seg, og under står beana, hund og flertallet beatnagat." loading="lazy"><figcaption><b>Ordet lever</b> Trykk på et ord, så beveger dyret seg, logrer eller flyr, og stemmen sier ordet.</figcaption></figure>
+      <figure><img src="art/site/mitali-nb.png" width="280" height="190" alt="Slutten av en runde: gullmedalje, tiden, ordene du fant med bilder, og de nye ordene merket." loading="lazy"><figcaption><b>Medaljer</b> På slutten av runden ser du ordene du fant, og de beste tidene gir gull-, sølv- eller bronsemedalje.</figcaption></figure>
+      <figure><img src="art/site/puhelin-nb.png" width="280" height="190" alt="En mobil på siden: Matbutikken, med en spak til venstre og runde knapper til høyre." loading="lazy"><figcaption><b>På mobilen</b> Spak og knapper som i spill. Du kan legge spillet til på startskjermen med eget ikon.</figcaption></figure>
     </div>
   </section>
 
   <section>
     <h2>Steder</h2>
-    <p class="note">Steder merket <i>på finsk</i> finnes foreløpig bare i den finske versjonen.</p>
     <div class="places">
-      <figure><img src="art/site/koti.png" width="280" height="190" alt="" loading="lazy"><figcaption><b>Hjemme</b> <i>på finsk</i> Fem rom, møbler og familien: 24 ord.</figcaption></figure>
-      <figure><img src="art/site/elaimet.png" width="280" height="190" alt="" loading="lazy"><figcaption><b>Skogen</b> I skogen beveger 20 dyr seg, fra rein til ørn.</figcaption></figure>
-      <figure><img src="art/site/parkkipaikka.png" width="280" height="190" alt="" loading="lazy"><figcaption><b>Parkeringsplassen</b> <i>på finsk</i> Kjøretøy og farger på tre nivåer.</figcaption></figure>
-      <figure><img src="art/site/kirjasto.png" width="280" height="190" alt="" loading="lazy"><figcaption><b>Biblioteket</b> <i>på finsk</i> Bøker, penner og skrivebøker på tre nivåer.</figcaption></figure>
-      <figure><img src="art/site/kauppa.png" width="280" height="190" alt="" loading="lazy"><figcaption><b>Matbutikken</b> Kurv, handleliste, kasse og dør på to nivåer: 44 matvarer.</figcaption></figure>
-      <figure><img src="art/site/rautakauppa.png" width="280" height="190" alt="" loading="lazy"><figcaption><b>Jernvarehandelen</b> <i>på finsk</i> Verktøy, fiskeutstyr, klær og en utstillingsplass på to nivåer: 27 varer.</figcaption></figure>
-      <figure><img src="art/site/luokka.png" width="280" height="190" alt="" loading="lazy"><figcaption><b>Skolen</b> Lær tallene: finn riktig tall på en pult.</figcaption></figure>
-      <figure><img src="art/site/oppitunti.png" width="280" height="190" alt="" loading="lazy"><figcaption><b>Time på skolen</b> Skriv tallene og Skriv med ord: tallene 0–100 på tre nivåer.</figcaption></figure>
-      <figure><img src="art/site/laavu.png" width="280" height="190" alt="" loading="lazy"><figcaption><b>Lavvoen</b> <i>på finsk</i> En rolig kveld ved bålet med hunden, uten klokke.</figcaption></figure>
+      <figure><img src="art/site/elaimet.png" width="280" height="190" alt="" loading="lazy"><figcaption><b>Skogen</b> I skogen beveger 23 dyr seg, fra rein til ørn. Noen sover, og dem sniker du deg bort til.</figcaption></figure>
+      <figure><img src="art/site/kauppa.png" width="280" height="190" alt="" loading="lazy"><figcaption><b>Matbutikken</b> Kurv, handleliste, kasse og dør på to nivåer: 43 matvarer.</figcaption></figure>
+      <figure><img src="art/site/luokka.png" width="280" height="190" alt="" loading="lazy"><figcaption><b>Skolen</b> Lær tallene ved pultene, og skriv tallene 0–100 med sifre eller ord i timene.</figcaption></figure>
     </div>
+    <p class="note">De andre stedene (Hjemme, Parkeringsplassen, Biblioteket, Jernvarehandelen og Lavvoen) er ikke ferdige ennå og finnes foreløpig bare på finsk.</p>
   </section>
 
   <section>
@@ -239,21 +255,37 @@
       <li><strong>Flertall.</strong> Ordkortet viser også flertall, for eksempel <span lang="se">eadni – eatnit</span>.</li>
       <li><strong>Korte setninger.</strong> <span lang="se">Dát lea girji. Son lea eadni.</span></li>
       <li><strong>Å lære ved å prøve.</strong> Et feil valg koster ingenting, bare litt tid. Vil du ha en utfordring, tar klokka tiden, og de beste tidene blir husket.</li>
+      <li><strong>Din egen ordbok.</strong> Ordene du finner, blir tatt vare på, og du kan høre dem igjen. Stjernene viser hvilke ord du allerede kan.</li>
     </ul>
     <p class="note">Dette er målene med spillet. Om man faktisk lærer av det, er ikke undersøkt.</p>
   </section>
 
   <section>
     <h2>Slik spiller du</h2>
-    <dl class="controls">
-      <div><dt>Gå</dt><dd>Piltastene eller WASD, eller trykk i verdenen</dd></div>
-      <div><dt>Løp</dt><dd>Hold Shift nede. Hvis du krasjer, faller du eller sklir på magen!</dd></div>
-      <div><dt>Hopp</dt><dd>Mellomrom</dd></div>
-      <div><dt>Ta eller se</dt><dd>E når du er nær. På skolen setter E deg på stolen</dd></div>
-      <div><dt>Huk deg ned</dt><dd>C. På skolen setter C deg også på stolen</dd></div>
-    </dl>
-    <p class="note">Mens du spiller, viser hjelpebobler når du kan bruke E, og i butikken viser piler veien til kurven, kassa og døra. Hjelpeboblene er på fra starten og kan slås av i hovedmenyen.</p>
-    <p class="note">På mobil og nettbrett spiller du med egne kontroller: en spak til venstre som du går med (skyver du den helt ut, løper du), og knappene Ta, Hopp og huk til høyre. Snu mobilen på siden. Fra nettleserens meny kan du legge spillet til på startskjermen, så åpnes det i fullskjerm.</p>
+    <div class="howto">
+      <div class="device">
+        <h3>💻 På datamaskin</h3>
+        <dl class="controls">
+          <div><dt>Gå</dt><dd>Piltastene eller WASD, eller klikk i verdenen</dd></div>
+          <div><dt>Løp</dt><dd>Hold Shift nede</dd></div>
+          <div><dt>Hopp</dt><dd>Mellomrom</dd></div>
+          <div><dt>Ta eller se</dt><dd>E når du er nær</dd></div>
+          <div><dt>Huk deg ned</dt><dd>Hold C nede</dd></div>
+          <div><dt>Pause</dt><dd>Esc</dd></div>
+        </dl>
+      </div>
+      <div class="device">
+        <h3>📱 På mobil og nettbrett</h3>
+        <dl class="controls">
+          <div><dt>Gå</dt><dd>Spaken til venstre. Skyver du den helt ut, løper du</dd></div>
+          <div><dt>Ta</dt><dd>Den store knappen til høyre. Den viser hva som er nær</dd></div>
+          <div><dt>Hopp og huk</dt><dd>Knappene ved siden av</dd></div>
+          <div><dt>Pause</dt><dd>⏸ øverst i hjørnet eller tilbake-knappen</dd></div>
+        </dl>
+        <p class="note">Snu mobilen på siden. Fra nettleserens meny kan du legge spillet til på startskjermen, så åpnes det i fullskjerm.</p>
+      </div>
+    </div>
+    <p class="note">Med bryterne i hovedmenyen velger du om teksten vises eller om du spiller bare med lyd, om hjelpeboblene er på, og om tiden tas. I butikken viser piler veien til kurven, kassa og døra.</p>
   </section>
 
   <section>
@@ -269,11 +301,11 @@
 
   <section>
     <h2>Personvern</h2>
-    <p>Spillet har ingen reklame, ingen sporing og ingen brukerkontoer. Navnet, figuren og de beste tidene lagres bare i din egen nettleser og sendes ikke noe sted.</p>
+    <p>Spillet har ingen reklame, ingen sporing og ingen brukerkontoer. Navnet, figuren, ordboka og de beste tidene lagres bare i din egen nettleser og sendes ikke noe sted.</p>
   </section>
 
   <section>
-    <h2>Nytt i versjon 0.1.5–0.4.2</h2>
+    <h2>Nytt i versjon 0.1.5–0.4.3</h2>
     <ul class="points">
       <li><strong>Sátnegirji, din egen ordbok.</strong> Hvert ord du finner, lagres i din egen ordbok med bilde og oversettelse. Trykk på et ord, så beveger dyret seg og stemmen sier ordet. Ordet får en stjerne når det er funnet 3, 10 og 25 ganger, og det første ordet feires med en fanfare.</li>
       <li><strong>Nytt utseende.</strong> Hovedmenyen har brytere med bilder for tekst, hjelp og klokke. Klokka kan slås av, og da vises verken tid eller beste tider. I spillet står ordet du skal finne øverst med et spørsmålstegn, og etter to feil gjetninger vises skyggen av det. Figuren snakker i snakkebobler, og på slutten av runden får du en medalje for beste tid.</li>
@@ -319,10 +351,12 @@
 (function () {
   const titles = { fi: document.title, nb: "Sátnemátki: et nordsamisk ordspill for barn" };
   const picture = document.querySelector(".hero-picture"), alts = { fi: picture.alt, nb: picture.dataset.altNb };
+  const sources = { fi: picture.getAttribute("src"), nb: picture.dataset.srcNb };
   const show = (lang) => {
     document.documentElement.lang = document.documentElement.dataset.lang = lang;
     document.title = titles[lang];
     picture.alt = alts[lang];
+    picture.src = sources[lang] ?? sources.fi;
     document.querySelectorAll("[data-set-lang]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.setLang === lang)));
   };
   document.querySelectorAll("[data-set-lang]").forEach((b) => b.addEventListener("click", () => {
