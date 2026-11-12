@@ -121,7 +121,7 @@ function campSay(sme, fi, line) {
   saying = { say: sme, until: performance.now() + 3200 };
   cardEl.className = "";
   cardEl.innerHTML = audioOnly ? `<div class="note">${escapeText(fi)}</div>` : `<div><span lang="se">${escapeText(sme)}</span><div class="note">${escapeText(fi)}</div></div>`;
-  if (line) playVoice(`audio/${line}-${VOICES[look.gender]}.wav`);
+  if (line) playVoice(`audio/${line}-${VOICES[look.gender]}.mp3`);
 }
 
 function campChoreDone(chore) {
@@ -218,7 +218,7 @@ function campThrow(now) {
     camp.flight = { fromX: me.x, fromY: me.y, x, y, born: performance.now(), ms: 520 };
     campNoise(90, 900, 0.03);
   });
-  playVoice(`audio/camp-fetch-${VOICES[look.gender]}.wav`);
+  playVoice(`audio/camp-fetch-${VOICES[look.gender]}.mp3`);
 }
 
 function campPat(now) {

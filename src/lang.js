@@ -84,7 +84,7 @@ const TEXT_NB = {
   pickFallen: "Plukk opp varene som falt ned.",
   storePay: "Ta med varene til kassa.",
   storePrice: "Hør prisen og betal med E.",
-  storePriceTyped: "Hør prisen, tast den inn og trykk E.",
+  storePriceTyped: "Hør prisen, tast den inn og trykk OK.",
   wrongPrice: "Ikke helt. Hør en gang til.",
   storeBag: "Ta en pose ved enden av kassa.",
   storeDoor: "Gå til døra.",
@@ -94,6 +94,8 @@ const TEXT_NB = {
   entrance: "Inngang",
   take: "Ta",
   helpOn: "Hjelpebobler: på",
+  clockOn: "Klokke: på",
+  clockOff: "Klokke: av",
   helpOff: "Hjelpebobler: av",
   run: "Løp",
   sit: "Sett deg",
@@ -101,6 +103,10 @@ const TEXT_NB = {
   bestTimes: "Beste tider",
   bestTimesAudio: "Beste tider, bare lyd",
   newRecord: "Ny rekord!",
+  secondBest: "Nest beste tid!",
+  thirdBest: "Tredje beste tid!",
+  foundThese: "Du fant disse",
+  newInBook: "NY",
   choosePlace: (name) => (name ? `Hei, ${name}! Hvor skal vi?` : "Hvor skal vi?"),
   mainMenu: "Til hovedmenyen",
   changePlayer: "Bytt spiller",
@@ -111,6 +117,14 @@ const TEXT_NB = {
   playAgain: "Spill igjen",
   comingLater: "Kommer senere",
   modeBoth: "Lyd og tekst",
+  player: "Spiller",
+  switchText: "Tekst",
+  switchHelp: "Hjelp",
+  switchClock: "Klokke",
+  on: "på",
+  off: "av",
+  textOn: "lyd og tekst",
+  textOff: "bare lyd",
   modeAudio: "Bare lyd",
   modeHint: "Ordene høres bare, og de vises når runden er ferdig.",
   listen: "Lytt",
@@ -180,6 +194,7 @@ const PAGE_NB = {
   world: [null, "Spillverden"],
   zoom: [null, "Zoom"],
   "guide-close": [null, "Lukk hjelpen"],
+  "guide-open": [null, "Vis hjelpen"],
   pad: [null, "Bevegelse"],
   run: ["Løp"],
   jump: ["Hopp"],
@@ -190,6 +205,7 @@ const PAGE_NB = {
   "credits-line": ["Ord: GiellaLT / Divvun / Giellatekno (CC BY 4.0). Bøyningsformer: lang-sme (GPL-3.0). Tale: Divvun / Giellatekno."],
   "about-link": ["Om spillet (på finsk)"],
   "credits-link": ["Skapere og lisenser"],
+  "feedback-link": ["Gi tilbakemelding"],
   "change-outfit": ["Endre figur"],
   "change-place": ["Hovedmeny"],
 };
@@ -220,6 +236,13 @@ function pageInLanguage() {
       if (label) el.setAttribute("aria-label", label);
     }
     for (const [dir, label] of Object.entries(PAD_NB)) document.querySelector(`#pad [data-dir=${dir}]`)?.setAttribute("aria-label", label);
+  }
+  // Feedback by e-mail, with the version and language in the subject so a reply can be matched to the build.
+  const feedback = document.getElementById("feedback-link");
+  if (feedback) {
+    const version = document.querySelector("#game-title small")?.textContent ?? "";
+    const subject = `Sátnemátki ${version} (${LANG}): ${LANG === "nb" ? "tilbakemelding" : "palaute"}`;
+    feedback.href = `mailto:satni@somby.fi?subject=${encodeURIComponent(subject)}`;
   }
   const holder = document.getElementById("lang-switch");
   if (!holder) return;

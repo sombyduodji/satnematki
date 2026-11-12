@@ -1,6 +1,6 @@
 # Sátnemátki
 
-*Sátnemátki* means "word journey" in Northern Sámi. Version 0.3.7, a technology demo.
+*Sátnemátki* means "word journey" in Northern Sámi. Version 0.4.0, a technology demo.
 
 A Northern Sámi word game for children. The player creates a character, Máhtte or Biret, chooses a place, and
 walks around it in an isometric view with a camera that follows: furniture and family at home, animals in the forest, coloured books on the shelves and
@@ -12,7 +12,7 @@ Finnish translation, so no prior knowledge is needed, and there is no way to los
 
 Open `index.html` for the start page or `peli.html` for the game. They need no server, build step or network.
 
-Move with the arrow keys or WASD, by tapping the world, or with the on-screen pad on touch screens. Keys follow
+Move with the arrow keys or WASD, or by clicking the world. On a touch screen (or with `?touch` on the address) the game has controls of its own instead, in `src/touch.js`: a joystick that appears under the left thumb and runs when pushed to the edge, and round buttons on the right for using what's in reach (it shows it), jumping and crouching (a switch). Touching the picture does nothing there. The game fills the screen lying sideways and asks to be turned when held upright; a phone starts at 2× zoom, and the zoom is in the pause menu. Keys follow
 the screen: W goes straight up, and two keys together, such as W+A, go along the paths and across the bridges.
 Only trunks, things and water block the way; the character slides past them and walks behind the branches.
 Space jumps, about half the character's height: over things in the way, but not over the house or the river. Jumping into a tree,
@@ -22,11 +22,15 @@ The animals, store and library things are small 3D models in `src/models.js`. Th
 
 Every place is drawn at double detail, on a finer canvas: food, fittings, people and animals are modelled finer, and floors, trees, shelves and the player are enlarged with Scale2x. Two cashiers in the store's uniform sit at two checkouts, and a barrier across the store means the way out is through one of them: the way in is by a gate near the door. A butcher behind the meat counter cuts a big piece of meat, with plates of four kinds of meat on the counter. A worker fills the shelves from a small trolley, which can't be walked through and never closes an aisle, and carries used baskets back to the door. In the store, five to seven customers of different ages and looks pick things off the shelves into baskets (nothing leaves the shelf), queue at the till, pay the cashier, leave the empty basket at the end of the counter and go with a bag in the Sámi flag's colours, one of six kinds. The player needs a basket too, from the stack just inside the gate, and what they find goes into it. A fall drops the basket and spills the shopping: the character takes the basket back on getting up, and the blinking shopping is gathered by walking over it, without a word. With everything found, the player goes to the till, puts the shopping on the belt one thing at a time, pays, takes the bag and walks to the door, where the clock stops. Things cost whole euros, after real prices. On the harder level the list asks for up to five of each, C takes one at a time, and the price the cashier says must be typed into a calculator.
 
-A wrong pick holds the character still for three seconds while it's explained. E is the key for using things on every map (Q is kept for putting things away later): walking against something does nothing by itself, though what is tapped on is taken on arriving. Help bubbles show when E can be used, and in the store arrows point the way. They're on by default, with a switch in the menu and under the game. What E does just now also shows as text above the game, except when playing by sound only. They are only company: the player walks through them and can't touch them.
+A wrong pick holds the character still for three seconds while it's explained. E is the key for using things on every map (Q is kept for putting things away later): walking against something does nothing by itself, though what is tapped on is taken on arriving. Help bubbles show when E can be used, and in the store arrows point the way. They're on by default, with a switch in the main menu, set between rounds. What E does just now also shows as text above the game, except when playing by sound only. They are only company: the player walks through them and can't touch them.
 
 A clock starts at the first move of a round and stops at the last word; in the store it runs from taking the basket until the door. Play then stops, and a window shows the
 time, the ten best times for that place (kept in the browser, with the name the player gave), and the choice to
 play again or go to the main menu. The main menu fills the page: pick a place, then what to do there if it has several things, such as Opettele numerot in the classroom, then its level if it has several, or replay the last one. It also changes the player, which asks for the character and name again.
+
+The main menu's three switches, each a picture with a sliding knob, choose sound and text or sound only, the help bubbles, and the clock. In a round, the top of the view shows what to find, a "?" that turns into its shadow after two wrong picks (on the store's list, shadows beside the words), and a slot for each word; a find's card fades after five seconds, the clock, word book and zoom share the top right corner, and the help in the top left folds into a "?" once closed (`mahtte.guideFolded`). Esc in a round, or ⏸ in the corner on a touch screen, pauses it and opens a menu (`src/pause.js`): continue, start again, the main menu and the graphics: GPU or basic 2D, effects 0–3, the performance counter. Text or sound only, help and the clock are switched only in the main menu, between rounds, as they decide how a round is played and timed. At the end of a round a medal shows for a time among the three best, beside every word found and the three best times. The clock can be switched off there (`mahtte.clock`). Then no time shows during a round, the end-of-round window has no time or best times, and the menu shows no best times either. Times are still kept, so levels played still count as played.
+
+Sátnegirji, the word book (`src/wordbook.js`), opens from the main menu. It holds every word the player has found, place by place, with its picture, translation and sound: touching a word opens its page, where the animal moves through what its picture sheet in `art/animals/` holds (a wag, a look round, a walk, grazing, pecking, a flight, a hop) while the voice says "Dát lea …"; touching it plays it again, and a thing with no moves bounces. A word gets a star at 3, 10 and 25 finds, and words not found yet are grey shadows. Each player has a book of their own in the browser (`mahtte.book.<player>`), which also counts the wrong picks of each word asked for. The window at the end of a round shows what went into the book and which words got a star. During a round each find flies into a small book in the view's corner, without holding play up: new words with a golden trail and a brighter chime, new stars with a sparkle. The very first word in a player's book gets confetti, a steel-drum fanfare (Kenney, CC0), and the book's first page until it is tapped away or a key is pressed, and the game and clock wait meanwhile. With reduced motion asked for by the system, nothing flies. Only places open in the chosen language are in it.
 
 Luokka has three things to do. Opettele numerot is the one above. In Kirjoita numerot, with levels for 0–9, 0–20 and 0–100, the character sits at one of six desks in a small sunny classroom and can't get up, among five classmates with names of their own. The teacher, in a shirt of one of three colours chosen at random, picks up one of the pens from the tray, in the colours of the Sámi flag, and writes a number in Sámi on the white board and asks what it is, in a voice of her own. E raises a hand and opens a keypad, like the shop's, for the number in digits. Then the character says it and the teacher answers. If nobody answers for 20 seconds, a classmate does, in a character's voice played higher. Kirjoita sanalla, the hard one, has levels for 0–9, 0–20 and 0–100 and goes the other way: the board shows digits and the keypad becomes a Sámi keyboard for writing the word, with the classmates waiting all the while. In both, what's said shows in a speech bubble in Sámi and Finnish, and each language has a switch where the level is chosen. All of it is in `src/lesson.js`.
 
@@ -37,6 +41,18 @@ Laavu is a slow evening with no clock or list to race. The chores come one after
 The forest is made ahead by `tools/make_forest.py` into `art/forest/`: the ground in pieces that load as they come near, and the trees. Which species grows where is decided in `tools/make_map.py`: Norway spruce, Scots pine with juniper under it, and birch with some rowan along the river. Only the river, some grass, the trees' slow lean and a few specks of light move, so that it stays calm to look at.
 
 The grocery store, the two classrooms, the library, the home, the car park and the general store are made the same way, by `tools/make_store.py`, `tools/make_classrooms.py`, `tools/make_library.py`, `tools/make_home.py`, `tools/make_city.py` and `tools/make_gearstore.py` (the last four with `tools/rooms3d.py`) into `art/store/`, `art/classroom/`, `art/lesson/`, `art/library/`, `art/home/`, `art/city/` and `art/gearstore/`: the floor in pieces, one sheet with each tile's walls and fixtures, and for the classrooms the chair. All of it goes into the floor's pictures, and a tile is drawn again only over someone behind it. At home the furniture is made with the room too, each piece a picture of its own drawn again over the player behind it, and the family sit, stand and play on and by it. In these places, on a big enough screen, the window shows more of the world rather than a bigger picture of it, with buttons for 1×, 2×, 3× and 4× zoom, and the game window is never larger than 1920×1080. In the grocery store every food always has its own place, from `stock_of` in `tools/make_map.py`, and a sign with its Finnish name; in the general store every thing has its own place too, hanging from the pegboards' pegs or the clothes rails or standing on a low platform, from `GEAR_FIXTURES` there. The library's bookcases have sections for each colour, and a book is found at its colour's sections; pens, pencils, notebooks, laptops, tablets and scissors lie on its reading tables. The car park has a small town's shops and flats along two sides, birches, street lamps and benches, and two ways in for cars. The food, the animals, the shops' things and the people are made by `tools/make_animals.py` into `art/animals/`. After changing the map, run the place's script again.
+
+## Icon and installing
+
+```bash
+python3 tools/make_icon.py
+```
+
+The icon is Máhtte and Biret side by side on the flag's yellow, made from the game's own figures (`art/icon/biret.png` and
+`mahtte.png`) into `art/icon/`. `manifest.webmanifest` makes the game installable: "Add to home screen" on a phone puts
+Sátnemátki there with this icon, and it opens fullscreen and lying sideways, straight into `peli.html`. On a touch screen
+the game also asks for fullscreen with the first touch in a round, has a ⛶ button for it, and the phone's back button
+opens the pause menu.
 
 ## Art
 
@@ -102,6 +118,11 @@ python3 tools/fetch_voices.py
 This fetches the spoken lines into `audio/` once: the question, the greeting, varied answers, every thing's name
 in plain and coloured forms, and the numbers up to 100. The name the player types
 stays on their device and is not spoken.
+
+The lines are kept as MP3, mono at 48 kbit/s (`tools/audio_mp3.py`): every browser and phone plays it, and it sounds the
+same as the WAV the speech service sends, at about a sixth of the size (2,542 lines, about 40 MB instead of 244 MB). The
+fetcher and `tools/store3d/make_announcements.py` need ffmpeg for that: one on the PATH, `$FFMPEG`, or pip's
+imageio-ffmpeg in `~/.cache/audio-tools`.
 
 ## Word data
 

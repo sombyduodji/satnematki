@@ -4,6 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Sátnemátki: pohjoissaamen sanapeli lapsille</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="32x32" href="art/icon/favicon-32.png">
+<link rel="icon" type="image/png" sizes="48x48" href="art/icon/favicon-48.png">
+<link rel="apple-touch-icon" href="art/icon/apple-touch-icon.png">
+<meta name="theme-color" content="#0d3f8f">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Sátnemátki">
 <meta name="description" content="Sátnemátki on maksuton pohjoissaamen sanapeli lapsille. Tämä on vielä vain teknologiademo.">
 <link rel="stylesheet" href="src/site.css">
 <script>
@@ -25,13 +33,13 @@
     <button class="flag flag-nb" data-set-lang="nb" title="Norsk" aria-label="Norsk"></button>
   </div>
   <div class="hero-text" data-lang="fi">
-    <h1 lang="se">Sátnemátki <small>v0.3.7</small></h1>
+    <h1 lang="se">Sátnemátki <small>v0.4.0</small></h1>
     <p class="lead">Pohjoissaamen sanapeli lapsille. Nimi tarkoittaa <em>sanamatkaa</em>: kuljet hahmollasi kodissa, metsässä ja kaupassa ja etsit sen, mitä saamenkielinen sana tarkoittaa.</p>
     <a class="play" href="peli.html">Pelaa selaimessa</a>
     <p class="fine">Maksuton. Ei rekisteröitymistä eikä asennusta.</p>
   </div>
   <div class="hero-text" data-lang="nb" lang="nb">
-    <h1 lang="se">Sátnemátki <small>v0.3.7</small></h1>
+    <h1 lang="se">Sátnemátki <small>v0.4.0</small></h1>
     <p class="lead">Et nordsamisk ordspill for barn. Navnet betyr <em>ordreise</em>: du går rundt med figuren din hjemme, i skogen og i butikken og finner det et samisk ord betyr.</p>
     <a class="play" href="peli.html">Spill i nettleseren</a>
     <p class="fine">Gratis. Ingen registrering og ingen installasjon.</p>
@@ -108,8 +116,8 @@
       <div><dt>Ota tai katso</dt><dd>E, kun olet lähellä. Luokassa E istuttaa tuolille</dd></div>
       <div><dt>Kyykisty</dt><dd>C. Luokassa C myös istuttaa tuolille</dd></div>
     </dl>
-    <p class="note">Pelin aikana puhekuplat kertovat, milloin E:tä voi käyttää, ja kaupassa nuolet näyttävät tien korille, kassalle ja ovelle. Ohjekuplat ovat aluksi päällä, ja ne voi kytkeä pois valikosta tai pelin alta.</p>
-    <p class="note">Peli toimii parhaiten tietokoneella. Puhelimessa on omat painikkeet, mutta niitä ei ole vielä kokeiltu oikealla puhelimella.</p>
+    <p class="note">Pelin aikana puhekuplat kertovat, milloin E:tä voi käyttää, ja kaupassa nuolet näyttävät tien korille, kassalle ja ovelle. Ohjekuplat ovat aluksi päällä, ja ne voi kytkeä pois päävalikosta.</p>
+    <p class="note">Puhelimessa ja tabletissa pelataan omilla ohjaimilla: vasemmalla tatti, jolla liikutaan (reunaan asti työnnettynä juostaan), ja oikealla Ota-, Hyppy- ja kyykkypainikkeet. Käännä puhelin vaakatasoon. Selaimen valikosta pelin voi lisätä aloitusnäyttöön, jolloin se aukeaa koko näytölle.</p>
   </section>
 
   <section>
@@ -129,8 +137,12 @@
   </section>
 
   <section>
-    <h2>Uutta versioissa 0.1.5–0.3.7</h2>
+    <h2>Uutta versioissa 0.1.5–0.4.0</h2>
     <ul class="points">
+      <li><strong>Sátnegirji, oma sanakirja.</strong> Jokainen löydetty sana tallentuu pelaajan omaan sanakirjaan kuvan ja käännöksen kanssa. Sanaa koskettamalla eläin liikkuu ja ääni sanoo sanan. Sana saa tähden, kun se on löydetty 3, 10 ja 25 kertaa, ja ensimmäinen sana juhlitaan fanfaarilla.</li>
+      <li><strong>Uusi ulkoasu.</strong> Päävalikossa on kuvalliset kytkimet tekstille, ohjeille ja kellolle. Kellon voi kytkeä pois, jolloin aikaa ja parhaita aikoja ei näytetä. Pelissä etsittävä sana näkyy ylhäällä kysymysmerkkinä, ja kahden väärän arvauksen jälkeen siinä näkyy sen varjo. Hahmo puhuu puhekuplissa, ja kierroksen lopussa parhaasta ajasta saa mitalin.</li>
+      <li><strong>Tauko.</strong> Esc tai ⏸-painike pysäyttää pelin ja avaa valikon, josta voi jatkaa, aloittaa alusta tai vaihtaa grafiikkaa.</li>
+      <li><strong>Puhelimelle.</strong> Kosketusnäytöllä on peliohjain: vasemmalla tatti, oikealla painikkeet. Peli täyttää vaakatasoon käännetyn näytön, ja sen voi lisätä puhelimen aloitusnäyttöön omana kuvakkeenaan. Äänet ovat nyt MP3-muodossa, joten peli latautuu paljon nopeammin.</li>
       <li><strong>Norjankielinen versio aloitettu.</strong> Pelin yläkulman lipuista voi vaihtaa ohjeiden kielen suomesta norjaksi (bokmål). Saame pysyy samana. Norjaksi on toistaiseksi käännetty Metsä, Ruokakauppa molempine tasoineen ja Koulu kaikkine tehtävineen, ja muut paikat tulevat myöhemmin. Ruokakaupan kyltit kirjoitetaan pelaajan kielellä.</li>
       <li><strong>Grafiikka näytönohjaimella.</strong> Peli voi piirtää näytönohjaimella (WebGL 2), ja se on käytössä aina, kun se toimii. Silloin paikoissa on valoa ja varjoja: auringon varjot, valokiilat ikkunoista ja puiden välistä sekä pehmeä hehku. Pelin alla olevasta Grafiikka-valinnasta voi vaihtaa näytönohjaimen ja perusgrafiikan välillä.</li>
       <li><strong>Uudistetut paikat.</strong> Kirjasto, Koti, Parkkipaikka ja Rautakauppa on tehty uusiksi 3D-malleina. Kirjastossa on jokaiselle värille oma hyllynsä ja lukupöydät, Parkkipaikan ympärillä pienen kaupungin kaupat ja asunnot, ja Rautakaupassa jokaisella tavaralla on oma paikkansa.</li>
@@ -240,8 +252,8 @@
       <div><dt>Ta eller se</dt><dd>E når du er nær. På skolen setter E deg på stolen</dd></div>
       <div><dt>Huk deg ned</dt><dd>C. På skolen setter C deg også på stolen</dd></div>
     </dl>
-    <p class="note">Mens du spiller, viser hjelpebobler når du kan bruke E, og i butikken viser piler veien til kurven, kassa og døra. Hjelpeboblene er på fra starten og kan slås av i menyen eller under spillet.</p>
-    <p class="note">Spillet fungerer best på datamaskin. På mobilen har det egne knapper, men de er ikke prøvd på en ekte mobil ennå.</p>
+    <p class="note">Mens du spiller, viser hjelpebobler når du kan bruke E, og i butikken viser piler veien til kurven, kassa og døra. Hjelpeboblene er på fra starten og kan slås av i hovedmenyen.</p>
+    <p class="note">På mobil og nettbrett spiller du med egne kontroller: en spak til venstre som du går med (skyver du den helt ut, løper du), og knappene Ta, Hopp og huk til høyre. Snu mobilen på siden. Fra nettleserens meny kan du legge spillet til på startskjermen, så åpnes det i fullskjerm.</p>
   </section>
 
   <section>
@@ -261,8 +273,12 @@
   </section>
 
   <section>
-    <h2>Nytt i versjon 0.1.5–0.3.7</h2>
+    <h2>Nytt i versjon 0.1.5–0.4.0</h2>
     <ul class="points">
+      <li><strong>Sátnegirji, din egen ordbok.</strong> Hvert ord du finner, lagres i din egen ordbok med bilde og oversettelse. Trykk på et ord, så beveger dyret seg og stemmen sier ordet. Ordet får en stjerne når det er funnet 3, 10 og 25 ganger, og det første ordet feires med en fanfare.</li>
+      <li><strong>Nytt utseende.</strong> Hovedmenyen har brytere med bilder for tekst, hjelp og klokke. Klokka kan slås av, og da vises verken tid eller beste tider. I spillet står ordet du skal finne øverst med et spørsmålstegn, og etter to feil gjetninger vises skyggen av det. Figuren snakker i snakkebobler, og på slutten av runden får du en medalje for beste tid.</li>
+      <li><strong>Pause.</strong> Esc eller ⏸-knappen stopper spillet og åpner en meny der du kan fortsette, starte på nytt eller bytte grafikk.</li>
+      <li><strong>For mobilen.</strong> På berøringsskjerm har spillet egne kontroller: en spak til venstre og knapper til høyre. Spillet fyller skjermen når mobilen ligger på siden, og du kan legge det til på startskjermen med eget ikon. Lydene er nå i MP3-format, så spillet lastes mye raskere.</li>
       <li><strong>Norsk versjon påbegynt.</strong> Med flaggene øverst bytter du språket på instruksjonene mellom finsk og norsk (bokmål). Samisken er den samme. Foreløpig er Skogen, Matbutikken med begge nivåene og Skolen med alle oppgavene oversatt, og de andre stedene kommer senere. Skiltene i Matbutikken skrives på spillerens språk.</li>
       <li><strong>Grafikk med skjermkortet.</strong> Spillet kan tegne med skjermkortet (WebGL 2), og det brukes alltid når det fungerer. Da har stedene lys og skygge: skygger fra sola, lysstriper fra vinduene og mellom trærne og en myk glød. Under spillet kan du bytte mellom skjermkort og enkel grafikk med Grafikk-valget.</li>
       <li><strong>Fornyede steder.</strong> Biblioteket, Hjemme, Parkeringsplassen og Jernvarehandelen er laget på nytt som 3D-modeller. Biblioteket har en egen hylle for hver farge og lesebord, rundt Parkeringsplassen ligger butikkene og leilighetene i en liten by, og i Jernvarehandelen har hver vare sin egen plass.</li>

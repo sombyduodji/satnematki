@@ -51,9 +51,9 @@ Norway), voices **Máhtte and Biret**, and **Sunná** for the classroom's teache
 answers, the names of things and the numbers are generated once and included in [`audio/`](audio/) by
 [`tools/fetch_voices.py`](tools/fetch_voices.py). The game itself makes no requests.
 
-Ruokakauppa's loudspeaker announcements are spoken by Sunná too (`audio/announce-*.wav`). The chime, the cheap speaker, the
+Ruokakauppa's loudspeaker announcements are spoken by Sunná too (`audio/announce-*.mp3`). The chime, the cheap speaker, the
 hall's echo and the crackle of static are added by [`tools/store3d/make_announcements.py`](tools/store3d/make_announcements.py)
-(`audio/pa-*.wav`).
+(`audio/pa-*.mp3`).
 
 Divvun's permission to keep generated samples covers Sátni FST. It has not yet been confirmed for this game,
 which is for now a technology demo.
@@ -108,12 +108,24 @@ The dog breeds, wolverine and lynx follow descriptions on Wikipedia ([Norrbotten
 The shopping list is written in [Caveat](https://github.com/googlefonts/caveat) by The Caveat Project Authors (`art/fonts/`),
 under the [SIL Open Font License 1.1](art/fonts/OFL.txt). It has all of Northern Sámi's letters.
 
+## Word book fanfare
+
+The fanfare for a player's first word in Sátnegirji, `audio/book-fanfare.mp3`, is `jingles_STEEL02` from
+[Music Jingles](https://kenney.nl/assets/music-jingles) by Kenney Vleugels ([kenney.nl](https://kenney.nl/)),
+[CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/), turned from OGG into mono MP3. CC0 needs no credit, but it's welcome.
+The softer sounds as words go into the book are made by the game itself.
+
 ## Sign font
 
 The words on the grocery store's signs are written by the game, in the player's language, with `art/fonts/satne-sign.woff2`:
 a cut-down copy of [DejaVu Sans Bold](https://dejavu-fonts.github.io/) with only the letters the signs need (Finnish, Norwegian
 and Northern Sámi). As the Bitstream Vera licence asks of changed fonts, the copy has a name of its own, Satne Sign. Licence:
 [art/fonts/DejaVu-LICENSE.txt](art/fonts/DejaVu-LICENSE.txt).
+
+## Icon
+
+The icon (`art/icon/`) is the game's own pixel art: Máhtte and Biret as the game draws them, put together by
+[`tools/make_icon.py`](tools/make_icon.py). GPL-3.0, like the rest of the art.
 
 ## Game
 

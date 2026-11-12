@@ -53,8 +53,8 @@
     fittedTo = ""; // src/world.js fits the game to the page again, now a line taller or shorter
     event.currentTarget.blur(); // or space, the jump key, would press it again
   });
-  const helpToggle = document.getElementById("help-toggle");
-  helpToggle?.after(document.createTextNode(" · "), toggle);
+  // After "change the character", among the links shown in a round. Help is switched only in the main menu, between rounds.
+  document.getElementById("change-outfit")?.after(document.createTextNode(" · "), toggle);
   show();
 
   // And which way the game draws: with the GPU, or the basic 2D canvas. Some computers do better one way, some the other.

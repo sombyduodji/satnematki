@@ -1,0 +1,18 @@
+{
+  "name": "Sátnemátki",
+  "short_name": "Sátnemátki",
+  "description": "Pohjoissaamen sanapeli lapsille. A Northern Sámi word game for children.",
+  "lang": "se",
+  "start_url": "peli.html",
+  "scope": "./",
+  "display": "fullscreen",
+  "display_override": ["fullscreen", "standalone"],
+  "orientation": "landscape",
+  "background_color": "#20303a",
+  "theme_color": "#0d3f8f",
+  "icons": [
+    { "src": "art/icon/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "art/icon/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "art/icon/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

@@ -1,11 +1,14 @@
-"""Makes the store's loudspeaker announcements, for Ruokakauppa and the 3D test, from Sunná's lines (audio/announce-*.wav, fetched by tools/fetch_voices.py):
+"""Makes the store's loudspeaker announcements, for Ruokakauppa and the 3D test, from Sunná's lines (audio/announce-*.mp3, fetched by tools/fetch_voices.py):
 a chime first, then the voice as through a small, cheap ceiling speaker in a big hall, with a little hum and hiss, and at the end
-a burst of crackling static, as if a cable was loose. Writes audio/pa-*.wav. Everything but the voice is made here.
+a burst of crackling static, as if a cable was loose. Writes audio/pa-*.mp3. Everything but the voice is made here.
 
-    python3 tools/store3d/make_announcements.py   (needs numpy)
+    python3 tools/store3d/make_announcements.py   (needs numpy, and ffmpeg: see tools/audio_mp3.py)
 """
-import glob, os, wave
+import glob, io, os, sys, wave
 import numpy as np
+
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
+from audio_mp3 import mp3_to_wav_bytes, wav_to_mp3
 
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..")
 RATE = 22050
@@ -13,7 +16,7 @@ rng = np.random.default_rng(7)
 
 
 def read(path):
-    with wave.open(path) as w:
+    with wave.open(io.BytesIO(mp3_to_wav_bytes(path, RATE))) as w:
         assert w.getframerate() == RATE and w.getsampwidth() == 2
         data = np.frombuffer(w.readframes(w.getnframes()), np.int16).astype(np.float64) / 32768
         return data if w.getnchannels() == 1 else data.reshape(-1, w.getnchannels()).mean(1)
@@ -21,11 +24,13 @@ def read(path):
 
 def write(path, data):
     data = np.clip(data, -1, 1)
-    with wave.open(path, "wb") as w:
+    buffer = io.BytesIO()
+    with wave.open(buffer, "wb") as w:
         w.setnchannels(1)
         w.setsampwidth(2)
         w.setframerate(RATE)
         w.writeframes((data * 32767).astype(np.int16).tobytes())
+    wav_to_mp3(buffer.getvalue(), path)
 
 
 def speaker(x):
@@ -76,7 +81,7 @@ def static(seconds=0.9):
     return speaker(out) * 0.55
 
 
-for path in sorted(glob.glob(os.path.join(ROOT, "audio", "announce-*.wav"))):
+for path in sorted(glob.glob(os.path.join(ROOT, "audio", "announce-*.mp3"))):
     voice = read(path)
     voice = speaker(voice) * 0.85
     gap = np.zeros(int(RATE * 0.25))

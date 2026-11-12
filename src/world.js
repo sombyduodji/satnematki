@@ -1231,13 +1231,16 @@ let screenStep = 0;
 // In these places the window shows more of the world instead of a bigger picture of it: this many screen pixels to each of the world's.
 const WIDE_VIEW_PLACES = new Set(["store", "classroom", "forest", "library", "home", "city", "gearstore"]);
 const ZOOMS = [1, 2, 3, 4];
-// The forest only close up: further out, its animals are too small to find.
+// The forest only close up: further out, its animals are too small to find. A phone is held closer, so 2× there too.
 const PLACE_ZOOMS = { forest: [3, 4] };
-const zoomsIn = (place) => PLACE_ZOOMS[place] ?? ZOOMS;
+const zoomsIn = (place) => (place === "forest" && TOUCH_UI ? [2, 3, 4] : PLACE_ZOOMS[place] ?? ZOOMS);
 let viewPlace = null;
 const MOST_PIXELS = { x: 1920, y: 1080 }; // the game window is never larger than this, whatever the screen, and nothing beyond it is drawn
-// 3× to begin with, and then whatever was last chosen in that place.
-const ZOOM_FIRST = 3;
+// A touch screen gets game-style touch controls (src/touch.js); ?touch on the address shows them with a mouse too.
+const TOUCH_UI = matchMedia("(pointer: coarse)").matches || new URLSearchParams(location.search).has("touch");
+// 3× to begin with, and then whatever was last chosen in that place. A phone lying sideways is low, so it starts at 2×, to see
+// about as far as a computer does.
+const ZOOM_FIRST = TOUCH_UI && Math.min(screen.width, screen.height) < 600 ? 2 : 3;
 let VIEW_ZOOM = ZOOM_FIRST;
 function keptZoom(place) {
   try {
@@ -1278,7 +1281,8 @@ function chooseCanvasDetail() {
   if (window.innerWidth >= 700 && !document.body.classList.contains("menu")) {
     // Room for the game and everything else on the page too, the links under it among them, so that nothing needs scrolling to.
     const view = canvas.parentElement, page = view?.closest("main");
-    const around = page ? Math.max(24, Math.ceil(page.getBoundingClientRect().height - view.getBoundingClientRect().height)) : 24;
+    // With touch controls everything floats on the game and nothing is under it, so it may fill the screen.
+    const around = TOUCH_UI ? 4 : page ? Math.max(24, Math.ceil(page.getBoundingClientRect().height - view.getBoundingClientRect().height)) : 24;
     const roomX = Math.min(window.innerWidth - 32, MOST_PIXELS.x), roomY = Math.min(window.innerHeight - around, MOST_PIXELS.y);
     let step, detail;
     if (WIDE_VIEW_PLACES.has(viewPlace)) {

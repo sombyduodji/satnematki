@@ -96,14 +96,14 @@ function lessonSpeak(...turns) {
   speech.then(() => shown.forEach(lessonReleaseBubble));
   return speech;
 }
-const lessonMyLine = (name) => `audio/${name}-${VOICES[look.gender]}.wav`;
+const lessonMyLine = (name) => `audio/${name}-${VOICES[look.gender]}.mp3`;
 // One of the teacher's praises, then "Dát lea" and the number by itself, and "Buorre" with the name of whoever answered.
 // Two of the praises are left out here, as they would say "buorre" twice.
 const LESSON_PRAISES = [0, 1, 4, 5, 6, 7, 8, 9, 10, 11];
 function lessonPraise(number, name) {
   const praise = LESSON_PRAISES[Math.floor(Math.random() * LESSON_PRAISES.length)];
   // Her lines leave out "Gávdnet dan!", so they count without it.
-  return lessonTurn("teacher", LESSON_SPEECH.praise(TEXT.right.filter(([say]) => say !== "Gávdnet dan!")[praise], number, name), `audio/teacher-praise-${praise}.wav`, "audio/teacher-it-is.wav", `audio/teacher-number-${number}.wav`, `audio/teacher-good-${lessonNameFile(name)}.wav`);
+  return lessonTurn("teacher", LESSON_SPEECH.praise(TEXT.right.filter(([say]) => say !== "Gávdnet dan!")[praise], number, name), `audio/teacher-praise-${praise}.mp3`, "audio/teacher-it-is.mp3", `audio/teacher-number-${number}.mp3`, `audio/teacher-good-${lessonNameFile(name)}.mp3`);
 }
 
 // After the rules have been read.
@@ -112,7 +112,7 @@ function lessonBegin() {
   lesson.started = true;
   lesson.nextAt = now + LESSON.firstMs;
   timer.running = true;
-  lessonSpeak(lessonTurn("teacher", LESSON_SPEECH.hello, "audio/teacher-hello.wav"));
+  lessonSpeak(lessonTurn("teacher", LESSON_SPEECH.hello, "audio/teacher-hello.mp3"));
   showPrompt();
 }
 
@@ -144,9 +144,9 @@ function updateLesson(dt, now) {
   if (!current.asked && now >= current.until) {
     current.asked = true;
     current.waitFrom = now;
-    const question = `audio/teacher-which-${current.number < 10 ? "digit" : "number"}.wav`;
+    const question = `audio/teacher-which-${current.number < 10 ? "digit" : "number"}.mp3`;
     // The question only, never the number: that would give the answer away.
-    if (!lesson.typing && !current.answered) lessonSpeak(lessonTurn("teacher", current.number < 10 ? LESSON_SPEECH.whichDigit : LESSON_SPEECH.whichNumber, ...(audioOnly ? [`audio/teacher-number-${current.number}.wav`] : []), question));
+    if (!lesson.typing && !current.answered) lessonSpeak(lessonTurn("teacher", current.number < 10 ? LESSON_SPEECH.whichDigit : LESSON_SPEECH.whichNumber, ...(audioOnly ? [`audio/teacher-number-${current.number}.mp3`] : []), question));
   }
   // Left too long, a classmate gets there first.
   if (current.asked && !current.answered && !lesson.typing && now - current.waitFrom >= LESSON.speakUpAfterMs) lessonSpeakUp(now);
@@ -218,7 +218,7 @@ function lessonSpeakUp(now) {
   helper.swingUntil = 0;
   if (!audioOnly) lessonNote(LESSON_TEXT.beaten(helper.name, word, number));
   lessonNext(lessonSpeak(
-    lessonTurn(helper, LESSON_SPEECH.answer(number), { src: `audio/number-${number}-${voiceName}.wav`, rate }, { src: `audio/is-it-so-${voiceName}.wav`, rate }),
+    lessonTurn(helper, LESSON_SPEECH.answer(number), { src: `audio/number-${number}-${voiceName}.mp3`, rate }, { src: `audio/is-it-so-${voiceName}.mp3`, rate }),
     lessonPraise(number, helper.name),
   ));
 }
@@ -290,7 +290,7 @@ function lessonConfirm() {
   // A misspelt word stays open to be put right, and the classmates still wait.
   if (!right && theme.inWords) {
     lessonKeypad(LESSON_TEXT.wrongWord);
-    lessonSpeak(lessonTurn("teacher", LESSON_SPEECH.wrong, "audio/teacher-wrong.wav"));
+    lessonSpeak(lessonTurn("teacher", LESSON_SPEECH.wrong, "audio/teacher-wrong.mp3"));
     return;
   }
   lesson.typing = false;
@@ -299,20 +299,20 @@ function lessonConfirm() {
     me.heldUntil = now + WRONG_HOLD_MS;
     if (lesson.current.waitFrom) lesson.current.waitFrom = now;
     lessonNote(LESSON_TEXT.notYet);
-    lessonSpeak(lessonTurn("teacher", LESSON_SPEECH.wrong, "audio/teacher-wrong.wav"));
+    lessonSpeak(lessonTurn("teacher", LESSON_SPEECH.wrong, "audio/teacher-wrong.mp3"));
     return;
   }
   stars++;
   heardWords.push({ lemma: word, fi: String(number), nb: String(number), number, place: "desk" });
   sparkles.push({ x: me.x - 0.5, y: me.y - 1, born: now });
-  cardEl.className = "right";
+  cardEl.className = "right answered";
   cardEl.innerHTML = `<div>${LESSON_TEXT.right(word, number)}</div>`;
   showPrompt();
   // The character says it and asks, and the teacher answers. All of it is joined from separate lines.
   const speech = lessonSpeak(
     lessonTurn(lesson.people.find((person) => person.me), LESSON_SPEECH.answer(number), lessonMyLine(`number-${number}`), lessonMyLine("is-it-so")),
     lessonPraise(number, CHARACTER_NAMES[VOICES[look.gender]]),
-    ...(stars >= LESSON.rounds ? [lessonTurn("teacher", LESSON_SPEECH.end, "audio/teacher-end.wav")] : []),
+    ...(stars >= LESSON.rounds ? [lessonTurn("teacher", LESSON_SPEECH.end, "audio/teacher-end.mp3")] : []),
   );
   if (stars >= LESSON.rounds) {
     lesson.ended = true;
@@ -328,12 +328,14 @@ function lessonPrompt() {
     promptEl.innerHTML = "";
     return;
   }
-  const row = "★".repeat(stars) + "☆".repeat(roundSize - stars);
-  promptEl.innerHTML = `<span>${theme.inWords ? LESSON_TEXT.promptWords : audioOnly ? LESSON_TEXT.promptAudio : LESSON_TEXT.prompt}</span>
-    ${audioOnly ? `<button id="hear-again">🔊 ${TEXT.hearAgain}</button>` : ""}
-    <span class="stars" aria-label="${stars}/${roundSize}">${row}</span>`;
+  // The same pill as the other places: what the teacher asks, and a slot for each number of the lesson.
+  promptEl.className = "quest";
+  promptEl.innerHTML = `<span class="ask"><b>${theme.inWords ? LESSON_TEXT.promptWords : audioOnly ? LESSON_TEXT.promptAudio : LESSON_TEXT.prompt}</b></span>
+    ${audioOnly ? `<button id="hear-again">🔊 ${TEXT.hearAgain}</button>` : ""}`;
+  promptEl.prepend(questBadge(null, theme.inWords ? "✏️" : "🔢"));
+  promptEl.append(questSlots());
   promptEl.querySelector("#hear-again")?.addEventListener("click", () => {
-    if (lesson.current) lessonSay(`audio/teacher-number-${lesson.current.number}.wav`);
+    if (lesson.current) lessonSay(`audio/teacher-number-${lesson.current.number}.mp3`);
   });
 }
 

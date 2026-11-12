@@ -4,19 +4,30 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Sátnemátki</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="32x32" href="art/icon/favicon-32.png">
+<link rel="icon" type="image/png" sizes="48x48" href="art/icon/favicon-48.png">
+<link rel="apple-touch-icon" href="art/icon/apple-touch-icon.png">
+<meta name="theme-color" content="#0d3f8f">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Sátnemátki">
 <link rel="stylesheet" href="src/style.css">
 </head>
 <body>
 <main>
-  <div id="title-row"><h1 id="game-title" lang="se">Sátnemátki <small>v0.3.7</small></h1><div id="lang-switch" role="group"></div></div>
+  <div id="title-row"><h1 id="game-title" lang="se">Sátnemátki <small>v0.4.0</small></h1><div id="lang-switch" role="group"></div></div>
   <header id="prompt" aria-live="polite"></header>
   <aside id="note"></aside>
   <div id="top-hint" aria-live="polite"></div>
   <div id="view">
     <canvas id="world" width="304" height="190" aria-label="Pelimaailma"></canvas>
-    <div id="timer" hidden>0:00.0</div>
+    <div id="corner">
+      <div id="timer" hidden>0:00.0</div>
+      <div id="zoom" role="group" aria-label="Zoomaus" hidden><button data-zoom="1">1×</button><button data-zoom="2">2×</button><button data-zoom="3">3×</button><button data-zoom="4">4×</button></div>
+    </div>
+    <button id="guide-open" hidden aria-label="Näytä ohje">?</button>
     <div id="hint" hidden></div>
-    <div id="zoom" role="group" aria-label="Zoomaus" hidden><button data-zoom="1">1×</button><button data-zoom="2">2×</button><button data-zoom="3">3×</button><button data-zoom="4">4×</button></div>
     <aside id="guide-box" hidden><button id="guide-close" aria-label="Sulje ohje">×</button><div></div></aside>
   </div>
   <section id="card" aria-live="polite"></section>
@@ -35,10 +46,10 @@
   <footer>
     <span id="credits-line">Sanat: GiellaLT / Divvun / Giellatekno (CC BY 4.0). Taivutusmuodot: lang-sme (GPL-3.0). Puhe: Divvun / Giellatekno.</span>
     <a id="about-link" href="index.html">Tietoa pelistä</a> ·
-    <a id="credits-link" href="CREDITS.md">Tekijät ja lisenssit</a>
+    <a id="credits-link" href="CREDITS.md">Tekijät ja lisenssit</a> ·
+    <a id="feedback-link" href="mailto:satni@somby.fi">Anna palautetta</a>
     <span id="in-game">·
       <button id="change-outfit">Muuta hahmoa</button> ·
-      <button id="help-toggle" class="help-switch link">Ohjekuplat: päällä</button> ·
       <button id="change-place" class="link">Päävalikko</button>
     </span>
   </footer>
@@ -71,7 +82,10 @@
 <script src="src/world.js"></script>
 <script src="src/camp.js"></script>
 <script src="src/lesson.js"></script>
+<script src="src/wordbook.js"></script>
 <script src="src/game.js"></script>
+<script src="src/pause.js"></script>
+<script src="src/touch.js"></script>
 <script src="src/gl/panel.js"></script>
 </body>
 </html>

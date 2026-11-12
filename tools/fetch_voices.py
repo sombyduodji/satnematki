@@ -17,6 +17,8 @@ import urllib.error
 import urllib.request
 from pathlib import Path
 
+from audio_mp3 import wav_to_mp3
+
 OUT = Path(__file__).resolve().parent.parent / "audio"
 TTS_URL = "https://api-giellalt.uit.no/tts/se/{voice}"
 CHARACTERS = {"mahtte": "Máhtte", "biret": "Biret"}
@@ -199,9 +201,7 @@ def fetch(path, voice, text):
         audio = response.read()
     if not audio.startswith(b"RIFF") or len(audio) < 5000:
         raise RuntimeError(f"not audio: {len(audio)} bytes")
-    partial = path.with_suffix(".part")
-    partial.write_bytes(audio)
-    partial.replace(path)  # a stopped run never leaves half a line behind
+    wav_to_mp3(audio, path)  # kept as MP3, as the game plays them; a stopped run never leaves half a line behind
     return len(audio)
 
 
@@ -216,15 +216,15 @@ def main():
     # Line by line in every voice, so that all the voices advance together.
     for line, text in wanted_lines():
         for voice, name in CHARACTERS.items():
-            path = OUT / f"{line}-{voice}.wav"
+            path = OUT / f"{line}-{voice}.mp3"
             if not path.exists():
                 jobs.append((path, voice, text.replace("{name}", name)))
     for line, text in teacher_lines():
-        path = OUT / f"{line}.wav"
+        path = OUT / f"{line}.mp3"
         if not path.exists():
             jobs.append((path, TEACHER, text))
     for line, text in ANNOUNCEMENTS.items():
-        path = OUT / f"{line}.wav"
+        path = OUT / f"{line}.mp3"
         if not path.exists():
             jobs.append((path, ANNOUNCER, text))
     # Whole places first: home, then other plain names, before the many colour phrases and numbers.

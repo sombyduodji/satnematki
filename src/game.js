@@ -95,6 +95,8 @@ const TEXT = textInLanguage({
   },
   useIt: "Ota tai katso",
   helpOn: "Ohjekuplat: päällä",
+  clockOn: "Kello: päällä",
+  clockOff: "Kello: pois",
   helpOff: "Ohjekuplat: pois",
   needBasket: "Ota ensin kori oven vierestä.",
   enough: (word) => `Doarvái ${word.forms[UNCOUNTED_FOODS.has(word.sprite) ? "Sg+Acc" : "Pl+Acc"][0]}`,
@@ -105,7 +107,7 @@ const TEXT = textInLanguage({
   pickFallen: "Kerää vielä putonneet ostokset.",
   storePay: "Vie ostokset kassalle.",
   storePrice: "Kuuntele hinta ja maksa E:llä.",
-  storePriceTyped: "Kuuntele hinta, näppäile se ja paina E.",
+  storePriceTyped: "Kuuntele hinta, näppäile se ja paina OK.",
   wrongPrice: "Ei aivan. Kuuntele uudelleen.",
   euro: "€",
   storeBag: "Ota kassi kassan päästä.",
@@ -118,6 +120,10 @@ const TEXT = textInLanguage({
   bestTimes: "Parhaat ajat",
   bestTimesAudio: "Parhaat ajat, vain ääni",
   newRecord: "Uusi ennätys!",
+  secondBest: "Toiseksi paras aika!",
+  thirdBest: "Kolmanneksi paras aika!",
+  foundThese: "Löysit nämä",
+  newInBook: "UUSI",
   choosePlace: (name) => (name ? `Hei, ${name}! Minne mennään?` : "Minne mennään?"),
   mainMenu: "Päävalikkoon",
   changePlayer: "Vaihda pelaajaa",
@@ -128,6 +134,14 @@ const TEXT = textInLanguage({
   playAgain: "Pelaa taas",
   comingLater: "Tulossa myöhemmin",
   modeBoth: "Ääni ja teksti",
+  player: "Pelaaja",
+  switchText: "Teksti",
+  switchHelp: "Ohjeet",
+  switchClock: "Kello",
+  on: "päällä",
+  off: "pois",
+  textOn: "ääni ja teksti",
+  textOff: "vain ääni",
   modeAudio: "Vain ääni",
   modeHint: "Sanat kuuluvat vain ääneen, ja ne näkyvät kierroksen lopussa.",
   listen: "Kuuntele",
@@ -503,16 +517,32 @@ const promptEl = document.getElementById("prompt");
 const noteEl = document.getElementById("note"); // the shopping list, there all round, beside whatever the prompt says
 const cardEl = document.getElementById("card");
 // How to play, over the picture, until it's closed. It comes back with the next round.
+// The help in the corner of the game. Closed, it folds into a "?" that opens it again, and stays folded in later rounds
+// until opened, as by then it has been read.
 const guideBox = document.getElementById("guide-box");
+const guideOpen = document.getElementById("guide-open");
+let guideFolded = false;
+try { guideFolded = localStorage.getItem("mahtte.guideFolded") === "1"; } catch { /* open then */ }
+function foldGuide(folded) {
+  guideFolded = folded;
+  try { localStorage.setItem("mahtte.guideFolded", folded ? "1" : "0"); } catch { /* this visit only */ }
+  guideBox.hidden = folded;
+  guideOpen.hidden = !folded;
+}
 document.getElementById("guide-close").addEventListener("click", () => {
-  guideBox.hidden = true;
+  foldGuide(true);
   canvas.focus?.();
+});
+guideOpen.addEventListener("click", () => {
+  foldGuide(false);
+  guideBox.querySelector("button")?.focus();
 });
 function showGuideBox(html) {
   cardEl.className = "";
   cardEl.innerHTML = "";
   guideBox.lastElementChild.innerHTML = html;
-  guideBox.hidden = false;
+  guideBox.hidden = guideFolded;
+  guideOpen.hidden = !guideFolded;
 }
 const pictureCache = new Map();
 function pictureOf(word) {
@@ -826,40 +856,69 @@ async function finishRound(name, speech) {
   if (mine === roundEnding) showResults(times, place);
 }
 
+// The end of a round: a medal for a time among the three best, the time, every word found as a little card (marked when it's new in
+// the word book or got a star), the three best times with their medals, and the way on.
+const MEDALS = ["gold", "silver", "bronze"];
 function showResults(times, place) {
   closeResults();
   const results = document.createElement("div");
-  queueMicrotask(() => {
-    // What was heard during the round, now shown with its meaning.
-    const list = results.querySelector(".heard");
-    for (const word of list ? heardWords : []) {
-      const row = document.createElement("li");
-      row.innerHTML = `<b lang="se">${escapeText(word.lemma)}</b> = ${escapeText(translation(word))}`;
-      list.append(row);
-    }
-  });
   results.id = "results";
   results.setAttribute("role", "dialog");
+  const medal = clockRound && place >= 0 && place < 3 ? MEDALS[place] : null;
+  const medalText = [TEXT.newRecord, TEXT.secondBest, TEXT.thirdBest][place];
   results.innerHTML = `<div class="panel">
+      ${medal ? `<div class="medal ${medal}" aria-hidden="true"><span class="ribbon"></span><span class="disc">${place + 1}</span></div>` : `<div class="cheer" aria-hidden="true">🎉</div>`}
       <h2>${TEXT.done}</h2>
-      <div class="note">${TEXT.yourTime}</div>
-      <div class="time">${formatTime(timer.ms)}</div>
-      ${place === 0 ? `<div class="record">${TEXT.newRecord}</div>` : ""}
-      <h3>${audioOnly ? TEXT.bestTimesAudio : TEXT.bestTimes}</h3>
-      <ol></ol>
-      ${audioOnly ? `<h3>${TEXT.heardWords}</h3><ul class="heard"></ul>` : ""}
-      <div class="buttons"><button id="again">${TEXT.again}</button><button id="places">${TEXT.mainMenu}</button></div>
+      ${medal ? `<div class="record ${medal}">${medalText}</div>` : ""}
+      ${clockRound ? `<div class="time" aria-label="${TEXT.yourTime} ${formatTime(timer.ms)}"><span aria-hidden="true">⏱</span> ${formatTime(timer.ms)}</div>` : ""}
+      <section class="found"><h3>${audioOnly ? TEXT.heardWords : TEXT.foundThese}</h3><div class="tiles"></div></section>
+      ${clockRound ? `<section class="best"><h3>${audioOnly ? TEXT.bestTimesAudio : TEXT.bestTimes}</h3><ol></ol></section>` : ""}
+      <div class="buttons"><button id="again">${TEXT.again}</button>${theme?.lesson || theme?.desks ? "" : `<button id="to-book">📖 Sátnegirji</button>`}<button id="places">${TEXT.mainMenu}</button></div>
     </div>`;
-  times.forEach((time, i) => {
+  // Every word of the round, with its picture; new in the book, or a new star, is marked.
+  const fresh = new Set(bookRound.fresh.map((w) => w.sprite));
+  const starred = new Map(bookRound.starred.map(([w, n]) => [w.sprite, n]));
+  const tiles = results.querySelector(".tiles");
+  for (const word of heardWords) {
+    const tile = document.createElement("div");
+    tile.className = "tile";
+    try {
+      const image = menuPicture(word);
+      const c = document.createElement("canvas");
+      c.width = image.width;
+      c.height = image.height;
+      c.getContext("2d").drawImage(image, 0, 0);
+      tile.append(c);
+    } catch {
+      // The word alone, then.
+    }
+    tile.insertAdjacentHTML("beforeend", `<b lang="se">${escapeText(word.lemma)}</b><small>${escapeText(translation(word))}</small>`);
+    if (fresh.has(word.sprite) && word.number === undefined) {
+      tile.classList.add("fresh");
+      tile.insertAdjacentHTML("beforeend", `<span class="flag">${TEXT.newInBook}</span>`);
+    } else if (starred.has(word.sprite)) {
+      tile.insertAdjacentHTML("beforeend", `<span class="flag star">${"★".repeat(starred.get(word.sprite))}</span>`);
+    }
+    tiles.append(tile);
+  }
+  if (!heardWords.length) results.querySelector(".found").remove();
+  bookNewRound(); // said once
+  // The three best, with their medals and passport photos, this one marked.
+  if (clockRound) times.slice(0, 3).forEach((time, i) => {
     const row = document.createElement("li");
-    if (i === place) row.className = "new";
-    row.append(portraitImage(time.face), Object.assign(document.createElement("span"), { className: "who-name", textContent: time.name || "" }),
+    row.className = MEDALS[i] + (i === place ? " new" : "");
+    row.append(Object.assign(document.createElement("span"), { className: "mini-medal", textContent: String(i + 1) }), portraitImage(time.face),
+      Object.assign(document.createElement("span"), { className: "who-name", textContent: time.name || "" }),
       Object.assign(document.createElement("span"), { className: "best-time", textContent: formatTime(time.ms) }));
     results.querySelector("ol").append(row);
   });
   document.body.append(results);
-  results.querySelector("#again").addEventListener("click", () => (theme.lesson ? enterTheme(theme) : newRound()));
+  results.querySelector("#again").addEventListener("click", restartRound);
   results.querySelector("#places").addEventListener("click", showPlaces);
+  results.querySelector("#to-book")?.addEventListener("click", () => {
+    showPlaces();
+    showBook("all");
+  });
   results.querySelector("#again").focus();
 }
 
@@ -872,9 +931,18 @@ function shuffled(list) {
   return copy;
 }
 
-function enterTheme(chosenTheme) {
+// Starting a place: the place itself, the player at its start, a new round. "Start again" and "play again" do all of it too,
+// only without the window of instructions, which has been read.
+function restartRound() {
+  if (theme) enterTheme(theme, { guide: false });
+}
+
+function enterTheme(chosenTheme, { guide = true } = {}) {
   if (CLOSED_PLACES.has(chosenTheme.menuPlace ?? chosenTheme.place) || !placeInLanguage(chosenTheme.menuPlace ?? chosenTheme.place)) return; // not open yet, or not in this language
   theme = chosenTheme;
+  closePause();
+  saying = null; // nothing from a round before is still being said
+  bookHud(false); // a round of words shows it again
   document.body.classList.remove("menu");
   setAmbience(theme.place);
   stopLoudspeaker();
@@ -892,7 +960,8 @@ function enterTheme(chosenTheme) {
   if (theme.lesson) setupLesson();
   else lesson = null;
   showPrompt();
-  showGuide();
+  if (guide) showGuide();
+  else startRound();
 }
 
 // In the classroom the on-screen pad's crouch button sits at a chair.
@@ -932,20 +1001,23 @@ function showGuide() {
   }
   document.body.append(panel);
   const ok = panel.querySelector("#guide-ok");
-  ok.addEventListener("click", () => {
-    closeResults();
-    paused = false;
-    if (theme.camp) {
-      if (!campDogName()) campAskDogName();
-      return;
-    }
-    if (theme.lesson) {
-      lessonBegin();
-      return;
-    }
-    announce();
-  });
+  ok.addEventListener("click", startRound);
   ok.focus();
+}
+
+// Play begins: the first thing to find is asked, the lesson starts, or the camp asks the dog's name.
+function startRound() {
+  closeResults();
+  paused = false;
+  if (theme.camp) {
+    if (!campDogName()) campAskDogName();
+    return;
+  }
+  if (theme.lesson) {
+    lessonBegin();
+    return;
+  }
+  announce();
 }
 
 function newRound() {
@@ -954,7 +1026,7 @@ function newRound() {
   const clear = ([x, y]) => Math.hypot(x + 0.5 - me.x, y + 0.5 - me.y) > 1.5;
   closeResults();
   roundEnding++;
-  timerEl.hidden = !!theme.camp;
+  timerEl.hidden = !!theme.camp || !clockRound;
   paused = false;
   me.sittingOn = null;
   loudspeaker.wait = null; // till the basket is taken; one already speaking goes on
@@ -1005,15 +1077,17 @@ function newRound() {
   buildStoreAhead();
   targets = shuffled(find);
   heardWords = [];
+  missesSinceFind = 0;
+  bookNewRound();
   cart = newCart();
   if (theme.counts) {
     targets = wantedCounts(targets);
     const id = VOICES[look.gender];
-    prepareLines([1, 2, 3, 4].map((count) => `audio/count-${count}-${id}.wav`));
-    prepareLines([2, 3, 4, 5].map((count) => `audio/count-and-${count}-${id}.wav`));
-    prepareLines([...cart.want].filter(([, wanted]) => wanted > 1).map(([word]) => `audio/enough-${word.sprite}-${id}.wav`));
+    prepareLines([1, 2, 3, 4].map((count) => `audio/count-${count}-${id}.mp3`));
+    prepareLines([2, 3, 4, 5].map((count) => `audio/count-and-${count}-${id}.mp3`));
+    prepareLines([...cart.want].filter(([, wanted]) => wanted > 1).map(([word]) => `audio/enough-${word.sprite}-${id}.mp3`));
   }
-  if (helpRound && isShop(theme.place)) prepareLines(Object.values(STORE_HINTS).map((hint) => `audio/${hint.line}-${VOICES[look.gender]}.wav`));
+  if (helpRound && isShop(theme.place)) prepareLines(Object.values(STORE_HINTS).map((hint) => `audio/${hint.line}-${VOICES[look.gender]}.mp3`));
   prepareLines(targets.map((word) => askLine(word)));
   shoppingList = theme.ordered ? [...new Set(targets)] : [];
   roundSize = targets.length;
@@ -1052,6 +1126,15 @@ function paperList() {
     }
     if (!left) row.className = "bought";
     else if (left < wanted) row.dataset.left = `${wanted - left}/${wanted}`;
+    if (left && shadowHelps(word)) {
+      try {
+        const shadow = shadowOf(word);
+        shadow.className = "list-shadow";
+        row.prepend(shadow);
+      } catch {
+        // The word alone, then.
+      }
+    }
     paper.append(row);
   }
   return paper;
@@ -1063,7 +1146,66 @@ function escapeText(text) {
   return el.innerHTML;
 }
 
+// The round's progress at the top: a slot for each word, holding its picture once found, the next one ringed.
+function questSlots() {
+  const slots = document.createElement("span");
+  slots.className = "slots";
+  slots.setAttribute("aria-label", `${stars}/${roundSize}`);
+  for (let i = 0; i < roundSize; i++) {
+    const slot = document.createElement("span");
+    slot.className = `slot${i < stars ? " done" : i === stars ? " now" : ""}`;
+    const word = heardWords[i];
+    if (i < stars && word) {
+      try {
+        const image = menuPicture(word);
+        const c = document.createElement("canvas");
+        c.width = image.width;
+        c.height = image.height;
+        c.getContext("2d").drawImage(image, 0, 0);
+        slot.append(c);
+      } catch {
+        slot.textContent = "✓"; // a slot without its picture is still a filled slot
+      }
+    } else if (i < stars) slot.textContent = "✓";
+    slots.append(slot);
+  }
+  return slots;
+}
+
+// Wrong picks since the last find. After two, the shape of what's asked for shows as a help (a shadow, so the word is still
+// to be read); a find hides it again for the next one. Numbers never show theirs: the number is what's being learned.
+const SHADOW_AFTER_MISSES = 2;
+let missesSinceFind = 0;
+const shadowHelps = (word) => word && word.number === undefined && missesSinceFind >= SHADOW_AFTER_MISSES;
+
+function shadowOf(word) {
+  const image = menuPicture(word);
+  const c = document.createElement("canvas");
+  c.width = image.width;
+  c.height = image.height;
+  c.getContext("2d").drawImage(image, 0, 0);
+  return c;
+}
+
+// The round badge: a question mark, or after two wrong picks the shadow of what's asked for.
+function questBadge(word, glyph) {
+  const badge = document.createElement("span");
+  badge.className = "badge";
+  badge.setAttribute("aria-hidden", "true");
+  if (glyph || !shadowHelps(word)) badge.textContent = glyph ?? "?";
+  else {
+    try {
+      badge.append(shadowOf(word));
+      badge.classList.add("shadow");
+    } catch {
+      badge.textContent = "?";
+    }
+  }
+  return badge;
+}
+
 function showPrompt() {
+  promptEl.className = "";
   // What's been dropped is back on the list, not crossed off, until it's picked up again.
   noteEl.replaceChildren(...(theme?.ordered && shoppingList.length ? [paperList()] : []));
   if (theme?.camp) {
@@ -1074,17 +1216,23 @@ function showPrompt() {
     lessonPrompt();
     return;
   }
-  const starRow = "★".repeat(stars) + "☆".repeat(roundSize - stars);
   if (!theme) {
     promptEl.innerHTML = `<span>${escapeText(TEXT.choosePlace(loadName()))}</span>`;
   } else if (cart.spilled.length && targets.every((word) => cart.spilled.some((item) => item.word === word))) {
-    promptEl.innerHTML = `<span>${TEXT.pickFallen}</span>`;
+    promptEl.className = "quest";
+    promptEl.innerHTML = `<span class="ask"><b>${TEXT.pickFallen}</b></span>`;
+    promptEl.prepend(questBadge(null, "🧺"));
   } else if (STORE_PROMPTS[cart.stage] && isShop(theme.place)) {
-    promptEl.innerHTML = `<span>${TEXT[cart.stage === "price" && theme.counts ? "storePriceTyped" : STORE_PROMPTS[cart.stage]]}</span>`;
+    // Each step at the till in the same pill, with a picture of it.
+    promptEl.className = "quest";
+    promptEl.innerHTML = `<span class="ask"><b>${TEXT[cart.stage === "price" && theme.counts ? "storePriceTyped" : STORE_PROMPTS[cart.stage]]}</b></span>`;
+    promptEl.prepend(questBadge(null, STORE_STEP_PICTURES[cart.stage]));
   } else if (targets.length && audioOnly) {
-    promptEl.innerHTML = `<span>${TEXT.listen}</span>
-      <button id="hear-again">🔊 ${TEXT.hearAgain}</button>
-      <span class="stars" aria-label="${stars}/${roundSize}">${starRow}</span>`;
+    promptEl.className = "quest";
+    promptEl.innerHTML = `<span class="ask"><small>${TEXT.listen}</small></span>
+      <button id="hear-again">🔊 ${TEXT.hearAgain}</button>`;
+    promptEl.prepend(questBadge(null, "👂"));
+    promptEl.append(questSlots());
     promptEl.querySelector("#hear-again").addEventListener("click", hearAgain);
   } else if (targets.length) {
     const left = theme.counts ? targets.filter((word) => word === targets[0]).length : 1;
@@ -1094,9 +1242,11 @@ function showPrompt() {
       return;
     }
     const aimOf = targets[0].aimOf ? `<span class="aim-of" lang="se">${escapeText(targets[0].aimOf)}:</span>` : "";
-    promptEl.innerHTML = `<span>${TEXT.find}</span>${aimOf}
-      <span class="target waiting${aim.length > 12 ? " long" : ""}" lang="se">${escapeText(aim)}</span>
-      <span class="stars" aria-label="${stars}/${roundSize}">${starRow}</span>`;
+    promptEl.className = "quest";
+    promptEl.innerHTML = `<span class="ask"><small>${TEXT.find.replace(/:$/, "")}</small><span class="aim">${aimOf}
+      <span class="target waiting${aim.length > 12 ? " long" : ""}" lang="se">${escapeText(aim)}</span></span></span>`;
+    promptEl.prepend(questBadge(left > 1 ? null : targets[0], left > 1 ? `${left}×` : undefined));
+    promptEl.append(questSlots());
     if (shoppingList.length) {
       const list = document.createElement("ol");
       list.className = "shopping";
@@ -1111,8 +1261,10 @@ function showPrompt() {
       promptEl.append(list);
     }
   } else {
-    promptEl.innerHTML = `<span>${TEXT.done}</span>
-      <span class="stars" aria-label="${stars}/${roundSize}">${starRow}</span>`;
+    promptEl.className = "quest";
+    promptEl.innerHTML = `<span class="ask"><b>${TEXT.done}</b></span>`;
+    promptEl.prepend(questBadge(null, "🎉"));
+    promptEl.append(questSlots());
   }
 }
 
@@ -1147,7 +1299,7 @@ async function prepareLines(lines) {
 
 function answerLines() {
   const id = VOICES[look.gender];
-  return [...TEXT.right.map((_, i) => `audio/praise-${i}-${id}.wav`), ...TEXT.wrong.map((_, i) => `audio/wrong-${i}-${id}.wav`)];
+  return [...TEXT.right.map((_, i) => `audio/praise-${i}-${id}.mp3`), ...TEXT.wrong.map((_, i) => `audio/wrong-${i}-${id}.mp3`)];
 }
 
 // Audio only: the words are heard and not shown until the round has ended, to practise understanding spoken Sámi.
@@ -1169,9 +1321,9 @@ function setAudioOnly(on) {
 
 // The line that asks for what to find next.
 function askLine(word, id = VOICES[look.gender]) {
-  if (word.number !== undefined) return `audio/ask-number-${word.number}-${id}.wav`;
-  if (word.spoken) return `audio/ask-${word.spoken}-${word.sprite}-${word.colour}-${id}.wav`;
-  return `audio/ask-${word.sprite}-${id}.wav`;
+  if (word.number !== undefined) return `audio/ask-number-${word.number}-${id}.mp3`;
+  if (word.spoken) return `audio/ask-${word.spoken}-${word.sprite}-${word.colour}-${id}.mp3`;
+  return `audio/ask-${word.sprite}-${id}.mp3`;
 }
 
 function hearAgain() {
@@ -1182,14 +1334,14 @@ function hearAgain() {
 // What's being looked for, with how many first when there are several to get.
 function askLines() {
   const left = theme?.counts ? targets.filter((word) => word === targets[0]).length : 1;
-  return [...(left > 1 ? [`audio/count-${left}-${VOICES[look.gender]}.wav`] : []), askLine(targets[0])];
+  return [...(left > 1 ? [`audio/count-${left}-${VOICES[look.gender]}.mp3`] : []), askLine(targets[0])];
 }
 
 // The line that says what a thing is, as fetched by tools/fetch_voices.py.
 function wordLine(word, id = VOICES[look.gender]) {
-  if (word.number !== undefined) return `audio/number-${word.number}-${id}.wav`;
-  if (word.spoken) return `audio/${word.spoken}-${word.sprite}-${word.colour}-${id}.wav`;
-  return `audio/word-${word.sprite}-${id}.wav`;
+  if (word.number !== undefined) return `audio/number-${word.number}-${id}.mp3`;
+  if (word.spoken) return `audio/${word.spoken}-${word.sprite}-${word.colour}-${id}.mp3`;
+  return `audio/word-${word.sprite}-${id}.mp3`;
 }
 
 async function playNextLine() {
@@ -1197,7 +1349,7 @@ async function playNextLine() {
   // A line can come with a speed, which also raises its pitch: that's how classmates get voices of their own.
   const src = line?.src ?? line, rate = line?.rate ?? 1;
   // A classmate or cashier has the same line played at another speed.
-  playerTalking = Boolean(src) && !line?.rate && src.endsWith(`-${VOICES[look.gender]}.wav`);
+  playerTalking = Boolean(src) && !line?.rate && src.endsWith(`-${VOICES[look.gender]}.mp3`);
   if (!src) {
     voiceBusy = false;
     duckAmbience(false);
@@ -1408,7 +1560,7 @@ function askName() {
   });
   bubble.append(form);
   input.focus();
-  playVoice(`audio/question-${id}.wav`);
+  playVoice(`audio/question-${id}.mp3`);
 }
 
 // The bubble has the name; the spoken line is a plain "Bures!", so nothing leaves the player's device.
@@ -1419,7 +1571,7 @@ async function sayHello(name) {
   showBubble(TEXT.bures(name), TEXT.buresFi(name));
   await Promise.all([
     new Promise((resolve) => setTimeout(resolve, BUBBLE_MIN_MS)),
-    playVoice(`audio/bures-${VOICES[look.gender]}.wav`),
+    playVoice(`audio/bures-${VOICES[look.gender]}.mp3`),
   ]);
   if (mine !== greeting) return;
   // By now the character's sheet has come for the greeting: who's playing is remembered with their portrait, someone who played
@@ -1431,6 +1583,8 @@ async function sayHello(name) {
 // The menu of places: at the start, after a round, or whenever the player asks.
 function showPlaces() {
   closeResults();
+  closePause();
+  bookHud(false); // and a celebration still open goes with it
   roundEnding++;
   timerEl.hidden = true;
   paused = true;
@@ -1525,7 +1679,7 @@ function menuButton({ look: picture, title, small, example, onClick, className, 
 
 const themeLook = (option) => ({ sprite: option.sprite, colour: option.colour, number: option.number });
 const bestOf = (option) => loadTimes(option.id)[0];
-const bestText = (option) => (bestOf(option) ? `${TEXT.best} ${formatTime(bestOf(option).ms)}` : "");
+const bestText = (option) => (clockRound && bestOf(option) ? `${TEXT.best} ${formatTime(bestOf(option).ms)}` : "");
 
 function lastTheme() {
   try {
@@ -1534,6 +1688,28 @@ function lastTheme() {
   } catch {
     return undefined;
   }
+}
+
+// A switch on the menu: a picture, a word, a sliding knob with a tick or a cross, and a word for how it's set now.
+function menuSwitch(id, picture, label, on, onText, offText, set) {
+  const button = document.createElement("button");
+  button.className = "toggle";
+  button.dataset.toggle = id;
+  button.setAttribute("role", "switch");
+  const show = (now) => {
+    button.setAttribute("aria-checked", String(now));
+    button.querySelector(".knob").textContent = now ? "✓" : "✕";
+    button.querySelector(".state").textContent = now ? onText : offText;
+  };
+  button.innerHTML = `<span class="pic" aria-hidden="true">${picture}</span><span class="label">${escapeText(label)}</span>
+    <span class="track" aria-hidden="true"><span class="knob"></span></span><span class="state"></span>`;
+  show(on);
+  button.addEventListener("click", () => {
+    const now = button.getAttribute("aria-checked") !== "true";
+    show(now);
+    set(now);
+  });
+  return button;
 }
 
 function menuPlaces() {
@@ -1547,47 +1723,38 @@ function menuPlaces() {
   avatar.width = FRAME_W * SHEET_DETAIL;
   avatar.height = FRAME_H * SHEET_DETAIL;
   preview = avatar.getContext("2d");
-  const name = document.createElement("span");
-  name.textContent = loadName() || NAMES[look.gender];
+  const name = document.createElement("div");
+  name.className = "who-text";
+  name.innerHTML = `<small>${TEXT.player}</small><b></b>`;
+  name.querySelector("b").textContent = loadName() || NAMES[look.gender];
   const player = document.createElement("button");
   player.id = "change-player";
-  player.textContent = TEXT.changePlayer;
+  player.innerHTML = `<span aria-hidden="true">👥</span> ${escapeText(TEXT.changePlayer)}`;
   player.addEventListener("click", changePlayer);
   who.append(avatar, name, player);
   const notice = document.createElement("p");
   notice.className = "demo-notice";
   notice.textContent = TEXT.demoNotice;
   if (TEXT.earlyNotice) notice.append(Object.assign(document.createElement("strong"), { className: "early-notice", textContent: TEXT.earlyNotice }));
-  const modes = document.createElement("div");
-  modes.className = "modes";
-  modes.setAttribute("role", "group");
-  modes.setAttribute("aria-label", TEXT.listen);
-  const modeHint = document.createElement("p");
-  modeHint.className = "mode-hint";
-  const showModes = () => {
-    modes.querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String((b.dataset.mode === "audio") === audioOnly)));
-    modeHint.textContent = audioOnly ? TEXT.modeHint : "";
-  };
-  for (const [mode, label] of [["both", TEXT.modeBoth], ["audio", TEXT.modeAudio]]) {
-    const button = document.createElement("button");
-    button.dataset.mode = mode;
-    button.textContent = label;
-    button.addEventListener("click", () => {
-      setAudioOnly(mode === "audio");
+  // Three switches with pictures, so that a child who can't read yet sees what's on: text, help bubbles, the clock.
+  const switches = document.createElement("div");
+  switches.className = "toggles";
+  switches.append(
+    menuSwitch("text", "📝", TEXT.switchText, !audioOnly, TEXT.textOn, TEXT.textOff, (on) => {
+      setAudioOnly(!on);
       menuPlaces(); // the best times shown are for this way of playing
-      cardEl.querySelector(`.modes [data-mode=${mode}]`).focus();
-    });
-    modes.append(button);
-  }
-  showModes();
-  const helpSwitch = document.createElement("button");
-  helpSwitch.className = "help-switch";
-  helpSwitch.addEventListener("click", () => setHelp(!helpRound));
-  cardEl.append(notice, who, modes, modeHint, helpSwitch);
-  showHelpSwitches();
+      cardEl.querySelector("[data-toggle=text]")?.focus();
+    }),
+    menuSwitch("help", "💬", TEXT.switchHelp, helpRound, TEXT.on, TEXT.off, (on) => setHelp(on)),
+    menuSwitch("clock", "⏱️", TEXT.switchClock, clockRound, TEXT.on, TEXT.off, (on) => setClock(on)),
+  );
+  cardEl.append(notice, who, switches);
+  if (audioOnly) cardEl.append(Object.assign(document.createElement("p"), { className: "mode-hint", textContent: TEXT.modeHint }));
+  const quick = document.createElement("div");
+  quick.className = "quick";
   const last = lastTheme();
   if (last) {
-    cardEl.append(menuButton({
+    quick.append(menuButton({
       look: themeLook(last),
       title: `${TEXT.playAgain}: ${last.title}${last.level ? ` (${last.level})` : ""}`,
       small: bestText(last),
@@ -1595,6 +1762,8 @@ function menuPlaces() {
       onClick: () => enterTheme(last),
     }));
   }
+  quick.append(bookButton());
+  cardEl.append(quick);
   for (const { heading, places, look: sectionLook } of MENU_SECTIONS) {
     const section = document.createElement("section");
     section.className = `menu-section ${sectionLook}`;
@@ -1630,6 +1799,7 @@ function menuPlaces() {
 // The three best times of a level, each with the player's passport photo and name.
 const BEST_SHOWN = 3;
 function bestList(option) {
+  if (!clockRound) return document.createDocumentFragment(); // no best times without the clock
   const times = option.camp ? [] : loadTimes(option.id).slice(0, BEST_SHOWN);
   const list = document.createElement("ol");
   list.className = "best-list";
@@ -1816,7 +1986,7 @@ function showChooser() {
       const button = document.createElement("button");
       button.className = "player";
       const name = document.createElement("span");
-      name.className = "who-name";
+      name.className = "who-text";
       name.textContent = player.name || NAMES[player.look.gender];
       button.append(portraitImage(lookKey(player.look)), name);
       const bests = playerBests(player);
@@ -1915,6 +2085,25 @@ let rightSpeech = null;
 let heardWords = [];
 
 
+// A find's card fades away after five seconds, unless something else has taken its place meanwhile.
+const FOUND_CARD_MS = 5000, CARD_FADE_MS = 600;
+let cardFade = null;
+function fadeFoundCard() {
+  clearTimeout(cardFade);
+  const marker = cardEl.firstElementChild;
+  if (!marker) return;
+  cardFade = setTimeout(() => {
+    if (!cardEl.contains(marker)) return;
+    cardEl.classList.add("fading");
+    cardFade = setTimeout(() => {
+      if (cardEl.contains(marker)) {
+        cardEl.className = "";
+        cardEl.innerHTML = "";
+      } else cardEl.classList.remove("fading");
+    }, CARD_FADE_MS);
+  }, FOUND_CARD_MS);
+}
+
 function showCard(word, right, count = 1) {
   preview = null;
   cardEl.className = right ? "right" : "";
@@ -1934,17 +2123,20 @@ function showCard(word, right, count = 1) {
   picture.getContext("2d").drawImage(image, 0, 0);
   cardEl.prepend(picture);
   cardEl.classList.add("answered");
-  const bubble = document.createElement("div");
-  bubble.className = "bubble";
-  bubble.innerHTML = `<div class="say" lang="se"></div><div class="note"></div>`;
+  // What the character says goes in a speech bubble over the head; the card keeps the picture and the word.
   const line = pickLine(right ? TEXT.right : TEXT.wrong);
   const [say, sayFi] = (right ? TEXT.right : TEXT.wrong)[line];
   const person = FAMILY.has(word.sprite);
-  bubble.querySelector(".say").textContent = count > 1 ? `Ja ${window.MAHTTE_NUMBERS[count]}. ${TEXT.enough(word)}.` : `${say} ${person ? TEXT.thisPerson(word.lemma) : thisIs(word)}`;
-  bubble.querySelector(".note").textContent = count > 1 ? `${count} × ${translation(word)}.` : `${sayFi} ${person ? TEXT.thisPersonFi(translation(word)) : thisIsFi(word)}`;
-  if (!audioOnly) cardEl.append(bubble);
+  if (!audioOnly) {
+    saying = {
+      sme: count > 1 ? `Ja ${window.MAHTTE_NUMBERS[count]}. ${TEXT.enough(word)}.` : `${say} ${person ? TEXT.thisPerson(word.lemma) : thisIs(word)}`,
+      fi: count > 1 ? `${count} × ${translation(word)}.` : `${sayFi} ${person ? TEXT.thisPersonFi(translation(word)) : thisIsFi(word)}`,
+      until: performance.now() + SAYING_MS,
+    };
+  }
+  if (right) fadeFoundCard();
   const id = VOICES[look.gender];
-  const lines = count > 1 ? [`audio/count-and-${count}-${id}.wav`, `audio/enough-${word.sprite}-${id}.wav`] : [`audio/${right ? "praise" : "wrong"}-${line}-${id}.wav`, wordLine(word, id)];
+  const lines = count > 1 ? [`audio/count-and-${count}-${id}.mp3`, `audio/enough-${word.sprite}-${id}.mp3`] : [`audio/${right ? "praise" : "wrong"}-${line}-${id}.mp3`, wordLine(word, id)];
   if (!right && targets.length) lines.push(askLine(targets[0], id)); // and again what is being looked for
   // A find is always said in full: what is bumped into meanwhile stays quiet, and another find waits its turn.
   if (right) {
@@ -1969,38 +2161,72 @@ const holdForWrongPick = (now) => {
   me.goal = null;
 };
 
+function countMiss() {
+  missesSinceFind++;
+  if (missesSinceFind !== SHADOW_AFTER_MISSES) return;
+  // The shadow comes into view now: only the ring, or the store's list, as drawing the top again would hide the word asked for.
+  const badge = promptEl.querySelector(".badge");
+  if (badge && targets.length && !theme?.ordered) {
+    const shadow = questBadge(targets[0]);
+    shadow.classList.add("appearing");
+    badge.replaceWith(shadow);
+  }
+  if (theme?.ordered && shoppingList.length) noteEl.replaceChildren(paperList());
+}
+
+// What the character says in the store about something touched: the line in a speech bubble over the character's head, Sámi
+// with the player's language under it, and the thing's picture and name on the card below. Listening only, just the short note.
+const STORE_SAYING_MS = 4500, SAYING_MS = 4500;
+function storeSpeechCard(word, sme, note) {
+  if (audioOnly) {
+    cardEl.className = "";
+    cardEl.innerHTML = `<div class="note">${escapeText(note)}</div>`;
+    return;
+  }
+  saying = { sme, fi: note, until: performance.now() + STORE_SAYING_MS };
+  cardEl.className = "answered";
+  cardEl.innerHTML = `<div>
+      <div class="note">${TEXT.thisIs}</div>
+      <div><span class="word" lang="se">${escapeText(word.lemma)}</span> <span class="translation">= ${escapeText(translation(word))}</span></div>
+    </div>`;
+  const picture = document.createElement("canvas");
+  const image = pictureOf(word);
+  picture.width = image.width;
+  picture.height = image.height;
+  picture.getContext("2d").drawImage(image, 0, 0);
+  cardEl.prepend(picture);
+}
+
 function touch(object, now) {
   // The shopping list can be followed in any order.
   const right = theme?.ordered ? targets.includes(object.word) : targets[0] === object.word;
   if (right && isShop(placeName) && !cart.has) {
-    cardEl.className = "";
-    cardEl.innerHTML = `<div class="note">${TEXT.needBasket}</div>`;
+    storeSpeechCard(object.word, STORE_HINTS.basket.sme, TEXT.needBasket);
+    if (!rightSpeech) playVoice(`audio/${STORE_HINTS.basket.line}-${VOICES[look.gender]}.mp3`);
     return;
   }
   // What's in the basket already stays on its shelf, and touching it again says so, with the same pause as a wrong pick.
   if (!right && object.taken) {
     const id = VOICES[look.gender], plural = PLURAL_ONLY[object.word.sprite] ? "-plural" : "";
-    cardEl.className = "";
-    cardEl.innerHTML = audioOnly ? `<div class="note">${TEXT.taken(object.word)}</div>`
-      : `<div><span lang="se">${plural ? "Dat leat" : "Dat lea"} juo mu márssus.</span><div class="note">${TEXT.taken(object.word)}</div></div>`;
-    if (!rightSpeech) playVoice(`audio/store-taken${plural}-${id}.wav`);
+    storeSpeechCard(object.word, `${plural ? "Dat leat" : "Dat lea"} juo mu márssus.`, TEXT.taken(object.word));
+    if (!rightSpeech) playVoice(`audio/store-taken${plural}-${id}.mp3`);
     holdForWrongPick(now);
     return;
   }
   // In the store only what's on the list can be taken; anything else stays where it is, and is said what it is.
   if (!right && isShop(placeName)) {
     const id = VOICES[look.gender];
-    cardEl.className = "";
-    cardEl.innerHTML = audioOnly ? `<div class="note">${TEXT.notOnList}</div>`
-      : `<div><span lang="se">Ii. ${escapeText(thisIs(object.word)).replace(escapeText(object.word.lemma), `<b>${escapeText(object.word.lemma)}</b>`)} ${PLURAL_ONLY[object.word.sprite] ? "Dat eai leat" : "Dat ii leat"} mu listtus.</span>
-        <div class="note">${TEXT.notOnListFi(object.word)}</div></div>`;
-    if (!rightSpeech) playVoice(`audio/store-no-${id}.wav`, wordLine(object.word, id), `audio/store-notonlist${PLURAL_ONLY[object.word.sprite] ? "-plural" : ""}-${id}.wav`);
+    storeSpeechCard(object.word, `Ii. ${thisIs(object.word)} ${PLURAL_ONLY[object.word.sprite] ? "Dat eai leat" : "Dat ii leat"} mu listtus.`,
+      audioOnly ? TEXT.notOnList : TEXT.notOnListFi(object.word));
+    if (!rightSpeech) playVoice(`audio/store-no-${id}.mp3`, wordLine(object.word, id), `audio/store-notonlist${PLURAL_ONLY[object.word.sprite] ? "-plural" : ""}-${id}.mp3`);
     holdForWrongPick(now);
+    countMiss();
     return;
   }
   // One at a time when several are wanted: the character counts each one out loud, and the next waits until it has been said.
   // The last of them ends the counting with "enough of it", and then it goes.
   if (right && theme.counts && targets.filter((word) => word === object.word).length > 1) {
+    missesSinceFind = 0;
     pickOne(object.word);
     startAction("pick", now);
     targets.splice(targets.indexOf(object.word), 1);
@@ -2014,7 +2240,8 @@ function touch(object, now) {
       : `<div><div><span class="word" lang="se">${escapeText(window.MAHTTE_NUMBERS[count])}</span>
         <span class="translation">${count} / ${wanted}</span></div>
         <div class="note"><span lang="se">${escapeText(object.word.lemma)}</span> = ${escapeText(translation(object.word))}</div></div>`;
-    rightSpeech = (rightSpeech ?? Promise.resolve()).then(() => playVoice(`audio/count-${count}-${VOICES[look.gender]}.wav`)).then(() => {
+    fadeFoundCard();
+    rightSpeech = (rightSpeech ?? Promise.resolve()).then(() => playVoice(`audio/count-${count}-${VOICES[look.gender]}.mp3`)).then(() => {
       rightSpeech = null;
     });
     showPrompt();
@@ -2022,14 +2249,18 @@ function touch(object, now) {
   }
   const speech = showCard(object.word, right, theme?.counts && right ? cart.want.get(object.word) ?? 1 : 1);
   if (!right) {
+    if (!theme?.ordered && targets[0]) bookMissed(targets[0]); // what was asked for, and not recognised
     holdForWrongPick(now);
+    countMiss();
     return;
   }
+  missesSinceFind = 0; // the next one starts as a question mark again
   stars++;
   if (isShop(placeName)) {
     pickOne(object.word);
   }
   heardWords.push(object.word);
+  bookFound(object.word, object);
   targets.splice(targets.indexOf(object.word), 1);
   // Furniture and family stay where they are, but aren't asked about or spoken for again.
   if (placeName === "forest" && ANIMALS.has(object.word.sprite)) startReaction(object, now);
@@ -2074,7 +2305,7 @@ function startReaction(object, now) {
   startAction(reaction.pose, now);
   if (reaction.pose === "pat") stepUpToPat(object, now);
   if (reaction.sound) playImpact(reaction.sound);
-  if (reaction.say) saying = { say: reaction.say, until: now + reaction.ms };
+  if (reaction.say && !(saying && now < saying.until)) saying = { say: reaction.say, until: now + reaction.ms }; // not over what's being said
 }
 
 // In picture pixels from the feet: where the hand of the pat frames is. Standing just in front of the animal keeps the hand
@@ -3677,7 +3908,7 @@ function landOnBelt(now) {
 const PRICE_AGAIN_MS = 10000;
 function sayPrice(remind = false) {
   cart.priceAgainIn = PRICE_AGAIN_MS;
-  playVoice({ src: `audio/store-price-${cart.total}-${cashierVoice()}.wav`, rate: cashierRate() }, ...(remind ? [`audio/${STORE_HINTS.pay.line}-${VOICES[look.gender]}.wav`] : []));
+  playVoice({ src: `audio/store-price-${cart.total}-${cashierVoice()}.mp3`, rate: cashierRate() }, ...(remind ? [`audio/${STORE_HINTS.pay.line}-${VOICES[look.gender]}.mp3`] : []));
 }
 
 // The harder level: the price the cashier said goes into a calculator.
@@ -3740,6 +3971,7 @@ const BUTCHER = { at: [2.2, 5.1], board: [3, 5], cutMs: 420, crankMs: 160 };
 // Words in the bubbles. Machine made like the game's other sentences: for the user to check.
 const BELT_ITEM_PX = 11; // so that nothing on the belt hangs over its edges
 const STORE_PROMPTS = { pay: "storePay", price: "storePrice", bag: "storeBag", door: "storeDoor" };
+const STORE_STEP_PICTURES = { pay: "🛒", price: "💶", bag: "🛍️", door: "🚪" };
 // The cashier is a woman or a man at random each round, and the voice goes with the look.
 const otherCashier = () => (cart.cashier === "mahtte" ? "biret" : "mahtte");
 const cashierVoice = () => (cart.lane ? otherCashier() : cart.cashier); // each lane has its own
@@ -3823,14 +4055,26 @@ function setHelp(on) {
   } catch {
     // The choice still holds for this visit.
   }
-  showHelpSwitches();
 }
 
-function showHelpSwitches() {
-  for (const button of document.querySelectorAll(".help-switch")) {
-    button.textContent = helpRound ? TEXT.helpOn : TEXT.helpOff;
-    button.setAttribute("aria-pressed", String(helpRound));
+// The clock: on, a round is timed and the best times are shown; off, nothing is timed on screen and no best times are shown,
+// so nobody is hurried. Times are still kept, quietly, so that the levels played still show as played.
+let clockRound = true;
+try {
+  clockRound = localStorage.getItem("mahtte.clock") !== "off";
+} catch {
+  // Private windows may refuse; the clock just stays on.
+}
+
+function setClock(on) {
+  clockRound = on;
+  try {
+    localStorage.setItem("mahtte.clock", on ? "on" : "off");
+  } catch {
+    // The choice still holds for this visit.
   }
+  menuPlaces(); // the best times come and go with it
+  cardEl.querySelector("[data-toggle=clock]")?.focus();
 }
 
 // What the E key does just now, at the top of the game, whether the bubbles are on or not. Not when only listening.
@@ -3859,6 +4103,11 @@ function updateHint() {
   if (hint !== hintShown) {
     hintShown = hint;
     el.hidden = !hint;
+    el.classList.remove("speech"); // something said is a sentence or two, not a short hint, and pops up anew each time
+    if (said) {
+      void el.offsetWidth;
+      el.classList.add("speech");
+    }
     if (hint) {
       const key = hint.key || hint.act ? "<kbd>E</kbd> " : "";
       const words = hint.sme && !audioOnly ? `<span lang="se">${escapeText(hint.sme)}</span> <small>${escapeText(hint.fi)}</small>` : "";
@@ -3873,7 +4122,7 @@ function updateHint() {
   // Each said once in a round, and never over a find being said.
   if (hint?.line && !cart.said.has(hint.line) && !rightSpeech) {
     cart.said.add(hint.line);
-    playVoice(`audio/${hint.line}-${VOICES[look.gender]}.wav`);
+    playVoice(`audio/${hint.line}-${VOICES[look.gender]}.mp3`);
   }
 }
 
@@ -4312,7 +4561,7 @@ async function playLoudspeaker() {
   const choices = LOUDSPEAKER_LINES.filter((name) => name !== loudspeaker.last);
   loudspeaker.last = choices[Math.floor(Math.random() * choices.length)];
   loudspeaker.playing = true; // until it ends, or it couldn't play
-  const buffer = sound && await lineBuffer(`audio/${loudspeaker.last}.wav`);
+  const buffer = sound && await lineBuffer(`audio/${loudspeaker.last}.mp3`);
   if (!buffer || placeName !== "store" || loudspeaker.playing !== true) {
     loudspeaker.playing = null;
     return;
@@ -4833,7 +5082,7 @@ function frame(now) {
     updateShoppers(dt);
     updateLoudspeaker(dt);
   }
-  if (timer.running && !paused) {
+  if (timer.running && !paused && !bookCelebrating) {
     timer.ms += dt;
     showTimer();
   }
@@ -4866,6 +5115,7 @@ document.addEventListener("keydown", (event) => {
     if (event.key === "Escape") document.getElementById("menu-back")?.click();
     return;
   }
+  if (event.key === "Escape" && pauseKey(event)) return;
   if (paused) return;
   if (theme?.lesson && lesson?.typing) {
     if (event.target.tagName === "INPUT") { // it takes the letters itself
@@ -4993,11 +5243,6 @@ document.querySelectorAll("#pad button[data-dir]").forEach((button) => {
 document.getElementById("camp-pack").addEventListener("click", () => campOpenPack());
 document.getElementById("camp-drop").addEventListener("click", () => campPutDown());
 document.getElementById("change-outfit").addEventListener("click", showChooser);
-document.getElementById("help-toggle").addEventListener("click", (event) => {
-  setHelp(!helpRound);
-  event.currentTarget.blur(); // or space, the jump key, would press it again
-});
-showHelpSwitches();
 document.getElementById("change-place").addEventListener("click", () => {
   if (cardEl.className !== "chooser" && cardEl.className !== "greeting") showPlaces();
 });
