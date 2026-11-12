@@ -53,7 +53,7 @@ const BOOK_PLACES = [
 
 // The places open in this language, each with its words.
 function bookPlaces() {
-  return BOOK_PLACES.filter(([place]) => !CLOSED_PLACES.has(place) && placeInLanguage(place)).map(([place, belongs]) => ({
+  return BOOK_PLACES.filter(([place]) => !CLOSED_PLACES.has(place) && placeOnDevice(place)).map(([place, belongs]) => ({
     place,
     title: THEMES.find((t) => (t.menuPlace ?? t.place) === place)?.title ?? place,
     words: window.MAHTTE_WORDS.filter(belongs),

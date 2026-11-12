@@ -1,6 +1,6 @@
 # Sátnemátki
 
-*Sátnemátki* means "word journey" in Northern Sámi. Version 0.4.1, a technology demo.
+*Sátnemátki* means "word journey" in Northern Sámi. Version 0.4.2, a technology demo.
 
 A Northern Sámi word game for children. The player creates a character, Máhtte or Biret, chooses a place, and
 walks around it in an isometric view with a camera that follows: furniture and family at home, animals in the forest, coloured books on the shelves and
@@ -12,7 +12,7 @@ Finnish translation, so no prior knowledge is needed, and there is no way to los
 
 Open `index.html` for the start page or `peli.html` for the game. They need no server, build step or network.
 
-Move with the arrow keys or WASD, or by clicking the world. On a touch screen (or with `?touch` on the address) the game has controls of its own instead, in `src/touch.js`: a joystick that appears under the left thumb and runs when pushed to the edge, and round buttons on the right for using what's in reach (it shows it), jumping and crouching (a switch). Touching the picture does nothing there. The game fills the screen lying sideways and asks to be turned when held upright; a phone starts at 2× zoom, and the zoom is in the pause menu. Keys follow
+Move with the arrow keys or WASD, or by clicking the world. On a touch screen (or with `?touch` on the address) the game has controls of its own instead, in `src/touch.js`: a joystick that appears under the left thumb and runs when pushed to the edge, and round buttons on the right for using what's in reach (it shows it), jumping and crouching (a switch). Touching the picture does nothing there. The game fills the screen lying sideways and asks to be turned when held upright; a phone starts at 2× zoom, and the zoom is in the pause menu. Only the forest, the grocery store and the school are offered on a touch screen (`TOUCH_PLACES` in `src/game.js`), as the other places haven't been tried with these controls. Keys follow
 the screen: W goes straight up, and two keys together, such as W+A, go along the paths and across the bridges.
 Only trunks, things and water block the way; the character slides past them and walks behind the branches.
 Space jumps, about half the character's height: over things in the way, but not over the house or the river. Jumping into a tree,

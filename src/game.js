@@ -541,8 +541,10 @@ function showGuideBox(html) {
   cardEl.className = "";
   cardEl.innerHTML = "";
   guideBox.lastElementChild.innerHTML = html;
-  guideBox.hidden = guideFolded;
-  guideOpen.hidden = !guideFolded;
+  // On a touch screen it starts folded every round, as the window of instructions has just shown the controls: "?" opens it.
+  const folded = guideFolded || TOUCH_UI;
+  guideBox.hidden = folded;
+  guideOpen.hidden = !folded;
 }
 const pictureCache = new Map();
 function pictureOf(word) {
@@ -938,7 +940,7 @@ function restartRound() {
 }
 
 function enterTheme(chosenTheme, { guide = true } = {}) {
-  if (CLOSED_PLACES.has(chosenTheme.menuPlace ?? chosenTheme.place) || !placeInLanguage(chosenTheme.menuPlace ?? chosenTheme.place)) return; // not open yet, or not in this language
+  if (CLOSED_PLACES.has(chosenTheme.menuPlace ?? chosenTheme.place) || !placeOnDevice(chosenTheme.menuPlace ?? chosenTheme.place)) return; // not open yet, not in this language, or not on a phone
   theme = chosenTheme;
   closePause();
   saying = null; // nothing from a round before is still being said
@@ -1611,11 +1613,14 @@ function showPlaces() {
 const PLACE_MAPS = { home: "koti", forest: "elaimet", city: "parkkipaikka", library: "kirjasto", store: "kauppa", gearstore: "rautakauppa", camp: "laavu", classroom: "luokka", lesson: "oppitunti" };
 // Places shown in the menu but not open yet: greyed out, and they can't be started, as their graphics are still being made.
 const CLOSED_PLACES = new Set(["camp"]);
+// On a phone or tablet only the places tested with the touch controls show: the forest, the grocery store and the school.
+const TOUCH_PLACES = new Set(["forest", "store", "classroom"]);
+const placeOnDevice = (place) => placeInLanguage(place) && (!TOUCH_UI || TOUCH_PLACES.has(place));
 // The menu's sections, by how far along the places are. A new place has to be added to one of them to show.
 const MENU_SECTIONS = [
   { heading: "Pelattava demo", places: ["classroom", "forest", "store"], look: "ready" },
   { heading: "Keskeneräiset kentät – näitä voi testata, mutta niiden kehitys on vasta alkamassa", places: ["home", "city", "library", "gearstore", "camp"], look: "partly" },
-].map((section) => ({ ...section, heading: (LANG === "nb" && TEXT_NB.sections[section.heading]) || section.heading, places: section.places.filter(placeInLanguage) }))
+].map((section) => ({ ...section, heading: (LANG === "nb" && TEXT_NB.sections[section.heading]) || section.heading, places: section.places.filter(placeOnDevice) }))
   .filter((section) => section.places.length); // a language without a place hides it
 
 // A finer picture for the menu than the one on a word's card: built again at double detail where it's made of round shapes, and
@@ -1683,7 +1688,7 @@ const bestText = (option) => (clockRound && bestOf(option) ? `${TEXT.best} ${for
 function lastTheme() {
   try {
     const last = THEMES.find((option) => option.id === localStorage.getItem("mahtte.last"));
-    return last && !CLOSED_PLACES.has(last.menuPlace ?? last.place) && placeInLanguage(last.menuPlace ?? last.place) ? last : undefined;
+    return last && !CLOSED_PLACES.has(last.menuPlace ?? last.place) && placeOnDevice(last.menuPlace ?? last.place) ? last : undefined;
   } catch {
     return undefined;
   }

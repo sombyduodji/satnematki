@@ -422,7 +422,8 @@ body.menu #view, body.menu #pad, body.menu #in-game { display: none; }
 #jump { grid-area: jump; }
 #crouch { grid-area: crouch; }
 #use { grid-area: use; }
-@media (pointer: coarse) { #pad { display: grid; } }
+/* Touch screens have their own controls (src/touch.js), so the old pad never shows there, not even while the page loads. */
+@media (pointer: coarse) { #pad, #pad.seated { display: none !important; } }
 footer { font-size: 13px; color: #a9bac2; }
 footer a { color: #cfe3ee; }
 
