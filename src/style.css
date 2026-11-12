@@ -1019,3 +1019,24 @@ body.touch-ui #results .panel > .buttons { flex: none; margin-top: 10px; }
 .touch-guide .icon { grid-row: span 2; display: grid; place-items: center; width: 38px; height: 38px; border-radius: 50%; border: 2px solid rgba(255, 255, 255, 0.7); font-size: 18px; color: #fff; background: #14213d; border-color: #14213d; }
 .touch-guide b { font-size: 14px; line-height: 1.1; }
 .touch-guide small { font-size: 12px; line-height: 1.15; opacity: 0.85; }
+
+/* A phone lying sideways with the browser's own bars showing has only about 300 px of height: the windows get compact there. */
+@media (max-height: 420px) {
+  #results .panel { padding: 12px 16px 10px; }
+  #results h2 { font-size: 20px; margin-bottom: 2px; }
+  body.touch-ui #results .panel > ul { font-size: 13px; line-height: 1.3; }
+  .touch-guide { gap: 4px; margin-top: 6px; }
+  .touch-guide > div { grid-template-columns: 28px 1fr; padding: 3px 6px; }
+  .touch-guide .icon { width: 28px; height: 28px; font-size: 14px; border-width: 1px; }
+  .touch-guide b { font-size: 12px; }
+  .touch-guide small { font-size: 10px; }
+  body.touch-ui #results .panel > .buttons { margin-top: 6px; }
+  #results button { min-height: 38px; }
+  /* A word's page: the moving picture beside the word, not above it. */
+  #book-page .sheet { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: auto auto auto auto 1fr; column-gap: 14px; row-gap: 2px; width: min(560px, 100%); padding: 12px 14px; }
+  #book-page .stage { grid-row: 1 / span 6; min-height: 0; height: min(220px, calc(100vh - 60px)); }
+  #book-page .stage canvas { max-height: 100%; width: auto; }
+  #book-page .se { margin-top: 26px; font-size: 26px; }
+  #book-page .tr { font-size: 16px; }
+  #book-page .again { align-self: end; padding: 8px 14px; font-size: 15px; }
+}

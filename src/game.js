@@ -1635,8 +1635,11 @@ function menuPicture(word) {
     else {
       const detail = viewDetail;
       viewDetail = 1;
-      menuPictures.set(key, doubledImage(pictureOf(word)));
+      const picture = pictureOf(word);
       viewDetail = detail;
+      // A picture still loading is empty: an empty one stands in for now, and isn't kept, so the next look gets the real one.
+      if (!picture.width || !picture.height) return Object.assign(document.createElement("canvas"), { width: 1, height: 1 });
+      menuPictures.set(key, doubledImage(picture));
     }
   }
   return menuPictures.get(key);
