@@ -3742,8 +3742,23 @@ async function buildStoreAhead() {
 
 async function buildAnimalsAhead() {
   const round = objects;
+  // Those with pictures made ahead: their pictures are loaded and cut while the guide is read, a few at a time.
+  const baked = [...new Set(objects.filter((o) => ANIMALS.has(o.word.sprite)).map((o) => bakedName(o.word.sprite, o.word.colour)))].filter((name) => window.MAHTTE_ANIMALS?.[name]);
+  for (const name of baked) bakedAnimal(name, 0, window.MAHTTE_ANIMALS[name].frames[0]); // asks for every sheet at once
+  for (const name of baked) {
+    const sheet = bakedSheets.get(name);
+    await sheet.decode().catch(() => {});
+    const { frames } = window.MAHTTE_ANIMALS[name];
+    for (let facing = 0; facing < 4; facing++) {
+      for (const frame of frames) {
+        if (round !== objects) return;
+        bakedAnimal(name, facing, frame);
+      }
+      await new Promise((resolve) => setTimeout(resolve, 30));
+    }
+  }
   for (const sprite of new Set(objects.map((o) => o.word.sprite))) {
-    if (!ANIMALS.has(sprite)) continue;
+    if (!ANIMALS.has(sprite) || window.MAHTTE_ANIMALS?.[bakedName(sprite)]) continue;
     for (let facing = 0; facing < 4; facing++) {
       for (let frame = 0; frame < 3; frame++) {
         if (round !== objects) return;

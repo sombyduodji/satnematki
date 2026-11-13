@@ -1515,11 +1515,17 @@ function swishFrame(sprite, frame) {
 
 // In a place made ahead, what's on its way stays away for the moment it takes to load, rather than being drawn the old way first.
 const NOTHING_YET = Object.assign(document.createElement("canvas"), { width: 1, height: 1 });
+// A thing that comes in several kinds has a picture for each, named after the kind.
+const bakedName = (sprite, colour) => (sprite === "beana" ? `beana-${dogBreed}` : window.MAHTTE_ANIMALS?.[`${sprite}-${colour}`] ? `${sprite}-${colour}` : sprite.replace("person_gear_", "person_"));
+// A picture that couldn't be loaded (offline, say) is drawn the old way instead, so that nothing goes missing for good.
+const bakedFailed = (baked) => { const sheet = bakedSheets.get(baked); return !!sheet && sheet.complete && !sheet.naturalWidth; };
+// While the world is being drawn, a picture on its way is left out for the moment it takes to load: drawing it the old way
+// meanwhile took a mid-range phone 5 s at the start of a forest round (OnePlus Nord N10, 2026-11-13).
+let drawingWorld = false;
 function modelImage(sprite, facing, frame, headFacing = facing, colour) {
   // An owl's body is near enough round, so that turning all of it does for its head turning to look.
-  // A thing that comes in several kinds has a picture for each, named after the kind.
-  const baked = sprite === "beana" ? `beana-${dogBreed}` : window.MAHTTE_ANIMALS?.[`${sprite}-${colour}`] ? `${sprite}-${colour}` : sprite.replace("person_gear_", "person_");
-  if (window.MAHTTE_ANIMALS?.[baked]) return bakedAnimal(baked, sprite === "jievjaskuolfi" ? headFacing : facing, swishFrame(baked, frame)) ?? (madeTiles() ? NOTHING_YET : plainModelImage(sprite === "gumpe" || sprite === "geatki" || sprite === "albbas" ? "beana" : sprite, facing, frame, headFacing, colour));
+  const baked = bakedName(sprite, colour);
+  if (window.MAHTTE_ANIMALS?.[baked]) return bakedAnimal(baked, sprite === "jievjaskuolfi" ? headFacing : facing, swishFrame(baked, frame)) ?? (madeTiles() || (drawingWorld && !bakedFailed(baked)) ? NOTHING_YET : plainModelImage(sprite === "gumpe" || sprite === "geatki" || sprite === "albbas" ? "beana" : sprite, facing, frame, headFacing, colour));
   if (viewDetail === 1) return plainModelImage(sprite, facing, frame, headFacing, colour);
   const key = `${sprite}/${facing}/${frame}/${headFacing}/${colour}/${viewDetail}`;
   if (!modelImages.has(key)) {
@@ -1758,6 +1764,10 @@ function paintSleepZ(cx, cy, now, phase) {
 }
 
 function draw(now) {
+  drawingWorld = true;
+  try { drawWorldNow(now); } finally { drawingWorld = false; }
+}
+function drawWorldNow(now) {
   if (!worldImage && !MADE_GROUNDS[placeName]) worldImage = buildWorld();
   const dt = lastDraw === null ? 16 : Math.max(0, Math.min(now - lastDraw, 100));
   lastDraw = now;

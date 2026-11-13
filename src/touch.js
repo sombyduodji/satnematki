@@ -69,11 +69,25 @@
     const asked = page.requestFullscreen ? page.requestFullscreen({ navigationUI: "hide" }) : page.webkitRequestFullscreen();
     Promise.resolve(asked).then(() => screen.orientation?.lock?.("landscape").catch(() => {})).catch(() => {});
   };
+  // A button goes fullscreen with its click, not as the finger comes down: the page grows as the bars go, the window moves
+  // down, and the finger would lift beside the button, so the guide's OK took two taps (phone test, 2026-11-13).
+  let touchedButton = false;
+  let leavingOnPurpose = false;
+  const inRound = () => theme && !document.body.classList.contains("menu");
+  const fullInRound = () => {
+    goFull();
+    if (isFull()) screen.orientation?.lock?.("landscape").catch(() => {}); // held sideways again, back in a round
+  };
   document.addEventListener("pointerdown", (event) => {
-    if (event.pointerType !== "mouse" && theme && !document.body.classList.contains("menu")) {
-      goFull();
-      if (isFull()) screen.orientation?.lock?.("landscape").catch(() => {}); // held sideways again, back in a round
-    }
+    touchedButton = false;
+    if (event.pointerType === "mouse" || !inRound()) return;
+    if (event.target.closest?.("button, a, input, select")) touchedButton = true;
+    else fullInRound();
+  }, true);
+  document.addEventListener("click", () => {
+    if (!touchedButton) return;
+    touchedButton = false;
+    if (inRound()) fullInRound();
   }, true);
   // The menus are ordinary pages to read and scroll: there the phone's own bars come back and it may turn freely, so fullscreen
   // and the sideways lock are let go as soon as one opens. The next round asks for them again with its first touch.
@@ -89,13 +103,20 @@
     full.setAttribute("aria-label", T.full);
     full.addEventListener("click", (event) => {
       event.currentTarget.blur();
-      if (isFull()) (document.exitFullscreen ?? document.webkitExitFullscreen)?.call(document);
+      if (isFull()) { leavingOnPurpose = true; (document.exitFullscreen ?? document.webkitExitFullscreen)?.call(document); }
       else goFull();
     });
     document.getElementById("corner")?.prepend(full);
     const showFull = () => full.classList.toggle("on", isFull());
-    document.addEventListener("fullscreenchange", () => { showFull(); fittedTo = ""; });
-    document.addEventListener("webkitfullscreenchange", () => { showFull(); fittedTo = ""; });
+    // In fullscreen the phone's Back key only takes the page out of fullscreen, and the game never hears it: so leaving
+    // fullscreen in a round, other than with the ⛶ button, opens the pause menu, as Back does otherwise (phone test, 2026-11-13).
+    const fullChanged = () => {
+      showFull(); fittedTo = "";
+      if (!isFull() && !leavingOnPurpose && inRound() && !pauseOpen()) openPause();
+      if (!isFull()) leavingOnPurpose = false;
+    };
+    document.addEventListener("fullscreenchange", fullChanged);
+    document.addEventListener("webkitfullscreenchange", fullChanged);
   }
 
   // Held upright, the game asks to be turned: there's no room for the controls and the picture side by side.
