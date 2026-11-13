@@ -1326,6 +1326,7 @@ function samiChanged() {
   }
   menuPlaces();
   cardEl.querySelector(`.sami-card .opt[data-sami="${SAMI}"]`)?.focus();
+  buildPlacesAhead(); // North Sámi has more places to draw than Inari
 }
 
 function setAudioOnly(on) {
@@ -1980,15 +1981,26 @@ function moveMenuFocus(dx, dy) {
   best?.focus();
 }
 
-// Drawing a whole place takes a moment, which is a hitch if it happens as a round starts. Do it while the menu is up.
+// Drawing a whole place takes a moment, which is a hitch if it happens as a round starts. Do it while the menu is up, but it
+// blocks the page while it draws: the forest for about 3 s on a mid-range phone (measured with the CPU slowed 6x, 2026-11-13).
+// So only the places that can be chosen here (a phone has three, Inari Sámi one), and each only once the menu has had no
+// taps or keys for a while, so that a choice isn't kept waiting.
+const AHEAD_CALM_MS = 1500;
+let lastInput = 0;
+for (const type of ["pointerdown", "touchstart", "keydown"]) {
+  document.addEventListener(type, () => (lastInput = performance.now()), { capture: true, passive: true });
+}
+const mapsToChoose = () => new Set(THEMES.filter((t) => !CLOSED_PLACES.has(t.menuPlace ?? t.place) && placeOnDevice(t.menuPlace ?? t.place)).map((t) => t.place));
 let buildingAhead = false;
 async function buildPlacesAhead() {
   if (buildingAhead) return;
   buildingAhead = true;
+  lastInput = performance.now(); // the menu has only just come up: let its first taps through
   for (const name of Object.keys(window.MAHTTE_MAPS)) {
-    await new Promise((resolve) => setTimeout(resolve, 200));
+    do await new Promise((resolve) => setTimeout(resolve, 250));
+    while (performance.now() - lastInput < AHEAD_CALM_MS);
     if (theme || cardEl.className !== "places") break; // someone chose; finish it another time
-    if (builtWorlds.has(name)) continue;
+    if (builtWorlds.has(name) || !mapsToChoose().has(name)) continue;
     const showing = placeName;
     loadPlace(name);
     buildWorld();
