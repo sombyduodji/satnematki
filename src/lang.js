@@ -181,6 +181,10 @@ const TEXT_NB = {
   switchText: "Tekst",
   switchHelp: "Hjelp",
   switchClock: "Klokke",
+  samiAsk: "Hvilken samisk lærer du?",
+  samiNotes: { se: "nordsamisk · alle steder · lyd", smn: "enaresamisk · bare Skogen · ingen lyd ennå" },
+  samiChosen: "valgt",
+  samiTrial: "forsøk",
   on: "på",
   off: "av",
   textOn: "lyd og tekst",
@@ -322,19 +326,6 @@ function pageInLanguage() {
     button.setAttribute("aria-pressed", String(id === LANG));
     button.addEventListener("click", () => id !== LANG && setLanguage(id));
     holder.append(button);
-  }
-  // Which Sámi: two pills, each named in its own language.
-  const sami = document.getElementById("sami-switch");
-  if (!sami) return;
-  sami.setAttribute("aria-label", LANG === "nb" ? "Samisk språk" : "Saamen kieli");
-  for (const { id, name } of SAMIS) {
-    const button = document.createElement("button");
-    button.className = "sami-pick";
-    button.lang = id;
-    button.textContent = name;
-    button.setAttribute("aria-pressed", String(id === SAMI));
-    button.addEventListener("click", () => id !== SAMI && setSami(id));
-    sami.append(button);
   }
 }
 pageInLanguage();

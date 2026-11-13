@@ -138,6 +138,10 @@ const TEXT = textInLanguage({
   switchText: "Teksti",
   switchHelp: "Ohjeet",
   switchClock: "Kello",
+  samiAsk: "Mitä saamea opettelet?",
+  samiNotes: { se: "pohjoissaame · kaikki paikat · ääni", smn: "inarinsaame · vain Metsä · ei vielä ääntä" },
+  samiChosen: "valittu",
+  samiTrial: "kokeilu",
   on: "päällä",
   off: "pois",
   textOn: "ääni ja teksti",
@@ -1750,6 +1754,27 @@ function menuSwitch(id, picture, label, on, onText, offText, set) {
   return button;
 }
 
+// Which Sámi the words are in: a big choice of two above the switches, each named in its own language.
+function samiChoice() {
+  const box = document.createElement("div");
+  box.className = "sami-card";
+  box.setAttribute("role", "group");
+  box.innerHTML = `<h3 id="sami-ask"><span class="pic" aria-hidden="true">🗣️</span>${escapeText(TEXT.samiAsk)}</h3><div class="opts"></div>`;
+  box.setAttribute("aria-labelledby", "sami-ask");
+  for (const { id, name } of SAMIS) {
+    const button = document.createElement("button");
+    button.className = "opt";
+    button.dataset.sami = id;
+    button.setAttribute("aria-pressed", String(id === SAMI));
+    button.innerHTML = `<b lang="${id}">${escapeText(name)}</b><small>${escapeText(TEXT.samiNotes[id])}</small>` +
+      (id === "smn" ? `<span class="tag">${escapeText(TEXT.samiTrial)}</span>` : "") +
+      (id === SAMI ? `<span class="chosen">✓ ${escapeText(TEXT.samiChosen)}</span>` : "");
+    button.addEventListener("click", () => id !== SAMI && setSami(id));
+    box.querySelector(".opts").append(button);
+  }
+  return box;
+}
+
 function menuPlaces() {
   showPrompt();
   cardEl.className = "places";
@@ -1786,7 +1811,7 @@ function menuPlaces() {
     menuSwitch("help", "💬", TEXT.switchHelp, helpRound, TEXT.on, TEXT.off, (on) => setHelp(on)),
     menuSwitch("clock", "⏱️", TEXT.switchClock, clockRound, TEXT.on, TEXT.off, (on) => setClock(on)),
   );
-  cardEl.append(notice, who, switches);
+  cardEl.append(notice, who, samiChoice(), switches);
   if (audioOnly) cardEl.append(Object.assign(document.createElement("p"), { className: "mode-hint", textContent: TEXT.modeHint }));
   const quick = document.createElement("div");
   quick.className = "quick";

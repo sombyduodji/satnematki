@@ -673,7 +673,7 @@ body:has(#book-party) #card { visibility: hidden; }
 #card.places .who-text b { font-size: 22px; }
 #card.places .who #change-player { flex-direction: row; gap: 6px; padding: 8px 16px; border: 0; border-radius: 99px; font-weight: 600; background: rgba(255, 255, 255, 0.12); }
 #card.places .who #change-player:hover { background: rgba(255, 255, 255, 0.2); }
-.toggles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 12px; }
+.toggles { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 10px; margin-bottom: 12px; }
 #card.places .toggle { gap: 6px; padding: 12px 6px 10px; border: 2px solid rgba(255, 255, 255, 0.12); border-radius: 16px; background: rgba(8, 20, 50, 0.35); }
 #card.places .toggle:hover { background: rgba(8, 20, 50, 0.55); }
 #card.places .toggle .pic { font-size: 34px; line-height: 1; filter: grayscale(1) opacity(0.45); transition: filter 0.2s; }
@@ -1048,13 +1048,32 @@ body.touch-ui #results .panel > .buttons { flex: none; margin-top: 10px; }
   #book-page .again { align-self: end; padding: 8px 14px; font-size: 15px; }
 }
 
-/* Which Sámi: beside the flags in the main menu, each named in its own language. */
+/* Which Sámi: a big choice of two in the main menu, above the switches. The flags beside the title are the help's language. */
 .title-picks { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; justify-content: flex-end; }
-#sami-switch { display: flex; padding: 2px; border-radius: 999px; background: rgba(0, 0, 0, 0.28); }
-#sami-switch .sami-pick { padding: 4px 11px; border: 0; border-radius: 999px; background: transparent; color: #c9d6dc; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
-#sami-switch .sami-pick[aria-pressed=true] { background: var(--sami-yellow); color: #13305e; }
-#sami-switch .sami-pick:hover, #sami-switch .sami-pick:focus-visible { color: #fff; }
-#sami-switch .sami-pick[aria-pressed=true]:hover { color: #13305e; }
+#card.places .sami-card { margin-bottom: 10px; padding: 12px; border: 2px solid rgba(255, 255, 255, 0.12); border-radius: 16px; background: rgba(8, 20, 50, 0.35); }
+#card.places .sami-card h3 { display: flex; align-items: center; gap: 8px; margin: 0 0 10px; font-size: 17px; }
+#card.places .sami-card h3 .pic { font-size: 26px; line-height: 1; }
+#card.places .sami-card .opts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+#card.places .sami-card .opt { gap: 4px; padding: 14px 12px; border: 2px solid rgba(255, 255, 255, 0.25); border-radius: 14px; background: rgba(255, 255, 255, 0.06); }
+#card.places .sami-card .opt b { font-size: 22px; }
+#card.places .sami-card .opt small { font-size: 13px; font-weight: 400; color: #c9d6ee; }
+#card.places .sami-card .opt .tag { margin-top: 2px; padding: 2px 9px; border-radius: 99px; font-size: 12px; background: #c23a2b; color: #fff; }
+#card.places .sami-card .opt .chosen { margin-top: 2px; font-size: 12px; }
+#card.places .sami-card .opt[aria-pressed=true] { color: #13305e; background: var(--sami-yellow); border-color: var(--sami-yellow); cursor: default; }
+#card.places .sami-card .opt[aria-pressed=true] small { color: #3d4a66; }
+#card.places .sami-card .opt:not([aria-pressed=true]):hover { background: #164a9e; }
+@media (max-width: 520px) {
+  #card.places .sami-card .opts { gap: 6px; }
+  #card.places .sami-card .opt { padding: 10px 6px; }
+  #card.places .sami-card .opt b { font-size: 17px; }
+  #card.places .sami-card .opt small { font-size: 11px; }
+}
+@media (max-height: 420px) {
+  #card.places .sami-card { padding: 8px 10px; }
+  #card.places .sami-card h3 { margin-bottom: 6px; font-size: 15px; }
+  #card.places .sami-card .opt { padding: 8px 10px; }
+  #card.places .sami-card .opt b { font-size: 18px; }
+}
 
 /* On a phone lying sideways, the character maker is taller than the screen: Valmis stays in sight at the bottom while the choices scroll. */
 @media (max-height: 420px) {
