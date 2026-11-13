@@ -251,7 +251,7 @@ function carParkWords(findCount, extraCount) {
 }
 
 // A round in the forest has one to three birds on the map, at least one of them to find; the rest are other animals.
-const FOREST_BIRDS = new Set(["rievssat", "goahppil", "beahceloddi", "garanas", "njukca", "goaskin", "jievjaskuolfi"]);
+const FOREST_BIRDS = new Set(["rievssat", "goahppil", "beahceloddi", "garanas", "njukca", "goaskin", "jievjaskuolfi", "garja", "cuonja"]);
 
 function forestWords(findCount, extraCount) {
   const animals = shuffled(wordsOfTheme("animal"));
@@ -785,7 +785,7 @@ function saveName(name) {
 }
 
 // Playing by ear is a different game, so it has best times of its own, as different levels do.
-const timesKey = (themeId) => `mahtte.times.${themeId}${audioOnly ? ".audio" : ""}`;
+const timesKey = (themeId) => `mahtte.times.${themeId}${SAMI === "smn" ? ".smn" : ""}${audioOnly ? ".audio" : ""}`;
 
 // All best times are forgotten once when this changes, as rounds played before no longer compare. Name and character stay.
 const TIMES_FROM = "0.1.7";
@@ -875,7 +875,7 @@ function showResults(times, place) {
       ${clockRound ? `<div class="time" aria-label="${TEXT.yourTime} ${formatTime(timer.ms)}"><span aria-hidden="true">⏱</span> ${formatTime(timer.ms)}</div>` : ""}
       <section class="found"><h3>${audioOnly ? TEXT.heardWords : TEXT.foundThese}</h3><div class="tiles"></div></section>
       ${clockRound ? `<section class="best"><h3>${audioOnly ? TEXT.bestTimesAudio : TEXT.bestTimes}</h3><ol></ol></section>` : ""}
-      <div class="buttons"><button id="again">${TEXT.again}</button>${theme?.lesson || theme?.desks ? "" : `<button id="to-book">📖 Sátnegirji</button>`}<button id="places">${TEXT.mainMenu}</button></div>
+      <div class="buttons"><button id="again">${TEXT.again}</button>${theme?.lesson || theme?.desks ? "" : `<button id="to-book">📖 ${bookText().title}</button>`}<button id="places">${TEXT.mainMenu}</button></div>
     </div>`;
   // Every word of the round, with its picture; new in the book, or a new star, is marked.
   const fresh = new Set(bookRound.fresh.map((w) => w.sprite));
@@ -885,16 +885,12 @@ function showResults(times, place) {
     const tile = document.createElement("div");
     tile.className = "tile";
     try {
-      const image = menuPicture(word);
-      const c = document.createElement("canvas");
-      c.width = image.width;
-      c.height = image.height;
-      c.getContext("2d").drawImage(image, 0, 0);
+      const c = menuCanvas(word);
       tile.append(c);
     } catch {
       // The word alone, then.
     }
-    tile.insertAdjacentHTML("beforeend", `<b lang="se">${escapeText(word.lemma)}</b><small>${escapeText(translation(word))}</small>`);
+    tile.insertAdjacentHTML("beforeend", `<b lang="${SAMI_LANG}">${escapeText(word.lemma)}</b><small>${escapeText(translation(word))}</small>`);
     if (fresh.has(word.sprite) && word.number === undefined) {
       tile.classList.add("fresh");
       tile.insertAdjacentHTML("beforeend", `<span class="flag">${TEXT.newInBook}</span>`);
@@ -1053,7 +1049,9 @@ function newRound() {
       const large = word.big || word.sprite === "viessu";
       const spots = word.place === "land" && large ? OPEN_SPOTS.large : OPEN_SPOTS[word.place];
       // Only a thing standing free could land on the character; the rest are in fixtures.
-      const open = shuffled(spots).filter((s) => (word.place !== "land" || clear(s)) && !used.has(`${s}`));
+      const free = shuffled(spots).filter((s) => (word.place !== "land" || clear(s)) && !used.has(`${s}`));
+      const dry = free.filter((s) => dryFor(word, ...s));
+      const open = dry.length ? dry : free; // never none at all
       // In the forest things are spread around the map, as far apart as the spots left allow.
       let spot = open[0];
       if ((place.forest && word.place === "land") || place.store) {
@@ -1113,7 +1111,7 @@ const listShowsPrices = () => !(theme?.counts && placeName === "store");
 function paperList() {
   const paper = document.createElement("ul");
   paper.className = "paper-list";
-  paper.lang = "se";
+  paper.lang = SAMI_LANG;
   paper.setAttribute("aria-label", TEXT.shoppingList);
   for (const word of shoppingList) {
     const wanted = theme.counts ? cart.want.get(word) : 1;
@@ -1242,16 +1240,16 @@ function showPrompt() {
       promptEl.replaceChildren(); // the list says it all
       return;
     }
-    const aimOf = targets[0].aimOf ? `<span class="aim-of" lang="se">${escapeText(targets[0].aimOf)}:</span>` : "";
+    const aimOf = targets[0].aimOf ? `<span class="aim-of" lang="${SAMI_LANG}">${escapeText(targets[0].aimOf)}:</span>` : "";
     promptEl.className = "quest";
     promptEl.innerHTML = `<span class="ask"><small>${TEXT.find.replace(/:$/, "")}</small><span class="aim">${aimOf}
-      <span class="target waiting${aim.length > 12 ? " long" : ""}" lang="se">${escapeText(aim)}</span></span></span>`;
+      <span class="target waiting${aim.length > 12 ? " long" : ""}" lang="${SAMI_LANG}">${escapeText(aim)}</span></span></span>`;
     promptEl.prepend(questBadge(left > 1 ? null : targets[0], left > 1 ? `${left}×` : undefined));
     promptEl.append(questSlots());
     if (shoppingList.length) {
       const list = document.createElement("ol");
       list.className = "shopping";
-      list.lang = "se";
+      list.lang = SAMI_LANG;
       shoppingList.forEach((word) => {
         const row = document.createElement("li");
         row.textContent = `${theme.counts ? `${cart.want.get(word)} × ` : ""}${listWord(word)}${listShowsPrices() ? ` ${SHOP_PRICES[word.sprite]} ${TEXT.euro}` : ""}`;
@@ -1294,7 +1292,7 @@ function lineBuffer(src) {
 
 // Decodes a place's lines one at a time, before they're needed, so the first of each doesn't stutter.
 async function prepareLines(lines) {
-  if (!sound) return;
+  if (!sound || !SAMI_SPOKEN) return;
   for (const line of lines) await lineBuffer(line);
 }
 
@@ -1306,7 +1304,7 @@ function answerLines() {
 // Audio only: the words are heard and not shown until the round has ended, to practise understanding spoken Sámi.
 let audioOnly = false;
 try {
-  audioOnly = localStorage.getItem("mahtte.mode") === "audio";
+  audioOnly = SAMI_SPOKEN && localStorage.getItem("mahtte.mode") === "audio";
 } catch {
   // Private windows may refuse; the game then starts with text.
 }
@@ -1345,8 +1343,19 @@ function wordLine(word, id = VOICES[look.gender]) {
   return `audio/word-${word.sprite}-${id}.mp3`;
 }
 
+const SILENT_READ_MS = 1100;
 async function playNextLine() {
   const line = voiceQueue.shift();
+  if (line?.silent) {
+    voiceBusy = true;
+    const mine = ++lineNumber;
+    setTimeout(() => {
+      if (mine !== lineNumber) return;
+      lineNumber++;
+      playNextLine();
+    }, line.silent);
+    return;
+  }
   // A line can come with a speed, which also raises its pitch: that's how classmates get voices of their own.
   const src = line?.src ?? line, rate = line?.rate ?? 1;
   // A classmate or cashier has the same line played at another speed.
@@ -1405,7 +1414,8 @@ function playVoice(...lines) {
       return;
     }
     voiceDone?.();
-    voiceQueue = lines;
+    // With no voices for this Sámi, a moment to read what's in the bubble stands in for the lines.
+    voiceQueue = SAMI_SPOKEN ? lines : lines.length ? [{ silent: SILENT_READ_MS }] : [];
     voiceDone = resolve;
     // The newest thing touched is what matters: what was being said fades away and this takes over.
     if (voiceBusy) silenceLine();
@@ -1472,7 +1482,7 @@ function announce() {
   };
   const el = document.createElement("div");
   el.id = "announce";
-  el.lang = "se";
+  el.lang = SAMI_LANG;
   el.innerHTML = `<div class="label"></div><div></div>`;
   el.firstChild.textContent = targets[0]?.aimOf ? `${TEXT.find} ${targets[0].aimOf}` : TEXT.find;
   el.lastChild.textContent = target.textContent;
@@ -1523,12 +1533,12 @@ function showBubble(say, note) {
   canvasEl.width = FRAME_W * SHEET_DETAIL;
   canvasEl.height = FRAME_H * SHEET_DETAIL;
   const nameEl = document.createElement("figcaption");
-  nameEl.lang = "se";
+  nameEl.lang = SAMI_LANG;
   nameEl.textContent = NAMES[look.gender];
   figure.append(canvasEl, nameEl);
   const bubble = document.createElement("div");
   bubble.className = "bubble";
-  bubble.innerHTML = `<div class="say" lang="se"></div><div class="note"></div>`;
+  bubble.innerHTML = `<div class="say" lang="${SAMI_LANG}"></div><div class="note"></div>`;
   bubble.querySelector(".say").textContent = say;
   bubble.querySelector(".note").textContent = note;
   cardEl.append(figure, bubble);
@@ -1627,8 +1637,23 @@ const MENU_SECTIONS = [
 // otherwise doubled.
 const MENU_DETAIL = 2;
 const menuPictures = new Map();
+// Foods whose rough shape is another food's (src/models.js): their menu and word book pictures come from their own baked sheets.
+const BORROWED_SHAPES = new Set(["crispbread", "ryebread", "toast", "smokedmeat"]);
 function menuPicture(word) {
   const key = `${word.sprite}/${word.colour || ""}/${word.number ?? ""}`;
+  // An animal made ahead in tools/make_animals.py is shown as it is in the world, not as the rough shape that stands in for it while
+  // it loads: else the wolf, wolverine and lynx would all be the dog, and rye bread, crispbread and toast all plain bread.
+  if (!menuPictures.has(key) && (ANIMALS.has(word.sprite) || BORROWED_SHAPES.has(word.sprite)) && word.sprite !== "beana" && window.MAHTTE_ANIMALS?.[word.sprite]) {
+    if (!bakedAnimal(word.sprite, 0, 0)) return Object.assign(document.createElement("canvas"), { width: 1, height: 1 }); // still loading
+    const { w, h } = window.MAHTTE_ANIMALS[word.sprite];
+    const c = document.createElement("canvas");
+    c.width = Math.ceil((w * MENU_DETAIL) / BAKED_DETAIL);
+    c.height = Math.ceil((h * MENU_DETAIL) / BAKED_DETAIL);
+    const g = c.getContext("2d");
+    g.imageSmoothingQuality = "high";
+    g.drawImage(bakedSheets.get(word.sprite), 0, 0, w, h, 0, 0, c.width, c.height);
+    menuPictures.set(key, c);
+  }
   if (!menuPictures.has(key)) {
     const round = word.number === undefined && MODELS[word.sprite]?.(0, word.colour)[0].kind;
     if (round) menuPictures.set(key, croppedImage(makeModelImage(word.sprite, 0, word.sprite === "beaiveloddi" ? 1 : 0, 0, word.colour, MENU_DETAIL)));
@@ -1645,6 +1670,19 @@ function menuPicture(word) {
   return menuPictures.get(key);
 }
 
+// A word's menu picture in a canvas of its own: drawn now, and again once an animal's picture made ahead has loaded.
+function menuCanvas(word, canvasEl = document.createElement("canvas")) {
+  const paint = () => {
+    const image = menuPicture(word);
+    canvasEl.width = image.width;
+    canvasEl.height = image.height;
+    canvasEl.getContext("2d").drawImage(image, 0, 0);
+    return image.width > 1;
+  };
+  if (!paint() && bakedSheets.has(word.sprite)) bakedSheets.get(word.sprite).addEventListener("load", paint, { once: true });
+  return canvasEl;
+}
+
 function menuButton({ look: picture, title, small, example, onClick, className, map }) {
   const button = document.createElement("button");
   if (className) button.className = className;
@@ -1656,14 +1694,7 @@ function menuButton({ look: picture, title, small, example, onClick, className, 
     button.classList.add("has-map");
     button.append(mapEl);
   }
-  if (picture) {
-    const image = menuPicture(picture);
-    const canvasEl = document.createElement("canvas");
-    canvasEl.width = image.width;
-    canvasEl.height = image.height;
-    canvasEl.getContext("2d").drawImage(image, 0, 0);
-    button.append(canvasEl);
-  }
+  if (picture) button.append(menuCanvas(picture));
   const titleEl = document.createElement("span");
   titleEl.className = "title";
   titleEl.textContent = title;
@@ -1671,7 +1702,7 @@ function menuButton({ look: picture, title, small, example, onClick, className, 
   if (example) {
     const exampleEl = document.createElement("span");
     exampleEl.className = "example";
-    exampleEl.lang = "se";
+    exampleEl.lang = SAMI_LANG;
     exampleEl.textContent = example;
     button.append(exampleEl);
   }
@@ -1747,11 +1778,11 @@ function menuPlaces() {
   const switches = document.createElement("div");
   switches.className = "toggles";
   switches.append(
-    menuSwitch("text", "📝", TEXT.switchText, !audioOnly, TEXT.textOn, TEXT.textOff, (on) => {
+    ...(SAMI_SPOKEN ? [menuSwitch("text", "📝", TEXT.switchText, !audioOnly, TEXT.textOn, TEXT.textOff, (on) => {
       setAudioOnly(!on);
       menuPlaces(); // the best times shown are for this way of playing
       cardEl.querySelector("[data-toggle=text]")?.focus();
-    }),
+    })] : []),
     menuSwitch("help", "💬", TEXT.switchHelp, helpRound, TEXT.on, TEXT.off, (on) => setHelp(on)),
     menuSwitch("clock", "⏱️", TEXT.switchClock, clockRound, TEXT.on, TEXT.off, (on) => setClock(on)),
   );
@@ -2021,7 +2052,7 @@ function showChooser() {
   canvasEl.width = FRAME_W * SHEET_DETAIL;
   canvasEl.height = FRAME_H * SHEET_DETAIL;
   const nameEl = document.createElement("figcaption");
-  nameEl.lang = "se";
+  nameEl.lang = SAMI_LANG;
   figure.append(canvasEl, nameEl);
   const rows = document.createElement("div");
   rows.className = "choices";
@@ -2092,7 +2123,7 @@ let rightSpeech = null;
 let heardWords = [];
 
 
-// A find's card fades away after five seconds, unless something else has taken its place meanwhile.
+// A picked thing's card, right or wrong, fades away after five seconds, unless something else has taken its place meanwhile.
 const FOUND_CARD_MS = 5000, CARD_FADE_MS = 600;
 let cardFade = null;
 function fadeFoundCard() {
@@ -2119,16 +2150,23 @@ function showCard(word, right, count = 1) {
     cardEl.innerHTML = `<div class="note">${right ? TEXT.found : TEXT.notYet}</div>`;
   } else cardEl.innerHTML = `<div>
       <div class="note">${right ? TEXT.found : FAMILY.has(word.sprite) ? TEXT.thisIsPerson : TEXT.thisIs}</div>
-      <div><span class="word" lang="se">${escapeText(count > 1 ? TEXT.enough(word) : word.lemma)}</span>
+      <div><span class="word" lang="${SAMI_LANG}">${escapeText(count > 1 ? TEXT.enough(word) : word.lemma)}</span>
         <span class="translation">= ${count > 1 ? `${count} × ` : ""}${escapeText(translation(word))}${word.sprite === "beana" && placeName === "forest" ? ` (${(LANG === "nb" ? TEXT_NB.dogBreeds : DOG_BREEDS)[dogBreed]})` : ""}</span></div>
-      ${plural && count === 1 ? `<div class="note">${TEXT.plural} <span lang="se">${escapeText(plural)}</span></div>` : ""}
+      ${plural && count === 1 ? `<div class="note">${TEXT.plural} <span lang="${SAMI_LANG}">${escapeText(plural)}</span></div>` : ""}
     </div>`;
   const picture = document.createElement("canvas");
-  const image = pictureOf(word);
-  picture.width = image.width;
-  picture.height = image.height;
-  picture.getContext("2d").drawImage(image, 0, 0);
+  // A picture still being made is empty for a moment: the card shows without it and it's drawn in as soon as it's there.
+  const paint = (tries) => {
+    const image = pictureOf(word);
+    if (image.width && image.height) {
+      picture.width = image.width;
+      picture.height = image.height;
+      picture.getContext("2d").drawImage(image, 0, 0);
+    } else if (tries > 0 && picture.isConnected) setTimeout(() => paint(tries - 1), 150);
+  };
+  picture.width = picture.height = 1;
   cardEl.prepend(picture);
+  paint(20);
   cardEl.classList.add("answered");
   // What the character says goes in a speech bubble over the head; the card keeps the picture and the word.
   const line = pickLine(right ? TEXT.right : TEXT.wrong);
@@ -2141,14 +2179,14 @@ function showCard(word, right, count = 1) {
       until: performance.now() + SAYING_MS,
     };
   }
-  if (right) fadeFoundCard();
+  fadeFoundCard(); // a wrong pick's card too: what's being looked for is in the top bar
   const id = VOICES[look.gender];
   const lines = count > 1 ? [`audio/count-and-${count}-${id}.mp3`, `audio/enough-${word.sprite}-${id}.mp3`] : [`audio/${right ? "praise" : "wrong"}-${line}-${id}.mp3`, wordLine(word, id)];
   if (!right && targets.length) lines.push(askLine(targets[0], id)); // and again what is being looked for
   // A find is always said in full: what is bumped into meanwhile stays quiet, and another find waits its turn.
   if (right) {
     if (rightSpeech) {
-      voiceQueue.push(...lines);
+      voiceQueue.push(...(SAMI_SPOKEN ? lines : [{ silent: SILENT_READ_MS }])); // no voices for this Sámi: a moment to read instead
       return rightSpeech;
     }
     rightSpeech = playVoice(...lines).then(() => {
@@ -2194,14 +2232,21 @@ function storeSpeechCard(word, sme, note) {
   cardEl.className = "answered";
   cardEl.innerHTML = `<div>
       <div class="note">${TEXT.thisIs}</div>
-      <div><span class="word" lang="se">${escapeText(word.lemma)}</span> <span class="translation">= ${escapeText(translation(word))}</span></div>
+      <div><span class="word" lang="${SAMI_LANG}">${escapeText(word.lemma)}</span> <span class="translation">= ${escapeText(translation(word))}</span></div>
     </div>`;
   const picture = document.createElement("canvas");
-  const image = pictureOf(word);
-  picture.width = image.width;
-  picture.height = image.height;
-  picture.getContext("2d").drawImage(image, 0, 0);
+  // A picture still being made is empty for a moment: the card shows without it and it's drawn in as soon as it's there.
+  const paint = (tries) => {
+    const image = pictureOf(word);
+    if (image.width && image.height) {
+      picture.width = image.width;
+      picture.height = image.height;
+      picture.getContext("2d").drawImage(image, 0, 0);
+    } else if (tries > 0 && picture.isConnected) setTimeout(() => paint(tries - 1), 150);
+  };
+  picture.width = picture.height = 1;
   cardEl.prepend(picture);
+  paint(20);
 }
 
 function touch(object, now) {
@@ -2244,9 +2289,9 @@ function touch(object, now) {
     const count = wanted - targets.filter((word) => word === object.word).length;
     cardEl.className = "";
     cardEl.innerHTML = audioOnly ? `<div class="note">${count} / ${wanted}</div>`
-      : `<div><div><span class="word" lang="se">${escapeText(window.MAHTTE_NUMBERS[count])}</span>
+      : `<div><div><span class="word" lang="${SAMI_LANG}">${escapeText(window.MAHTTE_NUMBERS[count])}</span>
         <span class="translation">${count} / ${wanted}</span></div>
-        <div class="note"><span lang="se">${escapeText(object.word.lemma)}</span> = ${escapeText(translation(object.word))}</div></div>`;
+        <div class="note"><span lang="${SAMI_LANG}">${escapeText(object.word.lemma)}</span> = ${escapeText(translation(object.word))}</div></div>`;
     fadeFoundCard();
     rightSpeech = (rightSpeech ?? Promise.resolve()).then(() => playVoice(`audio/count-${count}-${VOICES[look.gender]}.mp3`)).then(() => {
       rightSpeech = null;
@@ -2299,6 +2344,8 @@ const REACTIONS = {
   beana: { pose: "pat", sound: "pant", ms: 1500 },
   beaiveloddi: { pose: "raiseHand", lands: true, ms: 1300 },
   guovza: { pose: "cheer", ms: 800 },
+  ealga: { pose: "cheer", ms: 800 },
+  goddi: { pose: "cheer", ms: 800 },
 };
 const PATTED = { pose: "pat", ms: 1100 };
 const FLIES_OFF = { pose: "cheer", flies: true, ms: 1000 };
@@ -3502,7 +3549,8 @@ function fleeSpot(o) {
     const away = Math.hypot(x - o.x, y - o.y);
     return away >= SLEEP.spotFrom && away <= SLEEP.spotTo
       && Math.hypot(x + 0.5 - me.x, y + 0.5 - me.y) > from + 1
-      && clearLine(o.x + 0.5, o.y + 0.5, x + 0.5, y + 0.5, o);
+      && clearLine(o.x + 0.5, o.y + 0.5, x + 0.5, y + 0.5, o)
+      && dryLine(o.word, o.x, o.y, x, y);
   }) || null;
 }
 
@@ -3568,9 +3616,36 @@ function spotOverTheRiver(o) {
     return away >= WANDER.crossFrom && away <= WANDER.crossTo
       && !clearLine(o.x + 0.5, o.y + 0.5, x + 0.5, y + 0.5, o)
       && overWater(o.x + 0.5, o.y + 0.5, x + 0.5, y + 0.5)
+      && dryFor(o.word, x, y)
       && Math.hypot(x + 0.5 - me.x, y + 0.5 - me.y) > WANDER.near + 2
       && !objects.some((other) => other !== o && Math.hypot(other.x - x, other.y - y) < 4);
   }) || null;
+}
+
+// Only fish go in the water. An animal keeps clear of it by as much as its body reaches, and more behind it, where its picture
+// rises over the ground, so that none of it is drawn over the river.
+function animalReach(word) {
+  const shadow = ANIMAL_WAYS[word.sprite]?.shadow;
+  return shadow ? 0.25 + shadow[0] / 32 : 0.5;
+}
+
+function dryFor(word, x, y) {
+  if (!ANIMALS.has(word.sprite)) return true;
+  const reach = animalReach(word), cx = x + 0.5, cy = y + 0.5, far = Math.ceil(reach * 1.8);
+  for (let ty = Math.floor(cy) - far; ty <= Math.floor(cy) + far; ty++) for (let tx = Math.floor(cx) - far; tx <= Math.floor(cx) + far; tx++) {
+    if (tileOr(tx, ty, "g") !== "w") continue;
+    const nx = Math.max(tx, Math.min(tx + 1, cx)), ny = Math.max(ty, Math.min(ty + 1, cy));
+    const behind = nx + ny < cx + cy;
+    if (Math.hypot(cx - nx, cy - ny) < reach * (behind ? 1.8 : 1)) return false;
+  }
+  return true;
+}
+
+// The whole way from one spot to another stays dry.
+function dryLine(word, ax, ay, bx, by) {
+  const steps = Math.ceil(Math.hypot(bx - ax, by - ay) * 4);
+  for (let i = 0; i <= steps; i++) if (!dryFor(word, ax + ((bx - ax) * i) / steps, ay + ((by - ay) * i) / steps)) return false;
+  return true;
 }
 
 function overWater(ax, ay, bx, by) {
@@ -3588,7 +3663,8 @@ function nextAnimalSpot(o, a) {
       && Math.hypot(x - a.homeX, y - a.homeY) < WANDER.home
       && Math.hypot(x + 0.5 - me.x, y + 0.5 - me.y) > WANDER.near + 0.5
       && !taken(x, y)
-      && clearLine(o.x + 0.5, o.y + 0.5, x + 0.5, y + 0.5, o);
+      && clearLine(o.x + 0.5, o.y + 0.5, x + 0.5, y + 0.5, o)
+      && (ANIMAL_WAYS[o.word.sprite]?.flights ? dryFor(o.word, x, y) : dryLine(o.word, o.x, o.y, x, y));
   }) || null;
 }
 
@@ -4094,7 +4170,7 @@ function showTopHint(hint) {
   el.style.visibility = text ? "visible" : "hidden";
   if (!text) return;
   const [key, sme, fi] = text.split("|");
-  el.innerHTML = `${key ? `<kbd>${key}</kbd> ` : ""}${sme ? `<span lang="se">${escapeText(sme)}</span> ` : ""}<small>${escapeText(fi)}</small>`;
+  el.innerHTML = `${key ? `<kbd>${key}</kbd> ` : ""}${sme ? `<span lang="${SAMI_LANG}">${escapeText(sme)}</span> ` : ""}<small>${escapeText(fi)}</small>`;
 }
 
 let hintShown = null;
@@ -4117,7 +4193,7 @@ function updateHint() {
     }
     if (hint) {
       const key = hint.key || hint.act ? "<kbd>E</kbd> " : "";
-      const words = hint.sme && !audioOnly ? `<span lang="se">${escapeText(hint.sme)}</span> <small>${escapeText(hint.fi)}</small>` : "";
+      const words = hint.sme && !audioOnly ? `<span lang="${SAMI_LANG}">${escapeText(hint.sme)}</span> <small>${escapeText(hint.fi)}</small>` : "";
       el.innerHTML = hint.say ? escapeText(hint.say) : `${key}${words}`;
     }
   }

@@ -1771,6 +1771,8 @@ Object.assign(MODELS, {
 
 // Made ahead by tools/make_animals.py; until those pictures have loaded, a dog's shape holds their place.
 Object.assign(MODELS, { gumpe: MODELS.beana, geatki: MODELS.beana, albbas: MODELS.beana });
+Object.assign(MODELS, { ealga: MODELS.boazu, goddi: MODELS.boazu, neahti: MODELS.beana, buoidda: MODELS.beana, madjit: MODELS.beana, ceavrris: MODELS.beana,
+  buovnnjat: MODELS.sahpan, goddesahpan: MODELS.sahpan, garja: MODELS.garanas, cuonja: MODELS.njukca });
 // Made ahead in tools/make_animals.py, and these only stand in until they've loaded.
 Object.assign(MODELS, { crispbread: MODELS.bread, ryebread: MODELS.bread, toast: MODELS.bread, smokedmeat: MODELS.reindeermeat });
 
@@ -1784,6 +1786,9 @@ const ANIMAL_WAYS = {
   bin: { shadow: [12, 6] }, guolli: { shadow: [12, 3] }, savza: { shadow: [15, 7] }, gussa: { shadow: [22, 8] }, spiidni: { shadow: [15, 7] }, vuonccis: { pecks: true, shadow: [11, 5] },
   rievssat: { flights: true, shadow: [12, 5] }, goahppil: { pecks: true, crosses: true, shadow: [16, 6] }, beahceloddi: { pecks: true, crosses: true, shadow: [18, 7] }, garanas: { flights: true, pecks: true, crosses: true, shadow: [15, 5] },
   njukca: { crosses: true, shadow: [18, 7] }, goaskin: { flights: true, crosses: true, shadow: [18, 7] }, jievjaskuolfi: { flights: true, looks: true, crosses: true, shadow: [12, 5] },
+  ealga: { shadow: [30, 10] }, goddi: { shadow: [24, 8] }, neahti: { shadow: [16, 5] }, buoidda: { shadow: [11, 4] }, madjit: { shadow: [17, 7] },
+  ceavrris: { shadow: [19, 6] }, buovnnjat: { shadow: [9, 4] }, goddesahpan: { shadow: [10, 4] },
+  garja: { flights: true, pecks: true, crosses: true, shadow: [13, 5] }, cuonja: { pecks: true, crosses: true, shadow: [18, 7] },
   // Those who stay where they are and keep doing something: the time each picture lasts, and where they look.
   eadni: { acts: 300, shadow: [0, 0] }, viellja: { acts: 900, shadow: [0, 0] }, oabbá: { acts: 700, shadow: [12, 5] },
   áhčči: { acts: 420, head: 0, shadow: [12, 5] }, tv: { acts: 1100, shadow: [14, 6] },

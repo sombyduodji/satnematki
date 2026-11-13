@@ -70,7 +70,8 @@ SHOWN_INSTEAD = {("gákti", "N"): {"saamenpuku": "lapinpuku"}}
 # for the word, so that a translation added there later is checked as usual.
 FINNISH_WHERE_NONE = {("dihtorduolbbus", "N"): "tabletti"}
 # The same for Norwegian, for the Norwegian version: suggested 2026-11-09 for the store's foods, for the user to review.
-NORWEGIAN_WHERE_NONE = {("goarddaláibi", "N"): "loff", ("beron", "N"): "pære", ("bullá", "N"): "bolle"}
+NORWEGIAN_WHERE_NONE = {("goarddaláibi", "N"): "loff", ("beron", "N"): "pære", ("bullá", "N"): "bolle",
+                         ("buovnnjat", "N"): "markmus"}  # 2026-11-12, for the forest: myyrä; for the user to review
 
 # Words the translation patterns can't catch.
 BLOCK_LEMMAS = {
@@ -167,6 +168,8 @@ def main():
             "freq": row["freq"],
             "forms": {t: forms[t] for t in tags if t in forms},
         }
+        if row["smn_translation"]:  # Inari Sámi, from Sátni FST's dict-sme-smn: not yet reviewed by a speaker
+            word["_smn"] = split_translations(row["smn_translation"])[0]
         if row["subtype"]:
             word["subtype"] = row["subtype"]
         if row["gradation"]:
@@ -201,12 +204,14 @@ def main():
             "lemma": s["lemma"], "pos": s["pos"], "fi": s["fi"], "nb": s["nb"],
             "sprite": s["sprite"], "place": s["place"], "theme": s["theme"],
             "gradation": word.get("gradation"), "forms": word["forms"],
+            **({"smn": word["_smn"]} if word.get("_smn") else {}),
         })
     if problems:
         sys.exit("Starter word problems:\n  " + "\n  ".join(problems))
 
     for w in words:
         del w["_all_fi"], w["_all_nb"]
+        w.pop("_smn", None)
 
     digest = hashlib.sha256()
     with open(args.db, "rb") as f:

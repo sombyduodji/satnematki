@@ -23,7 +23,8 @@ const RAISED = { pallet: 15, meat: 11, shelf: 11, fridge: 8, freezer: 10, produc
 const canvas = document.getElementById("world");
 // In kauppa-gl.html the GPU draws instead (src/gl/), through a stand-in that takes the same calls. Elsewhere, or without WebGL 2, the 2D canvas.
 const ctx = (window.SATNE_GL && window.makeGLContext?.(canvas)) || canvas.getContext("2d", { alpha: false }); // nothing shows through it, and knowing that saves the browser work
-const ANIMALS = new Set(["gumpe", "geatki", "albbas", "boazu", "beana", "njoammil", "loddi", "guovza", "rieban", "oarri", "sahpan", "gahttu", "savza", "gussa", "spiidni", "vuonccis", "cuoppu", "skuolfi", "beaiveloddi", "rievssat", "goahppil", "garanas", "njukca", "goaskin", "jievjaskuolfi", "beahceloddi"]);
+const ANIMALS = new Set(["gumpe", "geatki", "albbas", "boazu", "beana", "njoammil", "loddi", "guovza", "rieban", "oarri", "sahpan", "gahttu", "savza", "gussa", "spiidni", "vuonccis", "cuoppu", "skuolfi", "beaiveloddi", "rievssat", "goahppil", "garanas", "njukca", "goaskin", "jievjaskuolfi", "beahceloddi",
+  "ealga", "goddi", "neahti", "buoidda", "madjit", "ceavrris", "buovnnjat", "goddesahpan", "garja", "cuonja"]);
 const FLOATING = new Set(["guolli", "fanas"]);
 
 function noise(x, y) {
@@ -1499,7 +1500,7 @@ function bakedAnimal(sprite, facing, frame) {
 const SWISH_MS = 170, SWISH_EVERY = 34;
 // The game asks for a step or a wingbeat as one of two pictures. Where the sheet has more, they run through in their order, and big birds beat slower.
 const STEP_FRAME_MS = 95, BEAT_FRAME_MS = 62, BIG_BEAT_FRAME_MS = 105, FLUTTER_FRAME_MS = 58;
-const BIG_BIRDS = new Set(["goaskin", "njukca", "beahceloddi", "goahppil"]);
+const BIG_BIRDS = new Set(["goaskin", "njukca", "beahceloddi", "goahppil", "cuonja"]);
 function swishFrame(sprite, frame) {
   const { frames } = window.MAHTTE_ANIMALS[sprite] ?? window.MAHTTE_ANIMALS[`beana-${dogBreed}`];
   const time = performance.now() + sprite.length * 47;

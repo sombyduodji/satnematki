@@ -174,9 +174,13 @@ def bird_wings(frame, x, y, z, span, paint, folded):
 
 
 # ---------------------------------------------------------------- reindeer
-def boazu(frame):
+REINDEER = dict(leg_low="#3f3226", patch="#7d6a55", ring="#e8decb", hoof="#231b14", coat="#c8b596", back="#8c765c", belly="#efe6d4", rump="#f0ead9", neck="#e4d9c3", tail_low="#f6f1e4", tail_top="#6e5a44", mane="#f0e8d6", head="#6b5742", face="#3b2e22", nose="#d8d0c0", velvet="#4f3a27")
+
+
+def boazu(frame, c=None):
     """A reindeer, with the look the game's first had, after a photograph by the user: a pale coat with darker markings, a dark head and
     legs, a pale neck with a hanging mane and a white rump. Big round hooves, and antlers with several tines and a brow tine."""
+    c = c or REINDEER
     stride = stride_of(frame, 2.1)
     parts = []
     for i, (x, y, swing) in enumerate(((3.1, 5.8, stride), (-3.1, 5.8, -stride), (3.1, -5.8, -stride), (-3.1, -5.8, stride))):
@@ -185,46 +189,46 @@ def boazu(frame):
         knee = (x, y + swing * 0.45 + rise * 0.7, 7.2 + rise * 0.5)
         def leg_paint(p):
             high = np.clip((p[:, 2] - 6.5) / 5, 0, 1)
-            return mix(np.tile(colour("#3f3226"), (len(p), 1)), np.tile(colour("#7d6a55"), (len(p), 1)), high)
+            return mix(np.tile(colour(c["leg_low"]), (len(p), 1)), np.tile(colour(c["patch"]), (len(p), 1)), high)
         parts.append((smooth_union([tube((x, y, 13.5), knee, 1.35, 0.75), tube(knee, (x, foot, 2.4 + rise), 0.72, 0.56)], 0.7), leg_paint))
-        parts.append((ell((x, foot, 1.75 + rise), (0.95, 1.05, 0.6)), flat("#e8decb")))  # the pale ring over the hoof
-        parts.append((ell((x, foot + 0.35, 0.8 + rise), (1.35, 1.75, 0.8)), flat("#231b14")))
+        parts.append((ell((x, foot, 1.75 + rise), (0.95, 1.05, 0.6)), flat(c["ring"])))  # the pale ring over the hoof
+        parts.append((ell((x, foot + 0.35, 0.8 + rise), (1.35, 1.75, 0.8)), flat(c["hoof"])))
 
     body = fur(smooth_union([ell((0, -1.2, 14.6), (4.5, 8.4, 4.7)), ell((0, 5.2, 15.4), (4.2, 3.8, 4.6)), ell((0, -7, 15.2), (4, 3.6, 4.3)), tube((0, 6.5, 16), (0, 12, 18.3), 3.2, 2.2)], 2), 0.8, 1, 3)
     def coat(p):
         streak = strands(p)
-        out = np.tile(colour("#c8b596"), (len(p), 1))
+        out = np.tile(colour(c["coat"]), (len(p), 1))
         back = np.clip((p[:, 2] - 16.5) / 3, 0, 1)
-        out = mix(out, np.tile(colour("#8c765c"), (len(p), 1)), back * 0.75)  # darker along the back and flanks
+        out = mix(out, np.tile(colour(c["back"]), (len(p), 1)), back * 0.75)  # darker along the back and flanks
         patches = (noise3(p, np.array([0.3, 0.16, 0.3]), 8) > 0.6)[..., None]
-        out = np.where(patches, colour("#7d6a55"), out)
+        out = np.where(patches, colour(c["patch"]), out)
         belly = np.clip((11.5 - p[:, 2]) / 2.5, 0, 1)
-        out = mix(out, np.tile(colour("#efe6d4"), (len(p), 1)), belly)
+        out = mix(out, np.tile(colour(c["belly"]), (len(p), 1)), belly)
         rump = np.clip((-7.2 - p[:, 1]) / 2, 0, 1)
-        out = mix(out, np.tile(colour("#f0ead9"), (len(p), 1)), rump)
+        out = mix(out, np.tile(colour(c["rump"]), (len(p), 1)), rump)
         neck = np.clip((p[:, 1] - 5.6) / 3, 0, 1)
-        out = mix(out, np.tile(colour("#e4d9c3"), (len(p), 1)), neck * 0.9)
+        out = mix(out, np.tile(colour(c["neck"]), (len(p), 1)), neck * 0.9)
         return out * (0.86 + streak[..., None] * 0.3)
     parts.append((body, coat))
     # The tail: short but plain to see, standing out from the white rump, dark above and white beneath.
     swing = tail_swing(frame, 1.7)
     tail = fur(smooth_union([tube((0, -9, 17.2), (swing * 0.6, -11.6, 16.8), 1.15, 1.2), tube((swing * 0.6, -11.6, 16.8), (swing, -12.9, 15.6), 1.2, 0.55)], 0.5), 0.35, 1.8, 6)
-    parts.append((tail, lambda p: mix(np.tile(colour("#f6f1e4"), (len(p), 1)), np.tile(colour("#6e5a44"), (len(p), 1)), np.clip((p[:, 2] - 16.7) / 0.5, 0, 1)) * (0.9 + strands(p)[..., None] * 0.2)))
+    parts.append((tail, lambda p: mix(np.tile(colour(c["tail_low"]), (len(p), 1)), np.tile(colour(c["tail_top"]), (len(p), 1)), np.clip((p[:, 2] - 16.7) / 0.5, 0, 1)) * (0.9 + strands(p)[..., None] * 0.2)))
     # The mane hanging under the neck.
-    parts.append((fur(smooth_union([ell((0, 9, 12.6), (2.2, 3, 2.8)), ell((0, 7.4, 10.6), (1.4, 1.7, 2))], 1), 0.8, 1.6, 5), lambda p: np.tile(colour("#f0e8d6"), (len(p), 1)) * (0.88 + strands(p)[..., None] * 0.26)))
+    parts.append((fur(smooth_union([ell((0, 9, 12.6), (2.2, 3, 2.8)), ell((0, 7.4, 10.6), (1.4, 1.7, 2))], 1), 0.8, 1.6, 5), lambda p: np.tile(colour(c["mane"]), (len(p), 1)) * (0.88 + strands(p)[..., None] * 0.26)))
 
     def head_paint(p):
-        out = np.tile(colour("#6b5742"), (len(p), 1))
-        out = mix(out, np.tile(colour("#c8b596"), (len(p), 1)), np.clip((13.4 - p[:, 1]) / 1.6, 0, 1))
-        out = mix(out, np.tile(colour("#3b2e22"), (len(p), 1)), np.clip((p[:, 1] - 15) / 1.5, 0, 1))
+        out = np.tile(colour(c["head"]), (len(p), 1))
+        out = mix(out, np.tile(colour(c["coat"]), (len(p), 1)), np.clip((13.4 - p[:, 1]) / 1.6, 0, 1))
+        out = mix(out, np.tile(colour(c["face"]), (len(p), 1)), np.clip((p[:, 1] - 15) / 1.5, 0, 1))
         return out * (0.9 + strands(p)[..., None] * 0.2)
     parts.append((smooth_union([ell((0, 13.7, 17.6), (2.2, 3.2, 2.3)), ell((0, 16.6, 16.5), (1.75, 2.1, 1.6))], 0.9), head_paint))
-    parts.append((ell((0, 18.3, 16.6), (1.3, 0.75, 0.9)), flat("#d8d0c0")))  # the pale, furred nose
+    parts.append((ell((0, 18.3, 16.6), (1.3, 0.75, 0.9)), flat(c["nose"])))  # the pale, furred nose
     parts += eyes(2.0, 14.3, 18.4, 0.72)
     for s in (-1, 1):
-        parts.append((ell((s * 2.8, 12, 19.3), (1.35, 0.55, 0.75)), flat("#7d6a55")))
+        parts.append((ell((s * 2.8, 12, 19.3), (1.35, 0.55, 0.75)), flat(c["patch"])))
     # Antlers, in velvet: back and up, each with tines.
-    velvet = lambda p: np.tile(colour("#4f3a27"), (len(p), 1)) * (0.85 + value_noise(p[:, 0] * 2, p[:, 2] * 2)[..., None] * 0.45)
+    velvet = lambda p: np.tile(colour(c["velvet"]), (len(p), 1)) * (0.85 + value_noise(p[:, 0] * 2, p[:, 2] * 2)[..., None] * 0.45)
     def antler(p):
         parts_of = []
         for s in (-1, 1):
@@ -241,6 +245,17 @@ def boazu(frame):
         return np.minimum.reduce([f(p) for f in parts_of])
     parts.append((antler, velvet))
     return parts
+
+
+# A wild forest reindeer (goddi): the same animal, darker and browner all over, the neck a little paler, the white only on the rump
+# and over the hooves. From general knowledge of the Finnish forest reindeer; unchecked.
+WILD_REINDEER = dict(REINDEER, leg_low="#2a2019", patch="#4c3b2c", coat="#6a5440", back="#4a3a2b", belly="#cfc3ae", rump="#e8dfcd",
+                     neck="#a39279", tail_low="#efe8d8", tail_top="#45372a", mane="#b8aa92", head="#45372a", face="#2a2019", nose="#8e8170",
+                     velvet="#3b2b1e")
+
+
+def goddi(frame):
+    return boazu(frame, WILD_REINDEER)
 
 
 # -------------------------------------------------------------------- fox
@@ -786,6 +801,246 @@ WILD = {
 def canine_maker(b):
     return lambda frame: canine(frame, b)
 
+
+
+# ------------------------------------------------------- more forest animals
+# Added 2026-11-12. Each is built from the nearest animal already here: the moose from the reindeer, the marten, stoat and otter
+# from the wolverine's long low build, the vole and lemming from the mouse, the hooded crow from the raven and the goose from the
+# swan. Their looks are from general knowledge of the Nordic species; unchecked.
+def palm(at, radii, tilt, side):
+    """A moose's antler palm: a flat plate, tilted up towards its outer edge."""
+    a = np.radians(tilt) * side
+    c, s_ = np.cos(a), np.sin(a)
+    at = np.array(at, float)
+    def field(p):
+        q = p - at
+        q = np.stack([q[:, 0] * c + q[:, 2] * s_, q[:, 1], -q[:, 0] * s_ + q[:, 2] * c], axis=1)
+        return blob(q, (0, 0, 0), radii)
+    return field
+
+
+def ealga(frame):
+    """A moose bull: a dark brown body high on long legs that are pale below the knee, a hump over the shoulders, a long heavy head
+    with an overhanging muzzle, a bell of skin under the throat, long ears, and broad palmed antlers."""
+    stride = stride_of(frame, 2.3)
+    parts = []
+    for i, (x, y, swing) in enumerate(((3, 6.2, stride), (-3, 6.2, -stride), (3, -6, -stride), (-3, -6, stride))):
+        foot = y + swing
+        rise = foot_lift(i, 2.4)
+        knee = (x, y + swing * 0.45 + rise * 0.7, 8 + rise * 0.5)
+        def leg_paint(p):
+            return mix(np.tile(colour("#b9ad98"), (len(p), 1)), np.tile(colour("#33251a"), (len(p), 1)), np.clip((p[:, 2] - 8.5) / 2.5, 0, 1))
+        parts.append((smooth_union([tube((x, y, 15), knee, 1.5, 0.8), tube(knee, (x, foot, 1.6 + rise), 0.76, 0.6)], 0.7), leg_paint))
+        parts.append((ell((x, foot + 0.3, 0.75 + rise), (0.95, 1.35, 0.75)), flat("#1c1511")))
+    body = fur(smooth_union([ell((0, -1.4, 16.4), (4.3, 8.4, 4.4)), ell((0, 4.8, 18.2), (4.1, 4.2, 5.4)), ell((0, -7.2, 16.4), (3.8, 3.3, 4.1)),
+                             tube((0, 6.6, 19), (0, 10.4, 19.6), 3.2, 2.5)], 2), 0.7, 1, 3)
+    def coat(p):
+        out = np.tile(colour("#3f2d1f"), (len(p), 1))
+        out = mix(out, np.tile(colour("#5a4430"), (len(p), 1)), np.clip((p[:, 2] - 19) / 4, 0, 1) * 0.7)  # greyer brown over the hump and back
+        out = mix(out, np.tile(colour("#2a1e15"), (len(p), 1)), np.clip((13.5 - p[:, 2]) / 2, 0, 1))
+        return out * (0.84 + strands(p)[..., None] * 0.32)
+    parts.append((body, coat))
+    swing = tail_swing(frame, 0.8)
+    parts.append((fur(tube((0, -10.4, 18), (swing, -11.4, 16.6), 0.9, 0.6), 0.3, 1.8, 6), shaded_fur("#33251a")))
+    parts.append((fur(smooth_union([tube((0, 12.2, 16.8), (0, 12.6, 13.2), 0.95, 0.5), ell((0, 12.6, 13), (0.6, 0.7, 0.8))], 0.5), 0.5, 1.8, 5), shaded_fur("#2f2218")))  # the bell
+    def head_paint(p):
+        out = np.tile(colour("#3a2a1d"), (len(p), 1))
+        out = mix(out, np.tile(colour("#5b4936"), (len(p), 1)), np.clip((p[:, 1] - 15.5) / 2, 0, 1))  # the greyer muzzle
+        return out * (0.88 + strands(p)[..., None] * 0.24)
+    parts.append((smooth_union([ell((0, 12.4, 19.8), (2.3, 2.7, 2.4)), tube((0, 13.6, 19.3), (0, 17.6, 17.4), 2, 1.8), ell((0, 18.2, 17.1), (2, 2.1, 2.1))], 1), head_paint))
+    parts += [(ell((s * 0.9, 19.9, 17.2), (0.5, 0.35, 0.65)), flat("#1a1310")) for s in (-1, 1)]  # nostrils
+    parts += eyes(2.05, 13.6, 20.7, 0.55)
+    for s in (-1, 1):
+        parts.append((tube((s * 1.8, 11.6, 21.6), (s * 4.2, 10.9, 22.6), 0.95, 0.45), shaded_fur("#3a2a1d")))
+    bone = lambda p: np.tile(colour("#c7ae84"), (len(p), 1)) * (0.82 + value_noise(p[:, 0] * 1.6, p[:, 1] * 1.6 + p[:, 2])[..., None] * 0.3)
+    def antlers(p):
+        bits = []
+        for s in (-1, 1):
+            bits += [tube((s * 1.4, 11.9, 21.8), (s * 4.4, 11.5, 23.4), 0.62, 0.5), palm((s * 7.4, 11.2, 24.6), (3.8, 2.6, 0.5), 22, s),
+                     tube((s * 4.6, 12.2, 23.4), (s * 5.6, 15, 24.6), 0.42, 0.18)]  # a brow point
+            for k in range(5):  # points along the palm's outer edge
+                base = (s * (5.6 + k * 1.15), 9.2 + k * 0.5, 25.2 + k * 0.45)
+                bits.append(tube(base, (s * (6.2 + k * 1.35), 8.6 + k * 0.6, 27.6 + k * 0.4), 0.42, 0.14))
+        return np.minimum.reduce([f(p) for f in bits])
+    parts.append((antlers, bone))
+    return parts
+
+
+def mustelid(frame, m):
+    """A long, low body on short legs, with a small head, little round ears and a tail of its own kind: a marten's, a stoat's or an
+    otter's, from what's in m."""
+    L, r, leg = m["long"], m["thick"], m["leg"]
+    z = leg + r  # the body's middle
+    parts = walkers((r * 0.7, L * 0.72), z - r * 0.3, leg * 0.55, r * 0.42, r * 0.3, (r * 0.36, r * 0.55, r * 0.26), stride_of(frame, L * 0.22), m["legs"], m["feet"])
+    body = fur(smooth_union([ell((0, -0.3, z), (r, L, r * 0.92)), ell((0, -L * 0.62, z + r * 0.12), (r * 1.06, r * 1.3, r)),
+                             tube((0, L * 0.55, z + r * 0.1), (0, L + r * 0.75, z + r * 0.55), r * 0.86, r * 0.72)], r * 0.6), m["shag"], 1.6, 3)
+    def coat(p):
+        out = np.tile(colour(m["coat"]), (len(p), 1))
+        out = mix(out, np.tile(colour(m["back"]), (len(p), 1)), np.clip((p[:, 2] - z - r * 0.4) / (r * 0.5), 0, 1) * 0.6)
+        if m.get("under"):  # a sharp line between the back and a pale belly
+            out = np.where((p[:, 2] < z - r * 0.3 + np.clip(p[:, 1] - L * 0.4, 0, 9) * 0.5)[..., None], colour(m["under"]), out)
+        if m.get("bib"):  # a yellow patch on the throat
+            bib = (p[:, 1] > L * 0.45) & (p[:, 2] < z + r * 0.35 + (p[:, 1] - L * 0.45) * 0.35) & (np.abs(p[:, 0]) < r * 0.8)
+            out = np.where(bib[..., None], colour(m["bib"]), out)
+        return out * (0.86 + strands(p)[..., None] * 0.28)
+    parts.append((body, coat))
+    hy, hz = L + r * 1.55, z + r * 0.9
+    head = smooth_union([ell((0, hy, hz), (r * 0.98, r * 1.05, r * 0.82 * m.get("flat", 1))),
+                         tube((0, hy + r * 0.4, hz - r * 0.12), (0, hy + r * 0.4 + m["snout"], hz - r * 0.3), r * 0.55 * m.get("broad", 1), r * 0.36 * m.get("broad", 1))], r * 0.4)
+    def head_paint(p):
+        out = np.tile(colour(m["coat"]), (len(p), 1))
+        if m.get("face"):  # a paler chin and lips
+            out = mix(out, np.tile(colour(m["face"]), (len(p), 1)), np.clip((hz - r * 0.35 - p[:, 2]) / (r * 0.25), 0, 1))
+        return out * (0.9 + strands(p)[..., None] * 0.2)
+    parts.append((head, head_paint))
+    tip = hy + r * 0.4 + m["snout"]
+    parts.append((ell((0, tip + r * 0.28, hz - r * 0.25), (r * 0.3 * m.get("broad", 1), r * 0.2, r * 0.24)), flat("#141012")))
+    parts += eyes(r * 0.58, hy + r * 0.62, hz + r * 0.3, r * 0.24, "#141012")
+    for s in (-1, 1):
+        parts.append((ell((s * r * 0.72, hy - r * 0.35, hz + r * 0.72 * m.get("flat", 1)), (r * 0.36, r * 0.18, r * 0.32)), flat(m["ear"])))
+        if m.get("ear_rim"):
+            parts.append((ell((s * r * 0.74, hy - r * 0.3, hz + r * 0.95 * m.get("flat", 1)), (r * 0.3, r * 0.14, r * 0.1)), flat(m["ear_rim"])))
+    swing = tail_swing(frame, m["tail_long"] * 0.4)
+    root, end = (0, -L - r * 0.2, z + r * 0.1), (swing, -L - r * 0.2 - m["tail_long"], z + m["tail_rise"])
+    mid = ((root[0] + end[0]) / 2, (root[1] + end[1]) / 2, (root[2] + end[2]) / 2 + m["tail_long"] * 0.08)
+    kind = m["tail"]
+    if kind == "bushy":  # a marten's: long and full
+        tail = fur(smooth_union([tube(root, mid, r * 0.5, r * 0.75), tube(mid, end, r * 0.75, r * 0.38)], r * 0.3), m["shag"] + 0.25, 1.5, 7)
+        parts.append((tail, shaded_fur(m["tail_coat"])))
+    elif kind == "tip":  # a stoat's: thin, with a black end
+        tail = fur(tube(root, end, r * 0.36, r * 0.42), 0.18, 2, 7)
+        length = m["tail_long"]
+        parts.append((tail, lambda p: np.where((p[:, 1] < root[1] - length * 0.58)[..., None], colour("#16110e"), colour(m["coat"])) * (0.9 + strands(p)[..., None] * 0.2)))
+    else:  # an otter's: thick at the root and tapering, carried low
+        tail = smooth_union([tube(root, mid, r * 0.78, r * 0.5), tube(mid, end, r * 0.5, r * 0.16)], r * 0.3)
+        parts.append((tail, shaded_fur(m["tail_coat"], 0.2)))
+    if m.get("whiskers"):
+        for s in (-1, 1):
+            for k in (-1, 0, 1):
+                parts.append((tube((s * r * 0.35, tip - r * 0.1, hz - r * 0.3), (s * r * 1.35, tip - r * 0.2, hz - r * 0.3 + k * r * 0.22), 0.07, 0.04), flat("#e8e2d4")))
+    return parts
+
+
+MUSTELIDS = {
+    # A pine marten: dark chocolate brown, darker on the legs, with a yellow-orange throat bib, pale-rimmed ears and a long full tail.
+    "neahti": dict(long=5.4, thick=1.9, leg=2.7, shag=0.4, coat="#5c3a22", back="#4a2e1a", legs="#33200f", feet="#2a1a0d", bib="#e8a943",
+                   ear="#4a2e1a", ear_rim="#dcc49a", snout=1.5, tail="bushy", tail_long=7.6, tail_rise=-1.2, tail_coat="#3f2715"),
+    # A stoat in its summer coat: warm brown above and creamy white below, the line between them sharp, and a black tip to the tail.
+    "buoidda": dict(long=4.6, thick=1.35, leg=1.8, shag=0.2, coat="#8d5a2c", back="#7a4b23", legs="#8d5a2c", feet="#efe5cf", under="#f5eedc",
+                    face="#f5eedc", ear="#7a4b23", ear_rim="#efe5cf", snout=1.0, tail="tip", tail_long=4.6, tail_rise=0.6),
+    # An otter: long, sleek and dark brown, paler grey-brown on the throat and lips, a broad flat head with tiny ears and whiskers,
+    # short legs and a thick tail that tapers to a point.
+    "ceavrris": dict(long=6.6, thick=2.3, leg=2, shag=0.15, coat="#4b3424", back="#3e2a1c", legs="#3a281b", feet="#2e2016", face="#a3907a",
+                     ear="#3e2a1c", snout=1.1, broad=1.35, flat=0.82, whiskers=True, tail="otter", tail_long=8.5, tail_rise=-1.8, tail_coat="#45301f"),
+}
+
+
+def madjit(frame):
+    """A beaver: a round heavy brown body on short legs, a blunt head with small ears and orange front teeth, big dark hind feet,
+    and a flat scaly paddle of a tail."""
+    parts = walkers((2.2, 2.7), 2.6, 1.2, 0.85, 0.62, (0.85, 1.25, 0.42), stride_of(frame, 0.9), "#4f3420", "#2f2a26")
+    body = fur(smooth_union([ell((0, -0.8, 4.6), (3.4, 5.2, 3.7)), ell((0, 3.1, 4.4), (2.6, 2.5, 2.7))], 1.5), 0.32, 1.6, 3)
+    def coat(p):
+        out = np.tile(colour("#6e4729"), (len(p), 1))
+        out = mix(out, np.tile(colour("#55361e"), (len(p), 1)), np.clip((p[:, 2] - 6.5) / 1.6, 0, 1) * 0.7)
+        out = mix(out, np.tile(colour("#8a6240"), (len(p), 1)), np.clip((2.4 - p[:, 2]) / 1.2, 0, 1) * 0.6)
+        return out * (0.85 + strands(p)[..., None] * 0.3)
+    parts.append((body, coat))
+    parts.append((smooth_union([ell((0, 5.6, 5.4), (2.15, 2, 1.95)), ell((0, 7.2, 4.9), (1.45, 1.35, 1.25))], 0.8),
+                  lambda p: mix(np.tile(colour("#6e4729"), (len(p), 1)), np.tile(colour("#87603d"), (len(p), 1)), np.clip((p[:, 1] - 6.4) / 1, 0, 1)) * (0.9 + strands(p)[..., None] * 0.2)))
+    parts.append((ell((0, 8.45, 5.15), (0.62, 0.36, 0.42)), flat("#1c1614")))
+    parts.append((rounded((-0.5, 8.05, 3.55), (0.5, 8.35, 4.35), 0.12), flat("#e0832a")))  # the orange front teeth
+    parts += eyes(1.35, 6.5, 6.05, 0.4, "#141012")
+    parts += [(ell((s * 1.75, 5, 6.9), (0.5, 0.32, 0.48)), flat("#4f3420")) for s in (-1, 1)]
+    for s in (-1, 1):  # the big webbed hind feet
+        parts.append((ell((s * 2.4, -1.4, 0.35), (1.15, 1.9, 0.36)), flat("#2b2622")))
+    swing = tail_swing(frame, 1.3)
+    def scales(p):
+        cross = (np.abs(((p[:, 0] + p[:, 1]) * 1.6 + 40) % 1 - 0.5) < 0.1) | (np.abs(((p[:, 0] - p[:, 1]) * 1.6 + 40) % 1 - 0.5) < 0.1)
+        return np.where(cross[..., None], colour("#4a4440"), colour("#2d2927"))
+    parts.append((smooth_union([tube((0, -5.2, 3), (swing * 0.3, -6.6, 1.3), 1.2, 0.9), palm((swing * 0.6, -9, 0.95), (2.1, 3.1, 0.45), 0, 1)], 0.6), scales))
+    return parts
+
+
+def rodent(frame, k):
+    """A vole or a lemming, after the mouse: round, with a blunt face, small ears in the fur and a short tail."""
+    stride = stride_of(frame, 0.8)
+    parts = walkers((1.15, 1.9), 1.4, 0.7, 0.52, 0.36, (0.52, 0.66, 0.3), stride, k["legs"], k["feet"])
+    body = fur(smooth_union([ell((0, -0.3, 3 * k["size"]), (2.6 * k["size"], 3.8 * k["size"], 2.7 * k["size"])),
+                             ell((0, 3.2, 3.2 * k["size"]), (2 * k["size"], 2.1, 2 * k["size"])),
+                             ell((0, 4.9, 2.85 * k["size"]), (1.05, 0.95, 0.9))], 1.1), 0.32, 2.2, 3)
+    parts.append((body, k["coat"]))
+    parts.append((ell((0, 5.75, 2.95 * k["size"]), (0.42, 0.28, 0.32)), flat(k["nose"])))
+    parts += eyes(1.25, 4.15, 3.9 * k["size"], 0.42, "#141012")
+    parts += [(ell((s * 1.6, 2.6, 4.9 * k["size"]), (0.8, 0.35, 0.65)), flat(k["ear"])) for s in (-1, 1)]
+    swing = tail_swing(frame, 1.2)
+    parts.append((tube((0, -3.6, 2.3), (swing, -3.6 - k["tail"], 1.5), 0.4, 0.28), flat(k["tail_tone"])))
+    return parts
+
+
+def vole_coat(p):
+    """A bank vole's: chestnut along the back, grey-brown on the flanks, pale grey beneath."""
+    out = np.tile(colour("#7c6f63"), (len(p), 1))
+    out = mix(out, np.tile(colour("#94603a"), (len(p), 1)), np.clip((p[:, 2] - 3.6) / 1.2, 0, 1))
+    out = mix(out, np.tile(colour("#cdc4b6"), (len(p), 1)), np.clip((1.9 - p[:, 2]) / 0.6, 0, 1))
+    return out * (0.86 + strands(p)[..., None] * 0.3)
+
+
+def lemming_coat(p):
+    """A Norway lemming's: black head and shoulders with a dark stripe down the middle of the back, the rest tawny yellow-brown, a
+    buff band from the eye back over the cheek, and a pale belly."""
+    out = np.tile(colour("#c4883f"), (len(p), 1))
+    edge = 2.3 - np.clip(p[:, 2] - 3, 0, 3) * 0.35 + (value_noise(p[:, 0] * 1.4 + 7, p[:, 2] * 1.4) - 0.5) * 0.8  # reaching back a little over the shoulders
+    black = (p[:, 1] > edge) & (p[:, 2] > 1.9)
+    stripe = (np.abs(p[:, 0]) < 0.6 - np.clip(-p[:, 1], 0, 4) * 0.1) & (p[:, 2] > 4.6)
+    out = np.where((black | stripe)[..., None], colour("#1d1714"), out)
+    cheek = np.hypot((np.abs(p[:, 0]) - 1.7) / 0.6, (p[:, 2] - 3.6 + (p[:, 1] - 3.2) * 0.25) / 0.42) < 1  # from below the eye back towards the ear
+    out = np.where((cheek & (p[:, 1] > 1.8) & (p[:, 1] < 4.4))[..., None], colour("#d9a95e"), out)
+    out = mix(out, np.tile(colour("#e6d6b2"), (len(p), 1)), np.clip((1.9 - p[:, 2]) / 0.6, 0, 1))
+    return out * (0.88 + strands(p)[..., None] * 0.26)
+
+
+RODENTS = {
+    "buovnnjat": dict(size=1, coat=vole_coat, legs="#6a5c50", feet="#b9a99a", nose="#5a3d38", ear="#7a6050", tail=3.2, tail_tone="#6a5c50"),
+    "goddesahpan": dict(size=1.1, coat=lemming_coat, legs="#2a211b", feet="#b49c78", nose="#2a1d18", ear="#2a211b", tail=1.4, tail_tone="#b07a38"),
+}
+
+
+def garja(frame):
+    """A hooded crow: ash grey on the body, with black head, throat, wings and tail, a black beak, and smaller than the raven."""
+    def grey_and_black(p):
+        out = np.tile(colour("#a2a2a8"), (len(p), 1)) * (0.88 + value_noise(p[:, 0] * 2 + p[:, 2], p[:, 1] * 2)[..., None] * 0.2)
+        bib = (p[:, 1] > 3.2 + (8.2 - p[:, 2]) * 0.9) & (np.abs(p[:, 0]) < 2.2)  # the black throat and upper breast
+        return np.where(bib[..., None], colour("#1d1d24"), out)
+    black = lambda p: np.tile(colour("#212129"), (len(p), 1)) * (0.8 + value_noise(p[:, 0] * 1.8 + p[:, 2], p[:, 1] * 1.8)[..., None] * 0.45)
+    parts = [] if frame in AIR else bird_legs(1.2, 3.8, "#1a1a20")
+    parts.append((fur(smooth_union([ell((0, -0.5, 7.4), (3.3, 6, 3.8)), ell((0, 4.2, 8), (2.3, 2.1, 2.6))], 1.2), 0.18, 2.4, 3), grey_and_black))
+    parts.append((tube((0, -5.6, 7.6), (0, -10, 6.6), 1.5, 0.95), black))
+    parts += bird_wings(frame, 3.3, -1.6, 8.2, 11.5, black, (0.6, 4.6, 2))
+    down = (1.5, 6.5) if frame == 5 else (0, 0)
+    head = [(fur(ell((0, 5.8, 11), (2.3, 2.7, 2.3)), 0.2, 2.2, 5), black), (tube((0, 8, 11.2), (0, 10.8, 10.4), 0.95, 0.26), flat("#15151b")),
+            *eyes(1.7, 7.1, 11.7, 0.38, "#3a3a42")]
+    return parts + shifted(head, *down)
+
+
+def cuonja(frame):
+    """A taiga bean goose, the goose of the north's forests and bogs: grey-brown, the back's feathers edged pale in bars, a darker
+    head and neck, white under the tail, orange legs, and a black beak with an orange band near its tip."""
+    def barred(p):
+        n = value_noise(p[:, 0] * 1.2, p[:, 2] * 1.2)
+        edge = np.abs(((p[:, 1] + n * 0.7 + 40) % 1.7) - 0.85) < 0.2
+        out = np.where(edge[..., None], colour("#b9aa90"), colour("#6f604f"))
+        out = mix(out, np.tile(colour("#c9bca4"), (len(p), 1)), np.clip((6.2 - p[:, 2]) / 1.4, 0, 1))  # paler beneath
+        return np.where(((p[:, 1] < -5.6) & (p[:, 2] < 7.6))[..., None], colour("#f2eee4"), out)
+    dark = lambda p: np.tile(colour("#4f4235"), (len(p), 1)) * (0.88 + value_noise(p[:, 0] * 2, p[:, 2] * 2)[..., None] * 0.22)
+    parts = [] if frame in AIR else bird_legs(1.8, 4, "#e5862c")
+    parts.append((fur(smooth_union([ell((0, -1.4, 7.6), (4.4, 7.2, 4.3)), tube((0, -8, 8.4), (0, -10.4, 9), 1.8, 0.7)], 1.4), 0.18, 2, 3), barred))
+    parts += bird_wings(frame, 4, -2, 9.4, 12, barred, (0.9, 5.6, 2.8))
+    down = (2, 9) if frame == 5 else (0, 0)
+    head = [(smooth_union([tube((0, 4.2, 9.6), (0, 5.6, 13.6), 1.9, 1.3), tube((0, 5.6, 13.6), (0, 5.9, 16.4), 1.3, 1.15), ell((0, 6.7, 17.1), (1.6, 2.2, 1.5))], 0.8), dark),
+            (tube((0, 8.4, 16.9), (0, 10.7, 16.1), 0.78, 0.42), lambda p: np.where(((p[:, 1] > 9.3) & (p[:, 1] < 10.2))[..., None], colour("#e98a2c"), colour("#1b1a1c"))),
+            *eyes(1.3, 7.6, 17.6, 0.34)]
+    return parts + shifted(head, *down)
 
 
 # ---------------------------------------------------------------------- foods
@@ -1776,6 +2031,15 @@ POSES.update({f"beana-{breed}": POSES["beana"] for breed in DOGS})
 POSES["gumpe"] = POSES["beana"]
 POSES["geatki"] = dict(POSES["beana"], drop=1.8)
 POSES["albbas"] = dict(POSES["beana"], drop=4.6, tail_turn=0)
+POSES["goddi"] = POSES["boazu"]
+POSES["ealga"] = dict(drop=10.4, head_y=10.6, neck=(0, 9.6, 19.2), turn=118, head_down=3, tail_y=-9.8, root=(0, -10.2, 17.6), tail_turn=0, graze=58)
+POSES["madjit"] = dict(drop=1.4, head_y=4.6, neck=(0, 4.2, 5), turn=0, head_down=1.4, tail_y=-5.4, root=(0, -5.2, 2.8), tail_turn=0, graze=30)
+for _name, _m in MUSTELIDS.items():
+    _L, _r, _leg = _m["long"], _m["thick"], _m["leg"]
+    POSES[_name] = dict(drop=_leg - 0.1, head_y=_L + _r * 0.5, neck=(0, _L + _r * 0.4, _leg + _r * 1.4), turn=150, head_down=_r * 0.8,
+                        tail_y=-_L - _r * 0.4, root=(0, -_L, _leg + _r), tail_turn=-150, graze=50)
+for _name, _k in RODENTS.items():
+    POSES[_name] = dict(POSES["sahpan"], head_y=2.4, neck=(0, 2, 3.2), tail_y=-3.7, root=(0, -3.6, 2.2), graze=34)
 
 
 def walking(name, make, frame):
@@ -1832,6 +2096,17 @@ for breed, b in DOGS.items():
     ANIMALS[f"beana-{breed}"] = (larger(mammal(f"beana-{breed}", canine_maker(b)), BREEDS[breed]), DOG_FRAMES)
 for name, (size, b) in WILD.items():
     ANIMALS[name] = (larger(mammal(name, canine_maker(b)), size), WALKS)
+ANIMALS["goddi"] = (larger(mammal("goddi", goddi), 1.05), WALKS)
+ANIMALS["ealga"] = (larger(mammal("ealga", ealga), 1.3), WALKS)
+ANIMALS["madjit"] = (larger(mammal("madjit", madjit), 1.1), (0, 8, 9, 12, 13, 20, 21, 22, 23))
+# The smallest are drawn a little bigger than life, as the ptarmigan is, so that they can be told apart in the world.
+SHOWN_BIGGER = {"buoidda": 1.2, "buovnnjat": 1.35, "goddesahpan": 1.45}
+for name, m in MUSTELIDS.items():
+    ANIMALS[name] = (larger(mammal(name, lambda frame, m=m: mustelid(frame, m)), SHOWN_BIGGER.get(name, 1)), WALKS)
+for name, k in RODENTS.items():
+    ANIMALS[name] = (larger(mammal(name, lambda frame, k=k: rodent(frame, k)), SHOWN_BIGGER[name]), WALKS)
+ANIMALS["garja"] = (garja, FLIES)
+ANIMALS["cuonja"] = (cuonja, FLIES)
 for name, make in FOOD_MODELS.items():
     ANIMALS[name] = (make, (0,))
 for name, make in SHOP_THINGS.items():

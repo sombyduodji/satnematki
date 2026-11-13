@@ -100,6 +100,7 @@
       // One white texel, for plain fills, so that they needn't break the batch.
       if (!this.white) {
         this.white = this.place(4, 4);
+        gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false); // WebGL refuses it for plain bytes, as after another upload
         gl.texSubImage3D(gl.TEXTURE_2D_ARRAY, 0, this.white.x, this.white.y, this.white.layer, 4, 4, 1, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array(64).fill(255));
       }
     }
@@ -141,6 +142,7 @@
       this.white = null;
       this.white = this.place(4, 4);
       this.gl.bindTexture(this.gl.TEXTURE_2D_ARRAY, this.texture);
+      this.gl.pixelStorei(this.gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false); // as above: not for plain bytes
       this.gl.texSubImage3D(this.gl.TEXTURE_2D_ARRAY, 0, this.white.x, this.white.y, this.white.layer, 4, 4, 1, this.gl.RGBA, this.gl.UNSIGNED_BYTE, new Uint8Array(64).fill(255));
       return this.place(w, h);
     }

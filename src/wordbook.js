@@ -39,7 +39,18 @@ const BOOK_TEXT = {
     first: "Det første ordet i Sátnegirji!",
   },
 };
-const bookText = () => BOOK_TEXT[LANG] ?? BOOK_TEXT.fi;
+// In Inari Sámi the book is a sänikirje, kept apart from the North Sámi one.
+// There are no Inari voices yet, so a word is only seen moving.
+const BOOK_SMN = {
+  fi: [["Sátnegirjiin", "Sänikirjeeseen"], ["Sátnegirji", "Sänikirje"], [" ja kuulet sen", ""]],
+  nb: [["Sátnegirji", "Sänikirje"], [" og du hører det", ""]],
+};
+const bookText = () => {
+  const text = BOOK_TEXT[LANG] ?? BOOK_TEXT.fi;
+  if (SAMI !== "smn") return text;
+  const swap = (value) => (typeof value === "function" ? (...args) => swap(value(...args)) : typeof value === "string" ? (BOOK_SMN[LANG] ?? BOOK_SMN.fi).reduce((s, [a, b]) => s.split(a).join(b), value) : value);
+  return Object.fromEntries(Object.entries(text).map(([key, value]) => [key, swap(value)]));
+};
 
 // What can be found in each place, in the menu's order, as the rounds there choose their words.
 const BOOK_PLACES = [
@@ -70,7 +81,7 @@ function bookWords() {
 function bookKey() {
   let id = "";
   try { id = localStorage.getItem("mahtte.player") ?? ""; } catch { /* none */ }
-  return `mahtte.book.${id}`;
+  return `mahtte.book.${id}${SAMI === "smn" ? ".smn" : ""}`;
 }
 
 // { sprite: { n: finds, m: misses, c: colour last found in, s: how it was spoken, v: 1 once seen in the book } }
@@ -88,7 +99,7 @@ function saveBook(book) {
     localStorage.setItem(bookKey(), JSON.stringify(book));
     // Books of players no longer kept are let go.
     const ids = new Set(loadPlayers().map((p) => p.id));
-    Object.keys(localStorage).filter((k) => k.startsWith("mahtte.book.p") && !ids.has(k.slice("mahtte.book.".length))).forEach((k) => localStorage.removeItem(k));
+    Object.keys(localStorage).filter((k) => k.startsWith("mahtte.book.p") && !ids.has(k.slice("mahtte.book.".length).replace(/\.smn$/, ""))).forEach((k) => localStorage.removeItem(k));
   } catch {
     // Private windows may refuse; the book then lasts this visit only.
   }
@@ -247,7 +258,7 @@ function bookCelebrate(word, entry) {
   page.className = "page";
   page.insertAdjacentHTML("beforeend", `<div class="head">${t.first}</div>`);
   page.append(bookPicture(word, entry));
-  page.insertAdjacentHTML("beforeend", `<div class="se" lang="se">${escapeText(word.lemma)}</div><div class="tr">${escapeText(translation(word))}</div>
+  page.insertAdjacentHTML("beforeend", `<div class="se" lang="${SAMI_LANG}">${escapeText(word.lemma)}</div><div class="tr">${escapeText(translation(word))}</div>
     <div class="go">${t.tapToGo}</div>`);
   party.append(page);
   if (!bookCalm()) {
@@ -338,10 +349,7 @@ function bookMissed(word) {
 function bookPicture(word, entry) {
   const canvasEl = document.createElement("canvas");
   try {
-    const image = menuPicture({ sprite: word.sprite, colour: entry?.c });
-    canvasEl.width = image.width;
-    canvasEl.height = image.height;
-    canvasEl.getContext("2d").drawImage(image, 0, 0);
+    menuCanvas({ sprite: word.sprite, colour: entry?.c }, canvasEl);
   } catch {
     canvasEl.width = canvasEl.height = 1;
   }
@@ -366,7 +374,7 @@ function bookButton() {
   const unseen = words.filter((w) => book[w.sprite]?.n && !book[w.sprite].v).length;
   const button = document.createElement("button");
   button.className = "wordbook-open";
-  button.innerHTML = `<span class="book-icon" aria-hidden="true">📖</span><span class="wb-text"><span class="title" lang="se">${t.title}</span>
+  button.innerHTML = `<span class="book-icon" aria-hidden="true">📖</span><span class="wb-text"><span class="title" lang="${SAMI_LANG}">${t.title}</span>
     <small>${t.menu(found, words.length)}</small></span>${unseen ? `<span class="new-badge">${t.fresh(unseen)}</span>` : ""}`;
   button.addEventListener("click", () => showBook("all"));
   return button;
@@ -392,7 +400,7 @@ function showBook(tab = "all") {
   back.addEventListener("click", showPlaces);
   const head = document.createElement("div");
   head.className = "wb-head";
-  head.innerHTML = `<h2><span aria-hidden="true">📖</span> <span lang="se">${t.title}</span></h2><span class="sub">${found} / ${words.length} ${t.words}</span>
+  head.innerHTML = `<h2><span aria-hidden="true">📖</span> <span lang="${SAMI_LANG}">${t.title}</span></h2><span class="sub">${found} / ${words.length} ${t.words}</span>
     <span class="wb-bar" role="progressbar" aria-valuemin="0" aria-valuemax="${words.length}" aria-valuenow="${found}"><i style="width:${words.length ? (100 * found) / words.length : 0}%"></i></span>`;
   const tabs = document.createElement("div");
   tabs.className = "wb-tabs";
@@ -419,7 +427,7 @@ function showBook(tab = "all") {
         card.classList.add("fresh");
         card.dataset.fresh = t.freshMark;
       }
-      card.insertAdjacentHTML("beforeend", `<span class="say" aria-hidden="true">🔊</span><span class="se" lang="se">${escapeText(w.lemma)}</span>
+      card.insertAdjacentHTML("beforeend", `${SAMI_SPOKEN ? '<span class="say" aria-hidden="true">🔊</span>' : ""}<span class="se" lang="${SAMI_LANG}">${escapeText(w.lemma)}</span>
         <span class="tr">${escapeText(translation(w))}</span><span class="stars" aria-label="${bookStars(entry.n)} / 3">${starsHtml(entry.n)}</span>`);
       card.addEventListener("click", () => bookPage(w, entry, card));
     } else {
@@ -568,7 +576,7 @@ function bookPage(word, entry, from) {
   close.textContent = "✕";
   const stage = document.createElement("button");
   stage.className = "stage";
-  stage.setAttribute("aria-label", TEXT.hearAgain);
+  if (SAMI_SPOKEN) stage.setAttribute("aria-label", TEXT.hearAgain); // Inari Sámi has no sound yet: the picture only moves again
   const moving = bookAnimation(word, entry);
   const picture = moving ?? bookPicture(word, entry);
   if (!moving) picture.className = "bouncing";
@@ -578,10 +586,10 @@ function bookPage(word, entry, from) {
   again.className = "again";
   again.textContent = `🔊 ${TEXT.hearAgain}`;
   sheet.append(close, stage);
-  sheet.insertAdjacentHTML("beforeend", `<div class="se" lang="se">${escapeText(word.lemma)}</div><div class="tr">${escapeText(translation(word))}</div>
-    ${plural ? `<div class="pl">${TEXT.plural} <span lang="se">${escapeText(plural)}</span></div>` : ""}
+  sheet.insertAdjacentHTML("beforeend", `<div class="se" lang="${SAMI_LANG}">${escapeText(word.lemma)}</div><div class="tr">${escapeText(translation(word))}</div>
+    ${plural ? `<div class="pl">${TEXT.plural} <span lang="${SAMI_LANG}">${escapeText(plural)}</span></div>` : ""}
     <div class="stars" aria-label="${bookStars(entry.n)} / 3">${starsHtml(entry.n)}</div>`);
-  sheet.append(again);
+  if (SAMI_SPOKEN) sheet.append(again);
   page.append(sheet);
   document.body.append(page);
   const play = () => {

@@ -11,6 +11,9 @@ game through the database of [Sátni FST](https://github.com/sombyduodji/satni-f
 |---|---|---|
 | North Sámi → Finnish | Finnish translations | [giellalt/dict-sme-fin](https://github.com/giellalt/dict-sme-fin) |
 | North Sámi → Norwegian | Norwegian translations | [giellalt/dict-sme-nob](https://github.com/giellalt/dict-sme-nob) |
+| North Sámi → Inari Sámi | Inari Sámi words (the forest in Inari Sámi, experimental) | [giellalt/dict-sme-smn](https://github.com/giellalt/dict-sme-smn) |
+| Inari Sámi → North Sámi | Inari Sámi words Sátni FST fills in where the one above has none | [giellalt/dict-smn-sme](https://github.com/giellalt/dict-smn-sme) |
+| Finnish ↔ Inari Sámi | The words of the game's few Inari Sámi sentences (drafts) | [giellalt/dict-fin-smn](https://github.com/giellalt/dict-fin-smn), [giellalt/dict-smn-fin](https://github.com/giellalt/dict-smn-fin) |
 
 © GiellaLT / Divvun / Giellatekno and their contributors, licensed under
 [Creative Commons Attribution 4.0 International (CC BY 4.0)](https://creativecommons.org/licenses/by/4.0/).
@@ -28,6 +31,10 @@ database, [`tools/export_words.py`](tools/export_words.py):
 - keeps at most three translations per language and a few chosen inflected forms;
 - for the words the game shows, uses one translation picked by hand
   ([`tools/starter_words.tsv`](tools/starter_words.tsv)).
+- for the words the game shows, also keeps the first Inari Sámi translation, unreviewed. The game's Inari Sámi
+  sentences (in `src/lang.js`) were put together from these dictionaries and spelled with the Inari Sámi speller from
+  Divvun / GiellaLT in [Voikko](https://voikko.puimula.org/), which is not part of the game. Neither has yet been
+  checked by an Inari Sámi speaker.
 
 ## Morphology: GiellaLT lang-sme, GPL-3.0
 

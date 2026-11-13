@@ -647,6 +647,13 @@ body.menu #title-row { display: flex; }
 #book-party .se { font-size: 30px; font-weight: 700; }
 #book-party .tr { color: #3d4a66; }
 #book-party .go { margin-top: 6px; font-size: 13px; color: #6b7690; }
+/* The "found it" card says the same as the celebration, and on a low phone it would cover its translation and "tap to go on". */
+body:has(#book-party) #card { visibility: hidden; }
+@media (max-height: 420px) { /* a phone lying sideways: small enough to sit between the bars at the top and the bottom */
+  #book-party .page { gap: 0; padding: 6px 18px 6px; }
+  #book-party canvas { height: 56px; }
+  #book-party .se { font-size: 22px; }
+}
 #book-party i { position: absolute; top: -12px; width: 8px; height: 12px; border-radius: 2px; animation: book-confetti linear forwards; }
 @keyframes book-confetti { to { transform: translate(var(--drift), 110vh) rotate(var(--spin)); } }
 @media (max-width: 520px) {
@@ -1039,4 +1046,17 @@ body.touch-ui #results .panel > .buttons { flex: none; margin-top: 10px; }
   #book-page .se { margin-top: 26px; font-size: 26px; }
   #book-page .tr { font-size: 16px; }
   #book-page .again { align-self: end; padding: 8px 14px; font-size: 15px; }
+}
+
+/* Which Sámi: beside the flags in the main menu, each named in its own language. */
+.title-picks { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; justify-content: flex-end; }
+#sami-switch { display: flex; padding: 2px; border-radius: 999px; background: rgba(0, 0, 0, 0.28); }
+#sami-switch .sami-pick { padding: 4px 11px; border: 0; border-radius: 999px; background: transparent; color: #c9d6dc; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
+#sami-switch .sami-pick[aria-pressed=true] { background: var(--sami-yellow); color: #13305e; }
+#sami-switch .sami-pick:hover, #sami-switch .sami-pick:focus-visible { color: #fff; }
+#sami-switch .sami-pick[aria-pressed=true]:hover { color: #13305e; }
+
+/* On a phone lying sideways, the character maker is taller than the screen: Valmis stays in sight at the bottom while the choices scroll. */
+@media (max-height: 420px) {
+  #card #ready { position: sticky; bottom: 8px; z-index: 2; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45); }
 }

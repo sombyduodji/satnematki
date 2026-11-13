@@ -17,7 +17,67 @@ const LANGS = [
 ];
 // The places a language has; a language not listed has them all.
 const LANG_PLACES = { nb: new Set(["forest", "store", "classroom"]) };
-const placeInLanguage = (place) => !LANG_PLACES[LANG] || LANG_PLACES[LANG].has(place);
+
+// The Sámi the game teaches, chosen in the main menu: North Sámi (se), written and spoken, or Inari Sámi (smn), written only, as
+// Divvun's voices are North Sámi, and for now only in the forest. The Inari words are Sátni FST's (smn in data/starter-words.js,
+// from dict-sme-smn), and the Inari sentences in SMN_TEXT are drafts: neither has been checked by an Inari Sámi speaker yet.
+const SAMI = (() => {
+  try {
+    return localStorage.getItem("mahtte.sami") === "smn" ? "smn" : "se";
+  } catch {
+    return "se";
+  }
+})();
+const SAMIS = [
+  { id: "se", name: "Davvisámegiella" },
+  { id: "smn", name: "Anarâškielâ" },
+];
+const SAMI_PLACES = { smn: new Set(["forest"]) };
+const SAMI_SPOKEN = SAMI === "se";
+const SAMI_LANG = SAMI; // for lang="…" on Sámi text
+const placeInLanguage = (place) => (!LANG_PLACES[LANG] || LANG_PLACES[LANG].has(place)) && (!SAMI_PLACES[SAMI] || SAMI_PLACES[SAMI].has(place));
+
+function setSami(id) {
+  try {
+    localStorage.setItem("mahtte.sami", id);
+  } catch {
+    return; // nowhere to keep it, so it would be lost on the reload
+  }
+  location.reload(); // the words and sentences are set as the game starts
+}
+
+// In Inari Sámi only the words that have an Inari translation, shown in Inari. The North Sámi stays in sme; the forms and
+// gradation are North Sámi's, so they go.
+if (SAMI === "smn") {
+  window.MAHTTE_WORDS = window.MAHTTE_WORDS.filter((w) => w.smn).map((w) => ({ ...w, sme: w.lemma, lemma: w.smn, forms: {}, gradation: null }));
+}
+
+const SMN_NOTICE = {
+  fi: "Anarâškielâ eli inarinsaame on kokeilu: vain metsä, eikä ääntä vielä ole. Inarinsaamen sanoja ja lauseita ei ole vielä tarkistettu.",
+  nb: "Anarâškielâ, enaresamisk, er et forsøk: bare skogen, og ingen lyd ennå. De enaresamiske ordene og setningene er ikke kontrollert ennå.",
+};
+
+// What is said in Inari Sámi, with the Finnish and Norwegian beside it. Drafts, put together from Sátni FST's dictionaries and
+// spelled by Voikko's Inari Sámi speller, for an Inari Sámi speaker to check (2026-11-12).
+const SMN_TEXT = {
+  question: (name) => `Mii tuu nommâ lii? Muu nommâ lii ${name}.`,
+  bures: (name) => (name ? `Tiervâ, ${name}!` : "Tiervâ!"),
+  thisWord: (word) => `Taat lii ${word}.`,
+  thisPerson: (word) => `Sun lii ${word}.`,
+  right: [
+    ["Riehtâ!", "Oikein!", "Riktig!"],
+    ["Šiev!", "Hyvä!", "Bra!"],
+    ["Čeppi!", "Taitava!", "Flink!"],
+    ["Kavnih tom!", "Löysit sen!", "Du fant den!"],
+    ["Tot lâi riehtâ!", "Se oli oikein!", "Det var riktig!"],
+  ],
+  wrong: [
+    ["Ij lamaš.", "Ei ollut.", "Det var ikke den."],
+    ["Ij val!", "Ei vielä!", "Ikke ennå!"],
+    ["Keččâl val!", "Yritä vielä!", "Prøv igjen!"],
+    ["Uusâ val!", "Etsi vielä!", "Let videre!"],
+  ],
+};
 
 function setLanguage(id) {
   try {
@@ -172,7 +232,7 @@ const LESSON_TEXT_NB = {
   promptAudio: "Hvilket tall er det?",
   start: "Se på tavla. Når du kan tallet, rekker du opp hånda.",
   notYet: "Ikke ennå. Se på tavla og prøv igjen.",
-  beaten: (name, word, number) => `${escapeText(name)} rakk det først: <span lang="se">${escapeText(word)}</span> = ${number}.`,
+  beaten: (name, word, number) => `${escapeText(name)} rakk det først: <span lang="${SAMI_LANG}">${escapeText(word)}</span> = ${number}.`,
   close: "Lukk",
   wrongWord: "Ikke helt. Rett det og prøv igjen.",
   speechSe: (on) => `Samisk tekst: ${on ? "på" : "av"}`,
@@ -213,15 +273,22 @@ const PAD_NB = { up: "Opp", left: "Til venstre", down: "Ned", right: "Til høyre
 
 // TEXT_NB laid over TEXT: objects key by key, right and wrong pair by pair beside the same Sámi.
 function textInLanguage(text) {
+  if (SAMI === "smn") {
+    for (const key of ["question", "bures", "thisWord", "thisPerson"]) text[key] = SMN_TEXT[key];
+    for (const key of ["right", "wrong"]) text[key] = SMN_TEXT[key].map(([smn, fi]) => [smn, fi]);
+  }
+  if (SAMI === "smn") text.earlyNotice = SMN_NOTICE[LANG] ?? SMN_NOTICE.fi;
   if (LANG !== "nb") return text;
   const lay = (into, from) => {
     for (const [key, value] of Object.entries(from)) {
-      if (key === "right" || key === "wrong") into[key] = into[key].map(([sme], i) => [sme, value[i]]);
+      if ((key === "right" || key === "wrong") && SAMI === "smn") into[key] = SMN_TEXT[key].map(([smn, , nb]) => [smn, nb]);
+      else if (key === "right" || key === "wrong") into[key] = into[key].map(([sme], i) => [sme, value[i]]);
       else if (value && typeof value === "object" && !Array.isArray(value) && into[key] && typeof into[key] === "object") lay(into[key], value);
       else into[key] = value;
     }
   };
   lay(text, TEXT_NB);
+  if (SAMI === "smn") text.earlyNotice = SMN_NOTICE.nb;
   return text;
 }
 
@@ -241,7 +308,7 @@ function pageInLanguage() {
   const feedback = document.getElementById("feedback-link");
   if (feedback) {
     const version = document.querySelector("#game-title small")?.textContent ?? "";
-    const subject = `Sátnemátki ${version} (${LANG}): ${LANG === "nb" ? "tilbakemelding" : "palaute"}`;
+    const subject = `Sátnemátki ${version} (${LANG}${SAMI === "smn" ? ", smn" : ""}): ${LANG === "nb" ? "tilbakemelding" : "palaute"}`;
     feedback.href = `mailto:satni@somby.fi?subject=${encodeURIComponent(subject)}`;
   }
   const holder = document.getElementById("lang-switch");
@@ -255,6 +322,19 @@ function pageInLanguage() {
     button.setAttribute("aria-pressed", String(id === LANG));
     button.addEventListener("click", () => id !== LANG && setLanguage(id));
     holder.append(button);
+  }
+  // Which Sámi: two pills, each named in its own language.
+  const sami = document.getElementById("sami-switch");
+  if (!sami) return;
+  sami.setAttribute("aria-label", LANG === "nb" ? "Samisk språk" : "Saamen kieli");
+  for (const { id, name } of SAMIS) {
+    const button = document.createElement("button");
+    button.className = "sami-pick";
+    button.lang = id;
+    button.textContent = name;
+    button.setAttribute("aria-pressed", String(id === SAMI));
+    button.addEventListener("click", () => id !== SAMI && setSami(id));
+    sami.append(button);
   }
 }
 pageInLanguage();

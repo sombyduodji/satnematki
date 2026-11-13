@@ -24,8 +24,8 @@ const LESSON_TEXT = {
   promptAudio: "Mikä luku se on?",
   start: "Katso taulua. Kun tiedät luvun, viittaa.",
   notYet: "Ei vielä. Katso taulua ja yritä uudelleen.",
-  beaten: (name, word, number) => `${escapeText(name)} ehti ensin: <span lang="se">${escapeText(word)}</span> = ${number}.`,
-  right: (word, number) => `<span class="word" lang="se">${escapeText(word)}</span> <span class="translation">= ${number}</span>`,
+  beaten: (name, word, number) => `${escapeText(name)} ehti ensin: <span lang="${SAMI_LANG}">${escapeText(word)}</span> = ${number}.`,
+  right: (word, number) => `<span class="word" lang="${SAMI_LANG}">${escapeText(word)}</span> <span class="translation">= ${number}</span>`,
   close: "Sulje",
   wrongWord: "Ei ihan. Korjaa ja yritä uudelleen.",
   speechSe: (on) => `Saamenkielinen teksti: ${on ? "päällä" : "pois"}`,
@@ -243,7 +243,7 @@ function lessonKeypad(note = "") {
   cardEl.className = `keypad${theme.inWords ? " letters" : ""}`;
   // The word goes in a real text field, so that whatever the player's own keyboard can write comes through, accents and all. On a
   // touch screen it's only for show, as the keys below are there and the phone's own keyboard would cover the board.
-  cardEl.innerHTML = `${theme.inWords ? `<input class="sum" lang="se" maxlength="${LESSON.longestWord}" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="${LESSON_TEXT.promptWords}" ${LESSON_TOUCH ? "readonly" : ""}>` : `<div class="sum">${escapeText(lesson.typed) || "&nbsp;"}</div>`}
+  cardEl.innerHTML = `${theme.inWords ? `<input class="sum" lang="${SAMI_LANG}" maxlength="${LESSON.longestWord}" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="${LESSON_TEXT.promptWords}" ${LESSON_TOUCH ? "readonly" : ""}>` : `<div class="sum">${escapeText(lesson.typed) || "&nbsp;"}</div>`}
     <div class="note">${escapeText(note)}</div>
     <div class="keys">${keys}</div>
     <button id="lesson-close">${LESSON_TEXT.close}</button>`;
