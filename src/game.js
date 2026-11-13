@@ -10,7 +10,8 @@ const BEST_TIMES = 10;
 // Foods bought as a mass stay singular in a shopping list's object form (mielkki, vuoja); the rest are plural (moniid, tomáhtaid).
 // Must match UNCOUNTED_FOODS in tools/fetch_voices.py.
 const UNCOUNTED_FOODS = new Set(["bread", "milk", "cheese", "butter", "guolli", "icecream", "coffee", "juice", "chocolate", "cake", "soda", "jam"]);
-const TEXT = textInLanguage({
+// A fresh copy each time, as textInLanguage lays the language and the Sámi over it.
+const textBase = () => ({
   find: "Etsi:",
   found: "Löysit sen!",
   thisIs: "Tämä on",
@@ -163,6 +164,7 @@ const TEXT = textInLanguage({
   take: "Ota",
   entrance: "Sisään", // the sign over the store's way in
 });
+const TEXT = textInLanguage(textBase());
 
 // What a round looks for, and where. A theme hands out the words to find and a few others beside them.
 const wordsOfTheme = (theme) => window.MAHTTE_WORDS.filter((w) => w.theme === theme);
@@ -1313,6 +1315,19 @@ try {
   // Private windows may refuse; the game then starts with text.
 }
 
+// The Sámi switched in the main menu: the texts again, listening mode only where there is sound, and the menu redrawn.
+function samiChanged() {
+  for (const key of Object.keys(TEXT)) delete TEXT[key];
+  Object.assign(TEXT, textInLanguage(textBase()));
+  try {
+    audioOnly = SAMI_SPOKEN && localStorage.getItem("mahtte.mode") === "audio";
+  } catch {
+    audioOnly = false;
+  }
+  menuPlaces();
+  cardEl.querySelector(`.sami-card .opt[data-sami="${SAMI}"]`)?.focus();
+}
+
 function setAudioOnly(on) {
   audioOnly = on;
   try {
@@ -1631,7 +1646,8 @@ const CLOSED_PLACES = new Set(["camp"]);
 const TOUCH_PLACES = new Set(["forest", "store", "classroom"]);
 const placeOnDevice = (place) => placeInLanguage(place) && (!TOUCH_UI || TOUCH_PLACES.has(place));
 // The menu's sections, by how far along the places are. A new place has to be added to one of them to show.
-const MENU_SECTIONS = [
+// Asked each time the menu is drawn, as the Sámi can change while the game runs.
+const menuSections = () => [
   { heading: "Pelattava demo", places: ["classroom", "forest", "store"], look: "ready" },
   { heading: "Keskeneräiset kentät – näitä voi testata, mutta niiden kehitys on vasta alkamassa", places: ["home", "city", "library", "gearstore", "camp"], look: "partly" },
 ].map((section) => ({ ...section, heading: (LANG === "nb" && TEXT_NB.sections[section.heading]) || section.heading, places: section.places.filter(placeOnDevice) }))
@@ -1827,7 +1843,7 @@ function menuPlaces() {
   }
   quick.append(bookButton());
   cardEl.append(quick);
-  for (const { heading, places, look: sectionLook } of MENU_SECTIONS) {
+  for (const { heading, places, look: sectionLook } of menuSections()) {
     const section = document.createElement("section");
     section.className = `menu-section ${sectionLook}`;
     const title = document.createElement("h3");

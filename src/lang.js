@@ -21,7 +21,7 @@ const LANG_PLACES = { nb: new Set(["forest", "store", "classroom"]) };
 // The Sámi the game teaches, chosen in the main menu: North Sámi (se), written and spoken, or Inari Sámi (smn), written only, as
 // Divvun's voices are North Sámi, and for now only in the forest. The Inari words are Sátni FST's (smn in data/starter-words.js,
 // from dict-sme-smn), and the Inari sentences in SMN_TEXT are drafts: neither has been checked by an Inari Sámi speaker yet.
-const SAMI = (() => {
+let SAMI = (() => {
   try {
     return localStorage.getItem("mahtte.sami") === "smn" ? "smn" : "se";
   } catch {
@@ -33,24 +33,33 @@ const SAMIS = [
   { id: "smn", name: "Anarâškielâ" },
 ];
 const SAMI_PLACES = { smn: new Set(["forest"]) };
-const SAMI_SPOKEN = SAMI === "se";
-const SAMI_LANG = SAMI; // for lang="…" on Sámi text
+let SAMI_SPOKEN = SAMI === "se";
+let SAMI_LANG = SAMI; // for lang="…" on Sámi text
 const placeInLanguage = (place) => (!LANG_PLACES[LANG] || LANG_PLACES[LANG].has(place)) && (!SAMI_PLACES[SAMI] || SAMI_PLACES[SAMI].has(place));
 
+// Switched in place, without reloading: both word lists are kept, and the game redoes what it built from the Sámi
+// (samiChanged in game.js). The pictures are the same for both.
 function setSami(id) {
   try {
     localStorage.setItem("mahtte.sami", id);
   } catch {
-    return; // nowhere to keep it, so it would be lost on the reload
+    // Not kept for the next visit, but it still holds for this one.
   }
-  location.reload(); // the words and sentences are set as the game starts
+  SAMI = id;
+  SAMI_SPOKEN = SAMI === "se";
+  SAMI_LANG = SAMI;
+  window.MAHTTE_WORDS = SAMI_WORDS[SAMI];
+  feedbackLink();
+  samiChanged();
 }
 
 // In Inari Sámi only the words that have an Inari translation, shown in Inari. The North Sámi stays in sme; the forms and
 // gradation are North Sámi's, so they go.
-if (SAMI === "smn") {
-  window.MAHTTE_WORDS = window.MAHTTE_WORDS.filter((w) => w.smn).map((w) => ({ ...w, sme: w.lemma, lemma: w.smn, forms: {}, gradation: null }));
-}
+const SAMI_WORDS = {
+  se: window.MAHTTE_WORDS,
+  smn: window.MAHTTE_WORDS.filter((w) => w.smn).map((w) => ({ ...w, sme: w.lemma, lemma: w.smn, forms: {}, gradation: null })),
+};
+window.MAHTTE_WORDS = SAMI_WORDS[SAMI];
 
 const SMN_NOTICE = {
   fi: "Anarâškielâ eli inarinsaame on kokeilu: vain metsä, eikä ääntä vielä ole. Inarinsaamen sanoja ja lauseita ei ole vielä tarkistettu.",
@@ -296,6 +305,15 @@ function textInLanguage(text) {
   return text;
 }
 
+// Feedback by e-mail, with the version and language in the subject so a reply can be matched to the build.
+function feedbackLink() {
+  const feedback = document.getElementById("feedback-link");
+  if (!feedback) return;
+  const version = document.querySelector("#game-title small")?.textContent ?? "";
+  const subject = `Sátnemátki ${version} (${LANG}${SAMI === "smn" ? ", smn" : ""}): ${LANG === "nb" ? "tilbakemelding" : "palaute"}`;
+  feedback.href = `mailto:satni@somby.fi?subject=${encodeURIComponent(subject)}`;
+}
+
 // The page itself, and the flag buttons beside the title.
 function pageInLanguage() {
   document.documentElement.lang = LANG;
@@ -308,13 +326,7 @@ function pageInLanguage() {
     }
     for (const [dir, label] of Object.entries(PAD_NB)) document.querySelector(`#pad [data-dir=${dir}]`)?.setAttribute("aria-label", label);
   }
-  // Feedback by e-mail, with the version and language in the subject so a reply can be matched to the build.
-  const feedback = document.getElementById("feedback-link");
-  if (feedback) {
-    const version = document.querySelector("#game-title small")?.textContent ?? "";
-    const subject = `Sátnemátki ${version} (${LANG}${SAMI === "smn" ? ", smn" : ""}): ${LANG === "nb" ? "tilbakemelding" : "palaute"}`;
-    feedback.href = `mailto:satni@somby.fi?subject=${encodeURIComponent(subject)}`;
-  }
+  feedbackLink();
   const holder = document.getElementById("lang-switch");
   if (!holder) return;
   holder.setAttribute("aria-label", LANG === "nb" ? "Språk" : "Kieli");
