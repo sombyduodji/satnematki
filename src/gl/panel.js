@@ -16,22 +16,6 @@
   panel.innerHTML = `<span id="gl-stats">…</span>
     <label>Tehosteet <select id="gl-quality"><option value="0">0 pois</option><option value="1">1 valo ja varjot</option><option value="2">2 + valokiilat ja hehku</option><option value="3">3 kaikki</option></select></label>
     <a id="gl-other"></a>`;
-  const style = document.createElement("style");
-  style.textContent = `#gl-panel { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 10px; align-items: center; width: fit-content; max-width: 100%; box-sizing: border-box; margin: 4px auto; padding: 4px 8px; border-radius: 6px;
-      background: rgba(16, 14, 12, 0.82); color: #e8e2d4; font: 12px/1.4 Ubuntu, "DejaVu Sans", sans-serif; }
-    #gl-panel[hidden] { display: none; }
-    #gl-panel a { color: #ffd25a; }
-    #gl-panel select { font: inherit; }
-    #graphics-ask { max-width: min(420px, calc(100vw - 32px)); padding: 16px 18px; border: 0; border-radius: 10px; color: #f3ecd9;
-      background: #263845; box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5); font: 15px/1.45 Ubuntu, "DejaVu Sans", sans-serif; }
-    #graphics-ask::backdrop { background: rgba(0, 0, 0, 0.45); }
-    #graphics-ask h2 { margin: 0 0 8px; font-size: 19px; color: #ffd25a; }
-    #graphics-ask p { margin: 0 0 8px; }
-    #graphics-ask .buttons { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; margin-top: 12px; }
-    #graphics-ask button { font: inherit; font-weight: 700; padding: 8px 14px; border-radius: 8px; cursor: pointer; }
-    #graphics-ask .primary { color: #14213d; background: #ffd25a; border: 2px solid #ffd25a; }
-    #graphics-ask .secondary { color: #f3ecd9; background: none; border: 2px solid rgba(255, 255, 255, 0.35); }`;
-  document.head.append(style);
   // In the page just above the links under the game, so that it covers nothing, the switch least of all.
   const footer = document.querySelector("main > footer");
   if (footer) footer.before(panel);

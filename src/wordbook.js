@@ -401,7 +401,9 @@ function showBook(tab = "all") {
   const head = document.createElement("div");
   head.className = "wb-head";
   head.innerHTML = `<h2><span aria-hidden="true">📖</span> <span lang="${SAMI_LANG}" translate="no">${t.title}</span></h2><span class="sub">${found} / ${words.length} ${t.words}</span>
-    <span class="wb-bar" role="progressbar" aria-valuemin="0" aria-valuemax="${words.length}" aria-valuenow="${found}"><i style="width:${words.length ? (100 * found) / words.length : 0}%"></i></span>`;
+    <span class="wb-bar" role="progressbar" aria-valuemin="0" aria-valuemax="${words.length}" aria-valuenow="${found}"><i></i></span>`;
+  // Set here rather than in the markup, as the pages' security policy allows no styles written into it.
+  head.querySelector(".wb-bar i").style.width = `${words.length ? (100 * found) / words.length : 0}%`;
   const tabs = document.createElement("div");
   tabs.className = "wb-tabs";
   for (const { place, title, words: inPlace } of [{ place: "all", title: t.all, words }, ...places]) {

@@ -809,7 +809,7 @@ try {
 function loadTimes(themeId) {
   try {
     const saved = JSON.parse(localStorage.getItem(timesKey(themeId)));
-    return Array.isArray(saved) ? saved.filter((t) => Number.isFinite(t?.ms)) : [];
+    return Array.isArray(saved) ? saved.filter((t) => Number.isFinite(t?.ms) && t.ms > 0) : []; // 0:00.0 was never a real round
   } catch {
     return [];
   }
@@ -817,6 +817,9 @@ function loadTimes(themeId) {
 
 // Adds a time and returns the best ones, with the new one marked.
 function addTime(ms, name, themeId) {
+  // The clock starts with the first move, so a round finished without one would be a record of 0:00.0. Only a test that finishes
+  // rounds by itself gets there; it isn't kept.
+  if (!(ms > 0)) return { times: loadTimes(themeId), place: -1 };
   let player = null;
   try { player = localStorage.getItem("mahtte.player"); } catch { /* none */ }
   const entry = { ms, name, face: lookKey(look), player };

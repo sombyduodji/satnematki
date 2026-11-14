@@ -2,6 +2,7 @@
 <html lang="fi" translate="no">
 <head>
 <meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; media-src 'self' blob:; connect-src 'self'; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'"><!-- only the site's own files; nothing written into the page runs -->
 <meta name="google" content="notranslate"><!-- the Sámi must stay Sámi; the help is already in Finnish and Norwegian -->
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Sátnemátki – GPU-kauppa (testi)</title>
@@ -14,10 +15,11 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Sátnemátki">
 <link rel="stylesheet" href="src/style.css">
+<link rel="stylesheet" href="src/gl/panel.css">
 </head>
 <body>
 <main>
-  <h1 id="game-title" lang="se" translate="no">Sátnemátki <small>v0.5.3.2</small></h1>
+  <h1 id="game-title" lang="se" translate="no">Sátnemátki <small>v0.5.3.3</small></h1>
   <header id="prompt" aria-live="polite"></header>
   <aside id="note"></aside>
   <div id="top-hint" aria-live="polite"></div>
@@ -54,11 +56,7 @@
     </span>
   </footer>
 </main>
-<script>
-  // This page draws with the GPU unless ?canvas is on the address, to compare with the 2D canvas.
-  window.SATNE_GL = !new URLSearchParams(location.search).has("canvas");
-  window.SATNE_GL_AUTOSTART = true;
-</script>
+<script src="src/gl/page-settings.js"></script>
 <script src="src/gl/post.js"></script>
 <script src="src/gl/gl2d.js"></script>
 <script src="art/store/light.js"></script>

@@ -2,6 +2,7 @@
 <html lang="fi" translate="no">
 <head>
 <meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; media-src 'self' blob:; connect-src 'self'; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'"><!-- only the site's own files; nothing written into the page runs -->
 <meta name="google" content="notranslate"><!-- the Sámi must stay Sámi; the help is already in Finnish and Norwegian -->
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Sátnemátki</title>
@@ -14,10 +15,11 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Sátnemátki">
 <link rel="stylesheet" href="src/style.css">
+<link rel="stylesheet" href="src/gl/panel.css">
 </head>
 <body>
 <main>
-  <div id="title-row"><h1 id="game-title" lang="se" translate="no">Sátnemátki <small>v0.5.3.2</small></h1><div class="title-picks"><div id="lang-switch" role="group"></div></div></div>
+  <div id="title-row"><h1 id="game-title" lang="se" translate="no">Sátnemátki <small>v0.5.3.3</small></h1><div class="title-picks"><div id="lang-switch" role="group"></div></div></div>
   <header id="prompt" aria-live="polite"></header>
   <aside id="note"></aside>
   <div id="top-hint" aria-live="polite"></div>
