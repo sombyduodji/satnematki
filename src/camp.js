@@ -107,7 +107,7 @@ function campMeet(sprite, picture = sprite) {
   cardEl.className = "right";
   preview = null;
   cardEl.innerHTML = audioOnly ? `<div class="note">${TEXT.listen}</div>` : `<div><div class="note">${TEXT.thisIs}</div>
-    <div><span class="word" lang="${SAMI_LANG}">${escapeText(word.lemma)}</span> <span class="translation">= ${escapeText(translation(word))}</span></div></div>`;
+    <div><span class="word" lang="${SAMI_LANG}" translate="no">${escapeText(word.lemma)}</span> <span class="translation">= ${escapeText(translation(word))}</span></div></div>`;
   const image = picture.getContext ? picture : pictureOf({ sprite: picture });
   const canvasEl = document.createElement("canvas");
   canvasEl.width = image.width;
@@ -120,7 +120,7 @@ function campMeet(sprite, picture = sprite) {
 function campSay(sme, fi, line) {
   saying = { say: sme, until: performance.now() + 3200 };
   cardEl.className = "";
-  cardEl.innerHTML = audioOnly ? `<div class="note">${escapeText(fi)}</div>` : `<div><span lang="${SAMI_LANG}">${escapeText(sme)}</span><div class="note">${escapeText(fi)}</div></div>`;
+  cardEl.innerHTML = audioOnly ? `<div class="note">${escapeText(fi)}</div>` : `<div><span lang="${SAMI_LANG}" translate="no">${escapeText(sme)}</span><div class="note">${escapeText(fi)}</div></div>`;
   if (line) playVoice(`audio/${line}-${VOICES[look.gender]}.mp3`);
 }
 
@@ -432,7 +432,7 @@ function campPickButton(sprite, onClick) {
   const button = document.createElement("button");
   button.append(campThumb(sprite === "kettle" ? "kettle" : sprite));
   const label = document.createElement("span");
-  label.innerHTML = `<b lang="${SAMI_LANG}">${escapeText(word.lemma)}</b> ${audioOnly ? "" : escapeText(translation(word))}`;
+  label.innerHTML = `<b lang="${SAMI_LANG}" translate="no">${escapeText(word.lemma)}</b> ${audioOnly ? "" : escapeText(translation(word))}`;
   button.append(label);
   button.addEventListener("click", () => {
     closeResults();
@@ -505,7 +505,7 @@ function campEnd() {
   const list = panel.querySelector(".heard");
   for (const word of list ? heardWords : []) {
     const row = document.createElement("li");
-    row.innerHTML = `<b lang="${SAMI_LANG}">${escapeText(word.lemma)}</b> = ${escapeText(translation(word))}`;
+    row.innerHTML = `<b lang="${SAMI_LANG}" translate="no">${escapeText(word.lemma)}</b> = ${escapeText(translation(word))}`;
     list.append(row);
   }
   panel.querySelector("#camp-again").addEventListener("click", () => enterTheme(theme));
@@ -517,6 +517,7 @@ function campList() {
   const paper = document.createElement("ul");
   paper.className = "paper-list";
   paper.lang = SAMI_LANG;
+  paper.translate = false; // a Sámi word, never put through a browser's translation
   const add = (sme, fi, done) => {
     const row = document.createElement("li");
     row.textContent = sme;

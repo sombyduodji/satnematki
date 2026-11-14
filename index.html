@@ -1,7 +1,8 @@
 <!doctype html>
-<html lang="fi">
+<html lang="fi" translate="no">
 <head>
 <meta charset="utf-8">
+<meta name="google" content="notranslate"><!-- the Sámi must stay Sámi; the help is already in Finnish and Norwegian -->
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Sátnemátki: pohjoissaamen sanapeli lapsille</title>
 <link rel="manifest" href="manifest.webmanifest">
@@ -33,13 +34,13 @@
     <button class="flag flag-nb" data-set-lang="nb" title="Norsk" aria-label="Norsk"></button>
   </div>
   <div class="hero-text" data-lang="fi">
-    <h1 lang="se">Sátnemátki <small>v0.5.3.1</small></h1>
+    <h1 lang="se" translate="no">Sátnemátki <small>v0.5.3.2</small></h1>
     <p class="lead">Pohjoissaamen sanapeli lapsille. Nimi tarkoittaa <em>sanamatkaa</em>: kuljet hahmollasi kodissa, metsässä ja kaupassa ja etsit sen, mitä saamenkielinen sana tarkoittaa.</p>
     <a class="play" href="peli.html">Pelaa selaimessa</a>
     <p class="fine">Maksuton. Ei rekisteröitymistä eikä asennusta. Toimii tietokoneella ja puhelimessa.</p>
   </div>
   <div class="hero-text" data-lang="nb" lang="nb">
-    <h1 lang="se">Sátnemátki <small>v0.5.3.1</small></h1>
+    <h1 lang="se" translate="no">Sátnemátki <small>v0.5.3.2</small></h1>
     <p class="lead">Et nordsamisk ordspill for barn. Navnet betyr <em>ordreise</em>: du går rundt med figuren din hjemme, i skogen og i butikken og finner det et samisk ord betyr.</p>
     <a class="play" href="peli.html">Spill i nettleseren</a>
     <p class="fine">Gratis. Ingen registrering og ingen installasjon. Fungerer på datamaskin og mobil.</p>
@@ -63,7 +64,7 @@
     <h2>Idea</h2>
     <p>Sátnemátki kokeilee, voisiko pohjoissaamen sanoja oppia liikkumalla tutuissa paikoissa ja kokeilemalla rauhassa. Sitä ei voi hävitä, eikä lukemaan tarvitse osata sujuvasti, koska hahmo sanoo sanat myös ääneen.</p>
     <ol class="steps">
-      <li><strong>Peli antaa sanan.</strong> Ylhäällä lukee esimerkiksi <span lang="se">Etsi: <b>eadni</b></span>.</li>
+      <li><strong>Peli antaa sanan.</strong> Ylhäällä lukee esimerkiksi <span lang="se" translate="no">Etsi: <b>eadni</b></span>.</li>
       <li><strong>Mene sen luo ja ota se.</strong> Kulje hahmollasi sen luo, joka mielestäsi sopii, ja paina E tai puhelimessa Ota-painiketta. Kahden väärän arvauksen jälkeen ylhäällä näkyy etsittävän varjo.</li>
       <li><strong>Kuule ja näe, mikä se oli.</strong> Väärästäkin arvauksesta oppii, koska hahmo pysähtyy hetkeksi ja kertoo, mikä se oli.</li>
     </ol>
@@ -104,9 +105,9 @@
     <ul class="points">
       <li><strong>Sanasto arjesta.</strong> Perhe, koti, eläimet, ruoka, ajoneuvot, koulutavarat ja numerot.</li>
       <li><strong>Sanan kuuleminen ja lukeminen yhdessä.</strong> Jokainen sana näkyy ja kuuluu, ja suomennos on vieressä.</li>
-      <li><strong>Kielioppia askel kerrallaan.</strong> Väri liitetään sanaan ensin perusmuodossa (<span lang="se">biila: vielgat</span>) ja sitten sanan edessä (<span lang="se">vilges biila</span>).</li>
-      <li><strong>Monikko.</strong> Sanakortti näyttää myös monikon, esimerkiksi <span lang="se">eadni – eatnit</span>.</li>
-      <li><strong>Lyhyet lauseet.</strong> <span lang="se">Dát lea girji. Son lea eadni.</span></li>
+      <li><strong>Kielioppia askel kerrallaan.</strong> Väri liitetään sanaan ensin perusmuodossa (<span lang="se" translate="no">biila: vielgat</span>) ja sitten sanan edessä (<span lang="se" translate="no">vilges biila</span>).</li>
+      <li><strong>Monikko.</strong> Sanakortti näyttää myös monikon, esimerkiksi <span lang="se" translate="no">eadni – eatnit</span>.</li>
+      <li><strong>Lyhyet lauseet.</strong> <span lang="se" translate="no">Dát lea girji. Son lea eadni.</span></li>
       <li><strong>Oma sanakirja.</strong> Löydetyt sanat jäävät talteen, ja niitä voi kuunnella uudelleen. Tähdet näyttävät, mitkä sanat ovat jo tuttuja.</li>
       <li><strong>Kokeilemalla oppiminen.</strong> Väärästä valinnasta ei menetä mitään, vain hetken aikaa. Jos haluaa haastetta, kello ottaa aikaa ja parhaat ajat jäävät muistiin.</li>
     </ul>
@@ -158,8 +159,9 @@
   </section>
 
   <section>
-    <h2>Uutta versioissa 0.1.5–0.5.3.1</h2>
+    <h2>Uutta versioissa 0.1.5–0.5.3.2</h2>
     <ul class="points">
+      <li><strong>Sujuvampi puhelimella.</strong> Kierros alkaa ohjeella, jonka OK-painike on harmaa ja lukee ”Ladataan…”, kunnes paikka on valmis, joten peli liikkuu tasaisesti heti alusta. Koulun kirjainnäppäimet ovat vaakatasossa koko näytön levyiset, ääni hiljenee, kun näyttö lukitaan, ja paikka latautuu uudelleen, kun verkkoyhteys palaa. Selaimen käännöstoiminto ei enää muuta saamenkielisiä sanoja.</li>
       <li><strong>Uusia eläimiä ja inarinsaame.</strong> Metsässä on kymmenen uutta eläintä: hirvi, peura, näätä, kärppä, majava, saukko, myyrä, sopuli, varis ja hanhi. Eläimet pysyvät poissa joesta, ja vain kalat ovat vedessä. Päävalikosta voi valita pohjoissaamen tai kokeeksi inarinsaamen (Anarâškielâ). Inarinsaameksi on toistaiseksi vain Metsä ilman ääniä, eikä inarinsaamen puhuja ole vielä tarkistanut sen sanoja.</li>
       <li><strong>Sátnegirji, oma sanakirja.</strong> Jokainen löydetty sana tallentuu pelaajan omaan sanakirjaan kuvan ja käännöksen kanssa. Sanaa koskettamalla eläin liikkuu ja ääni sanoo sanan. Sana saa tähden, kun se on löydetty 3, 10 ja 25 kertaa, ja ensimmäinen sana juhlitaan fanfaarilla.</li>
       <li><strong>Uusi ulkoasu.</strong> Päävalikossa on kuvalliset kytkimet tekstille, ohjeille ja kellolle. Kellon voi kytkeä pois, jolloin aikaa ja parhaita aikoja ei näytetä. Pelissä etsittävä sana näkyy ylhäällä kysymysmerkkinä, ja kahden väärän arvauksen jälkeen siinä näkyy sen varjo. Hahmo puhuu puhekuplissa, ja kierroksen lopussa parhaasta ajasta saa mitalin.</li>
@@ -184,7 +186,7 @@
       <li><strong>Kauppareissu.</strong> Ota kori, hae tavarat käsin kirjoitetun listan mukaan missä järjestyksessä tahansa, jonota kassalle, maksa, ota kassi ja lähde ovesta. Kaupassa on muita asiakkaita, kassa, lihatiski ja hyllyjä täyttävä työntekijä.</li>
       <li><strong>Vaikeampi kauppataso.</strong> Samaa tavaraa haetaan useita kappaleita, ja hinta näppäillään itse. Ruokia on nyt paljon enemmän.</li>
       <li><strong>Tarkempi grafiikka.</strong> Kaikki paikat, niiden ihmiset ja eläimet sekä pelaajan hahmo on piirretty tarkemmin.</li>
-      <li><strong>Laskeminen ääneen.</strong> Kaupan vaikeammalla tasolla hahmo laskee tavarat ääneen: <span lang="se">Okta. Guokte. Ja golbma. Doarvái mielkki.</span> Ostoslista on kirjoitettu kuten oikea ostoslista: <span lang="se">5 × mielkki</span>.</li>
+      <li><strong>Laskeminen ääneen.</strong> Kaupan vaikeammalla tasolla hahmo laskee tavarat ääneen: <span lang="se" translate="no">Okta. Guokte. Ja golbma. Doarvái mielkki.</span> Ostoslista on kirjoitettu kuten oikea ostoslista: <span lang="se" translate="no">5 × mielkki</span>.</li>
       <li><strong>Eläimet reagoivat.</strong> Eläintä voi silittää, kissa kehrää, koira läähättää, perhonen laskeutuu kädelle ja linnut lentävät pois.</li>
       <li><strong>Väärä valinta pysäyttää.</strong> Väärän valinnan jälkeen hahmo seisoo kolme sekuntia paikallaan ja kertoo, mikä se oli.</li>
       <li><strong>Parhaat ajat alusta.</strong> Versiossa 0.1.7 kaikki parhaat ajat nollataan kerran, koska kierrokset ovat muuttuneet paljon. Nimi ja hahmo säilyvät.</li>
@@ -220,7 +222,7 @@
     <h2>Idé</h2>
     <p>Sátnemátki prøver ut om man kan lære nordsamiske ord ved å bevege seg på kjente steder og prøve seg fram i ro og mak. Man kan ikke tape, og man trenger ikke å lese flytende, for figuren sier ordene høyt også.</p>
     <ol class="steps">
-      <li><strong>Spillet gir deg et ord.</strong> Øverst står det for eksempel Finn: <b lang="se">eadni</b>.</li>
+      <li><strong>Spillet gir deg et ord.</strong> Øverst står det for eksempel Finn: <b lang="se" translate="no">eadni</b>.</li>
       <li><strong>Gå bort til det og trykk E.</strong> Gå med figuren din til det du tror passer. På mobilen trykker du Ta eller på det.</li>
       <li><strong>Hør og se hva det var.</strong> Du lærer også av feil svar, for figuren stopper litt og forteller hva det var.</li>
     </ol>
@@ -252,9 +254,9 @@
     <ul class="points">
       <li><strong>Ord fra hverdagen.</strong> Familie, hjem, dyr, mat, kjøretøy, skolesaker og tall.</li>
       <li><strong>Å høre og lese ordet samtidig.</strong> Hvert ord vises og høres, og oversettelsen står ved siden av.</li>
-      <li><strong>Grammatikk ett steg om gangen.</strong> Fargen knyttes først til ordet i grunnform (<span lang="se">biila: vielgat</span>) og så foran ordet (<span lang="se">vilges biila</span>).</li>
-      <li><strong>Flertall.</strong> Ordkortet viser også flertall, for eksempel <span lang="se">eadni – eatnit</span>.</li>
-      <li><strong>Korte setninger.</strong> <span lang="se">Dát lea girji. Son lea eadni.</span></li>
+      <li><strong>Grammatikk ett steg om gangen.</strong> Fargen knyttes først til ordet i grunnform (<span lang="se" translate="no">biila: vielgat</span>) og så foran ordet (<span lang="se" translate="no">vilges biila</span>).</li>
+      <li><strong>Flertall.</strong> Ordkortet viser også flertall, for eksempel <span lang="se" translate="no">eadni – eatnit</span>.</li>
+      <li><strong>Korte setninger.</strong> <span lang="se" translate="no">Dát lea girji. Son lea eadni.</span></li>
       <li><strong>Å lære ved å prøve.</strong> Et feil valg koster ingenting, bare litt tid. Vil du ha en utfordring, tar klokka tiden, og de beste tidene blir husket.</li>
       <li><strong>Din egen ordbok.</strong> Ordene du finner, blir tatt vare på, og du kan høre dem igjen. Stjernene viser hvilke ord du allerede kan.</li>
     </ul>
@@ -306,8 +308,9 @@
   </section>
 
   <section>
-    <h2>Nytt i versjon 0.1.5–0.5.3.1</h2>
+    <h2>Nytt i versjon 0.1.5–0.5.3.2</h2>
     <ul class="points">
+      <li><strong>Jevnere på mobilen.</strong> En runde starter med instruksjonene, der OK-knappen er grå og viser «Laster …» til stedet er klart, så spillet går jevnt helt fra starten. Bokstavtastene på skolen er like brede som skjermen når mobilen ligger på siden, lyden stopper når skjermen låses, og stedet lastes inn igjen når nettet er tilbake. Nettleserens oversettelse endrer ikke lenger de samiske ordene.</li>
       <li><strong>Nye dyr og enaresamisk.</strong> Skogen har ti nye dyr: elg, villrein, mår, røyskatt, bever, oter, markmus, lemen, kråke og gås. Dyrene holder seg unna elva, og bare fisk er i vannet. I hovedmenyen kan du velge nordsamisk eller, som et forsøk, enaresamisk (Anarâškielâ). På enaresamisk finnes foreløpig bare Skogen, uten lyd, og ingen som snakker enaresamisk, har ennå sjekket ordene.</li>
       <li><strong>Sátnegirji, din egen ordbok.</strong> Hvert ord du finner, lagres i din egen ordbok med bilde og oversettelse. Trykk på et ord, så beveger dyret seg og stemmen sier ordet. Ordet får en stjerne når det er funnet 3, 10 og 25 ganger, og det første ordet feires med en fanfare.</li>
       <li><strong>Nytt utseende.</strong> Hovedmenyen har brytere med bilder for tekst, hjelp og klokke. Klokka kan slås av, og da vises verken tid eller beste tider. I spillet står ordet du skal finne øverst med et spørsmålstegn, og etter to feil gjetninger vises skyggen av det. Figuren snakker i snakkebobler, og på slutten av runden får du en medalje for beste tid.</li>
@@ -332,7 +335,7 @@
       <li><strong>Handletur.</strong> Ta en kurv, hent varene etter en håndskrevet liste i den rekkefølgen du vil, still deg i kø ved kassa, betal, ta en pose og gå ut døra. I butikken er det andre kunder, en kasserer, en kjøttdisk og en ansatt som fyller hyllene.</li>
       <li><strong>Vanskeligere butikknivå.</strong> Du henter flere av samme vare og taster prisen selv. Det er nå mange flere matvarer.</li>
       <li><strong>Mer detaljert grafikk.</strong> Alle stedene, menneskene og dyrene der og spillerens figur er tegnet mer detaljert.</li>
-      <li><strong>Telle høyt.</strong> På det vanskeligere butikknivået teller figuren varene høyt: <span lang="se">Okta. Guokte. Ja golbma. Doarvái mielkki.</span> Handlelista er skrevet som en ekte handleliste: <span lang="se">5 × mielkki</span>.</li>
+      <li><strong>Telle høyt.</strong> På det vanskeligere butikknivået teller figuren varene høyt: <span lang="se" translate="no">Okta. Guokte. Ja golbma. Doarvái mielkki.</span> Handlelista er skrevet som en ekte handleliste: <span lang="se" translate="no">5 × mielkki</span>.</li>
       <li><strong>Dyrene reagerer.</strong> Du kan klappe dyrene, katten maler, hunden peser, sommerfuglen setter seg på hånda og fuglene flyr sin vei.</li>
       <li><strong>Feil valg stopper deg.</strong> Etter et feil valg står figuren stille i tre sekunder og forteller hva det var.</li>
       <li><strong>Beste tider på nytt.</strong> I versjon 0.1.7 ble alle beste tider nullstilt én gang, fordi rundene hadde endret seg mye. Navn og figur ble beholdt.</li>

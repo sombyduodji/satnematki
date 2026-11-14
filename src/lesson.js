@@ -24,8 +24,8 @@ const LESSON_TEXT = {
   promptAudio: "Mikä luku se on?",
   start: "Katso taulua. Kun tiedät luvun, viittaa.",
   notYet: "Ei vielä. Katso taulua ja yritä uudelleen.",
-  beaten: (name, word, number) => `${escapeText(name)} ehti ensin: <span lang="${SAMI_LANG}">${escapeText(word)}</span> = ${number}.`,
-  right: (word, number) => `<span class="word" lang="${SAMI_LANG}">${escapeText(word)}</span> <span class="translation">= ${number}</span>`,
+  beaten: (name, word, number) => `${escapeText(name)} ehti ensin: <span lang="${SAMI_LANG}" translate="no">${escapeText(word)}</span> = ${number}.`,
+  right: (word, number) => `<span class="word" lang="${SAMI_LANG}" translate="no">${escapeText(word)}</span> <span class="translation">= ${number}</span>`,
   close: "Sulje",
   wrongWord: "Ei ihan. Korjaa ja yritä uudelleen.",
   speechSe: (on) => `Saamenkielinen teksti: ${on ? "päällä" : "pois"}`,
@@ -235,6 +235,7 @@ function lessonRaise(now) {
   lessonKeypad();
 }
 
+let lessonKeyDown = null; // the keypad's button a finger or the mouse last came down on
 function lessonKeypad(note = "") {
   const button = (key) => `<button data-key="${key}">${key}</button>`;
   const keys = theme.inWords
@@ -243,15 +244,23 @@ function lessonKeypad(note = "") {
   cardEl.className = `keypad${theme.inWords ? " letters" : ""}`;
   // The word goes in a real text field, so that whatever the player's own keyboard can write comes through, accents and all. On a
   // touch screen it's only for show, as the keys below are there and the phone's own keyboard would cover the board.
-  cardEl.innerHTML = `${theme.inWords ? `<input class="sum" lang="${SAMI_LANG}" maxlength="${LESSON.longestWord}" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="${LESSON_TEXT.promptWords}" ${LESSON_TOUCH ? "readonly" : ""}>` : `<div class="sum">${escapeText(lesson.typed) || "&nbsp;"}</div>`}
+  // The keys are letters and digits, never words: a browser translating the page mustn't touch them (Chrome made Ŋ "OF", 2026-11-14).
+  cardEl.innerHTML = `${theme.inWords ? `<input class="sum" lang="${SAMI_LANG}" translate="no" translate="no" maxlength="${LESSON.longestWord}" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="${LESSON_TEXT.promptWords}" ${LESSON_TOUCH ? "readonly" : ""}>` : `<div class="sum">${escapeText(lesson.typed) || "&nbsp;"}</div>`}
     <div class="note">${escapeText(note)}</div>
-    <div class="keys">${keys}</div>
+    <div class="keys" translate="no">${keys}</div>
     <button id="lesson-close">${LESSON_TEXT.close}</button>`;
-  cardEl.querySelectorAll("[data-key]").forEach((button) => button.addEventListener("click", () => {
+  // The touch button that raises the hand acts as the finger comes down, so the keys open under the finger, and the tap's click
+  // then lands on whichever key is there: a stray letter at the start of every word (phone test, 2026-11-14). So a key only
+  // counts a click that began on it; a click from the keyboard (Enter or Space on a key, detail 0) still counts.
+  const pressedHere = (button, event) => !event.detail || lessonKeyDown === button;
+  cardEl.querySelectorAll("[data-key], #lesson-close").forEach((button) => button.addEventListener("pointerdown", () => (lessonKeyDown = button)));
+  cardEl.querySelectorAll("[data-key]").forEach((button) => button.addEventListener("click", (event) => {
+    if (!pressedHere(button, event)) return;
     button.blur();
     lessonTypeKey(button.dataset.key);
   }));
-  cardEl.querySelector("#lesson-close").addEventListener("click", lessonCloseKeypad);
+  const close = cardEl.querySelector("#lesson-close");
+  close.addEventListener("click", (event) => pressedHere(close, event) && lessonCloseKeypad());
   const field = cardEl.querySelector("input.sum");
   if (!field) return;
   field.value = lesson.typed;
@@ -349,7 +358,7 @@ function lessonSeatFrame(now) {
 // The classmates' pictures, from tools/make_mahtte.py: the same frame as the player's, the hand on the first row and sitting on the second.
 const classmateSheets = new Map();
 function classmateSheet(look) {
-  if (!classmateSheets.has(look)) classmateSheets.set(look, Object.assign(new Image(), { src: `art/classmates/${look}.png` }));
+  if (!classmateSheets.has(look)) classmateSheets.set(look, Object.assign(keepTrying(new Image()), { src: `art/classmates/${look}.png` }));
   return classmateSheets.get(look);
 }
 

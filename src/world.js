@@ -451,7 +451,7 @@ function forestTreeImage(kind, which) {
   if (!forestTreeImages.has(key)) {
     const plain = document.createElement("canvas");
     [plain.width, plain.height] = FOREST_TREES[kind][which];
-    plain.fine = new Image();
+    plain.fine = keepTrying(new Image());
     plain.fine.src = `art/forest/tree-${key}.png`;
     forestTreeImages.set(key, plain);
   }
@@ -1345,7 +1345,24 @@ function keepItSmooth(now) {
 
 // A picture decoded ahead of time at the size it'll be on the screen, so that it's only copied from then on: no scaling for every frame,
 // and no decoding in the middle of one.
-async function fittedImage(image, width, height) {
+// They are made one at a time, with the page drawing in between, as a slow phone spends a good while on each; a round's guide waits
+// for them all (picturesFitted).
+let fittingQueue = Promise.resolve();
+let fittingLeft = 0;
+let fittingDone = [];
+function fittedImage(image, width, height) {
+  fittingLeft++;
+  const job = fittingQueue.then(() => fitImageNow(image, width, height));
+  fittingQueue = job.then(() => new Promise((resolve) => setTimeout(resolve, 0)), () => {});
+  job.finally(() => {
+    if (--fittingLeft === 0) fittingDone.splice(0).forEach((resolve) => resolve());
+  });
+  return job;
+}
+function picturesFitted() {
+  return fittingLeft ? new Promise((resolve) => fittingDone.push(resolve)) : Promise.resolve();
+}
+async function fitImageNow(image, width, height) {
   const w = Math.round(width), h = Math.round(height);
   try {
     const fitted = await createImageBitmap(image, { resizeWidth: w, resizeHeight: h, resizeQuality: "high" });
@@ -1363,10 +1380,29 @@ async function fittedImage(image, width, height) {
   return c;
 }
 
+// A picture that couldn't be fetched, the network being gone for a moment, is asked for again a few seconds later, and at once
+// when the network is back, instead of staying missing for the rest of the visit (day test 2026-11-14: after the network came
+// back, the store's floor stayed black until the page was loaded again).
+const RETRY_PICTURE_MS = 4000;
+const failedPictures = new Set();
+function keepTrying(image) {
+  image.addEventListener("error", () => {
+    failedPictures.add(image);
+    setTimeout(() => retryPicture(image), RETRY_PICTURE_MS);
+  });
+  return image;
+}
+function retryPicture(image) {
+  if (!failedPictures.delete(image)) return; // already asked again, or loaded
+  const src = image.src.replace(/[?&]retry=\d+$/, "");
+  image.src = `${src}${src.includes("?") ? "&" : "?"}retry=${Date.now()}`;
+}
+window.addEventListener("online", () => [...failedPictures].forEach(retryPicture));
+
 function loadFitted(src, size) {
   // The plain picture is there to draw until the fitted one is.
   const entry = { ready: null, plain: null };
-  const image = new Image();
+  const image = keepTrying(new Image());
   image.onload = async () => {
     entry.plain = image;
     const [w, h] = size(image);
@@ -1602,9 +1638,9 @@ const CHAIR_LOOK = { size: 0.3, seat: 6, backBottom: 3, backTop: 18, edge: "#3a2
 const CHAIR_PICTURE = { w: 28, h: 36, foot: 22 };
 const chairPictures = {};
 function drawMadeChair(chair, part) {
-  chairPictures[part] ??= Object.assign(new Image(), { src: `art/classroom/chair-${part}.png` });
+  chairPictures[part] ??= Object.assign(keepTrying(new Image()), { src: `art/classroom/chair-${part}.png` });
   ctx.lit = false; // made with its light in, as the room was
-  if (chairPictures[part].complete) ctx.drawImage(chairPictures[part], isoX(chair.x, chair.y) - CHAIR_PICTURE.w / 2, isoY(chair.x, chair.y) - CHAIR_PICTURE.foot, CHAIR_PICTURE.w, CHAIR_PICTURE.h);
+  if (chairPictures[part].complete && chairPictures[part].naturalWidth) ctx.drawImage(chairPictures[part], isoX(chair.x, chair.y) - CHAIR_PICTURE.w / 2, isoY(chair.x, chair.y) - CHAIR_PICTURE.foot, CHAIR_PICTURE.w, CHAIR_PICTURE.h);
   ctx.lit = true;
 }
 

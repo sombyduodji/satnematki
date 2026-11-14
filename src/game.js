@@ -93,6 +93,7 @@ const textBase = () => ({
     crouch: "E: ota tai katso se, mikä on lähellä. C pohjassa: kyykisty ja kävele hitaasti kyykyssä.",
     crouchClassroom: "E tai C: istu tuolille. Kun tuoli ei ole lähellä, C kyykistää, ja kyykyssä voi kävellä hitaasti.",
     ok: "OK",
+    loading: "Ladataan…",
   },
   useIt: "Ota tai katso",
   helpOn: "Ohjekuplat: päällä",
@@ -896,7 +897,7 @@ function showResults(times, place) {
     } catch {
       // The word alone, then.
     }
-    tile.insertAdjacentHTML("beforeend", `<b lang="${SAMI_LANG}">${escapeText(word.lemma)}</b><small>${escapeText(translation(word))}</small>`);
+    tile.insertAdjacentHTML("beforeend", `<b lang="${SAMI_LANG}" translate="no">${escapeText(word.lemma)}</b><small>${escapeText(translation(word))}</small>`);
     if (fresh.has(word.sprite) && word.number === undefined) {
       tile.classList.add("fresh");
       tile.insertAdjacentHTML("beforeend", `<span class="flag">${TEXT.newInBook}</span>`);
@@ -912,7 +913,7 @@ function showResults(times, place) {
     const row = document.createElement("li");
     row.className = MEDALS[i] + (i === place ? " new" : "");
     row.append(Object.assign(document.createElement("span"), { className: "mini-medal", textContent: String(i + 1) }), portraitImage(time.face),
-      Object.assign(document.createElement("span"), { className: "who-name", textContent: time.name || "" }),
+      Object.assign(document.createElement("span"), { className: "who-name", textContent: time.name || "", translate: false }),
       Object.assign(document.createElement("span"), { className: "best-time", textContent: formatTime(time.ms) }));
     results.querySelector("ol").append(row);
   });
@@ -958,14 +959,60 @@ function enterTheme(chosenTheme, { guide = true } = {}) {
   prepareLines(answerLines());
   enterPlace(theme.place);
   setPadForTheme();
-  newRound();
+  closeResults();
+  cardEl.className = ""; // the menu's cards and greeting go at once, not when the round is ready
+  cardEl.innerHTML = "";
+  promptEl.replaceChildren();
+  // The guide comes up at once, its OK greyed out as "Loading…", and the slow part of setting up the round is done behind it in slices,
+  // so that a slow phone keeps drawing. Without the guide, a "Loading…" comes up only if it takes a while.
+  const run = ++preparing;
+  paused = true;
+  if (guide) showGuide();
+  else showLoading();
+  prepareRound(run, guide);
+}
+
+let animalsAhead = null; // the round's animals and store pictures being made ahead, which the guide's OK waits for
+let preparing = 0; // the round being set up; another start or the menu makes an older one stop
+const LOADING_MOST_MS = 8000; // sounds and pictures still coming after this don't keep OK greyed out
+
+async function prepareRound(run, guide) {
+  if (!(await newRound(run)) || run !== preparing) return;
   if (theme.camp) setupCamp();
   else camp = null;
   if (theme.lesson) setupLesson();
   else lesson = null;
   showPrompt();
-  if (guide) showGuide();
-  else startRound();
+  // As the guide did when it came after all this: the round waits for OK, and the start card's announcement with it.
+  paused = true;
+  announcement++;
+  document.getElementById("announce")?.remove();
+  // What is still being made ready: the ambience's loop and the pictures being fitted to the screen.
+  await Promise.race([Promise.all([ambienceRun?.ready, picturesFitted(), animalsAhead]), new Promise((resolve) => setTimeout(resolve, LOADING_MOST_MS))]);
+  if (run !== preparing) return;
+  if (guide) guideReady();
+  else {
+    closeResults();
+    startRound();
+  }
+}
+
+// It's there at once, so that nothing else (the pause menu) opens meanwhile, but only shows after a moment (style.css).
+function showLoading() {
+  const panel = document.createElement("div");
+  panel.id = "results";
+  panel.className = "loading";
+  panel.innerHTML = `<div class="panel"><p class="loading-text">${TEXT.guide.loading}</p></div>`;
+  document.body.append(panel);
+}
+
+// Long work at the start of a round is done in slices of about this long, with the page drawing in between.
+const SLICE_MS = 12;
+let sliceFrom = 0;
+async function breathe() {
+  if (performance.now() - sliceFrom < SLICE_MS) return;
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  sliceFrom = performance.now();
 }
 
 // In the classroom the on-screen pad's crouch button sits at a chair.
@@ -995,7 +1042,7 @@ function showGuide() {
   const panel = document.createElement("div");
   panel.id = "results";
   panel.setAttribute("role", "dialog");
-  panel.innerHTML = `<div class="panel"><h2>${theme.title}${level}</h2><ul></ul><div class="buttons"><button id="guide-ok">${guide.ok}</button></div></div>`;
+  panel.innerHTML = `<div class="panel"><h2>${theme.title}${level}</h2><ul></ul><div class="buttons"><button id="guide-ok" class="loading" disabled>${guide.loading}</button></div></div>`;
   for (const line of lines) {
     const row = document.createElement("li");
     row.textContent = line;
@@ -1004,7 +1051,18 @@ function showGuide() {
   if (TOUCH_UI && typeof touchGuide === "function") panel.querySelector("ul").after(touchGuide());
   document.body.append(panel);
   const ok = panel.querySelector("#guide-ok");
-  ok.addEventListener("click", startRound);
+  ok.addEventListener("click", () => {
+    if (!ok.disabled) startRound();
+  });
+}
+
+// The round is ready: the guide's OK can be pressed.
+function guideReady() {
+  const ok = document.getElementById("guide-ok");
+  if (!ok) return;
+  ok.disabled = false;
+  ok.classList.remove("loading");
+  ok.textContent = TEXT.guide.ok;
   ok.focus();
 }
 
@@ -1023,14 +1081,12 @@ function startRound() {
   announce();
 }
 
-function newRound() {
+async function newRound(run) {
   // Nothing appears on top of the character or behind anything, everything can be walked to,
   // and no way through is cut off.
   const clear = ([x, y]) => Math.hypot(x + 0.5 - me.x, y + 0.5 - me.y) > 1.5;
-  closeResults();
   roundEnding++;
   timerEl.hidden = !!theme.camp || !clockRound;
-  paused = false;
   me.sittingOn = null;
   loudspeaker.wait = null; // till the basket is taken; one already speaking goes on
   const { find, extra } = theme.words();
@@ -1073,13 +1129,14 @@ function newRound() {
       used.add(`${spot}`);
       return { word, x: spot[0], y: spot[1], phase: Math.random() * 3000 };
     });
-    if (everythingInReach()) break;
+    const reached = await everythingInReach(run);
+    if (run !== preparing) return false;
+    if (reached) break;
   }
   chooseDogBreed();
   chooseSleepers();
   prepareLines(objects.map((o) => wordLine(o.word))); // only this round's, as there are hundreds in all
-  buildAnimalsAhead();
-  buildStoreAhead();
+  animalsAhead = Promise.all([buildAnimalsAhead(), buildStoreAhead()]);
   targets = shuffled(find);
   heardWords = [];
   missesSinceFind = 0;
@@ -1105,6 +1162,7 @@ function newRound() {
   showTimer();
   showPrompt();
   showStartCard();
+  return true;
 }
 
 // The shopping list on a piece of paper, in handwriting. What's been found is crossed off, and things can be got in any order.
@@ -1118,6 +1176,7 @@ function paperList() {
   const paper = document.createElement("ul");
   paper.className = "paper-list";
   paper.lang = SAMI_LANG;
+  paper.translate = false; // a Sámi word, never put through a browser's translation
   paper.setAttribute("aria-label", TEXT.shoppingList);
   for (const word of shoppingList) {
     const wanted = theme.counts ? cart.want.get(word) : 1;
@@ -1246,16 +1305,17 @@ function showPrompt() {
       promptEl.replaceChildren(); // the list says it all
       return;
     }
-    const aimOf = targets[0].aimOf ? `<span class="aim-of" lang="${SAMI_LANG}">${escapeText(targets[0].aimOf)}:</span>` : "";
+    const aimOf = targets[0].aimOf ? `<span class="aim-of" lang="${SAMI_LANG}" translate="no">${escapeText(targets[0].aimOf)}:</span>` : "";
     promptEl.className = "quest";
     promptEl.innerHTML = `<span class="ask"><small>${TEXT.find.replace(/:$/, "")}</small><span class="aim">${aimOf}
-      <span class="target waiting${aim.length > 12 ? " long" : ""}" lang="${SAMI_LANG}">${escapeText(aim)}</span></span></span>`;
+      <span class="target waiting${aim.length > 12 ? " long" : ""}" lang="${SAMI_LANG}" translate="no">${escapeText(aim)}</span></span></span>`;
     promptEl.prepend(questBadge(left > 1 ? null : targets[0], left > 1 ? `${left}×` : undefined));
     promptEl.append(questSlots());
     if (shoppingList.length) {
       const list = document.createElement("ol");
       list.className = "shopping";
       list.lang = SAMI_LANG;
+      list.translate = false; // a Sámi word, never put through a browser's translation
       shoppingList.forEach((word) => {
         const row = document.createElement("li");
         row.textContent = `${theme.counts ? `${cart.want.get(word)} × ` : ""}${listWord(word)}${listShowsPrices() ? ` ${SHOP_PRICES[word.sprite]} ${TEXT.euro}` : ""}`;
@@ -1401,7 +1461,7 @@ async function playNextLine() {
   };
   setTimeout(next, LINE_MAX_MS);
   wakeSound();
-  const ready = sound && await Promise.race([
+  const ready = sound && !document.hidden && await Promise.race([
     sound.resume().then(() => true, () => false),
     new Promise((resolve) => setTimeout(() => resolve(false), 250)),
   ]);
@@ -1419,6 +1479,7 @@ async function playNextLine() {
     currentLine = { source, gain };
     return;
   }
+  if (document.hidden) return next(); // not said to a locked screen
   voice.onended = voice.onerror = next;
   voice.src = src;
   voice.preservesPitch = rate === 1;
@@ -1503,6 +1564,7 @@ function announce() {
   const el = document.createElement("div");
   el.id = "announce";
   el.lang = SAMI_LANG;
+  el.translate = false; // a Sámi word, never put through a browser's translation
   el.innerHTML = `<div class="label"></div><div></div>`;
   el.firstChild.textContent = targets[0]?.aimOf ? `${TEXT.find} ${targets[0].aimOf}` : TEXT.find;
   el.lastChild.textContent = target.textContent;
@@ -1554,11 +1616,12 @@ function showBubble(say, note) {
   canvasEl.height = FRAME_H * SHEET_DETAIL;
   const nameEl = document.createElement("figcaption");
   nameEl.lang = SAMI_LANG;
+  nameEl.translate = false; // a Sámi word, never put through a browser's translation
   nameEl.textContent = NAMES[look.gender];
   figure.append(canvasEl, nameEl);
   const bubble = document.createElement("div");
   bubble.className = "bubble";
-  bubble.innerHTML = `<div class="say" lang="${SAMI_LANG}"></div><div class="note"></div>`;
+  bubble.innerHTML = `<div class="say" lang="${SAMI_LANG}" translate="no"></div><div class="note"></div>`;
   bubble.querySelector(".say").textContent = say;
   bubble.querySelector(".note").textContent = note;
   cardEl.append(figure, bubble);
@@ -1613,6 +1676,7 @@ async function sayHello(name) {
 
 // The menu of places: at the start, after a round, or whenever the player asks.
 function showPlaces() {
+  preparing++; // a round still being set up stops
   closeResults();
   closePause();
   bookHud(false); // and a celebration still open goes with it
@@ -1724,6 +1788,7 @@ function menuButton({ look: picture, title, small, example, onClick, className, 
     const exampleEl = document.createElement("span");
     exampleEl.className = "example";
     exampleEl.lang = SAMI_LANG;
+    exampleEl.translate = false; // a Sámi word, never put through a browser's translation
     exampleEl.textContent = example;
     button.append(exampleEl);
   }
@@ -1783,7 +1848,7 @@ function samiChoice() {
     button.className = "opt";
     button.dataset.sami = id;
     button.setAttribute("aria-pressed", String(id === SAMI));
-    button.innerHTML = `<b lang="${id}">${escapeText(name)}</b><small>${escapeText(TEXT.samiNotes[id])}</small>` +
+    button.innerHTML = `<b lang="${id}" translate="no">${escapeText(name)}</b><small>${escapeText(TEXT.samiNotes[id])}</small>` +
       (id === "smn" ? `<span class="tag">${escapeText(TEXT.samiTrial)}</span>` : "") +
       (id === SAMI ? `<span class="chosen">✓ ${escapeText(TEXT.samiChosen)}</span>` : "");
     button.addEventListener("click", () => id !== SAMI && setSami(id));
@@ -1891,7 +1956,7 @@ function bestList(option) {
   }
   for (const time of times) {
     const row = document.createElement("li");
-    row.append(portraitImage(time.face), Object.assign(document.createElement("span"), { className: "who-name", textContent: time.name || "" }),
+    row.append(portraitImage(time.face), Object.assign(document.createElement("span"), { className: "who-name", textContent: time.name || "", translate: false }),
       Object.assign(document.createElement("span"), { className: "best-time", textContent: formatTime(time.ms) }));
     list.append(row);
   }
@@ -2106,6 +2171,7 @@ function showChooser() {
   canvasEl.height = FRAME_H * SHEET_DETAIL;
   const nameEl = document.createElement("figcaption");
   nameEl.lang = SAMI_LANG;
+  nameEl.translate = false; // a Sámi word, never put through a browser's translation
   figure.append(canvasEl, nameEl);
   const rows = document.createElement("div");
   rows.className = "choices";
@@ -2203,9 +2269,9 @@ function showCard(word, right, count = 1) {
     cardEl.innerHTML = `<div class="note">${right ? TEXT.found : TEXT.notYet}</div>`;
   } else cardEl.innerHTML = `<div>
       <div class="note">${right ? TEXT.found : FAMILY.has(word.sprite) ? TEXT.thisIsPerson : TEXT.thisIs}</div>
-      <div><span class="word" lang="${SAMI_LANG}">${escapeText(count > 1 ? TEXT.enough(word) : word.lemma)}</span>
+      <div><span class="word" lang="${SAMI_LANG}" translate="no">${escapeText(count > 1 ? TEXT.enough(word) : word.lemma)}</span>
         <span class="translation">= ${count > 1 ? `${count} × ` : ""}${escapeText(translation(word))}${word.sprite === "beana" && placeName === "forest" ? ` (${(LANG === "nb" ? TEXT_NB.dogBreeds : DOG_BREEDS)[dogBreed]})` : ""}</span></div>
-      ${plural && count === 1 ? `<div class="note">${TEXT.plural} <span lang="${SAMI_LANG}">${escapeText(plural)}</span></div>` : ""}
+      ${plural && count === 1 ? `<div class="note">${TEXT.plural} <span lang="${SAMI_LANG}" translate="no">${escapeText(plural)}</span></div>` : ""}
     </div>`;
   const picture = document.createElement("canvas");
   // A picture still being made is empty for a moment: the card shows without it and it's drawn in as soon as it's there.
@@ -2285,7 +2351,7 @@ function storeSpeechCard(word, sme, note) {
   cardEl.className = "answered";
   cardEl.innerHTML = `<div>
       <div class="note">${TEXT.thisIs}</div>
-      <div><span class="word" lang="${SAMI_LANG}">${escapeText(word.lemma)}</span> <span class="translation">= ${escapeText(translation(word))}</span></div>
+      <div><span class="word" lang="${SAMI_LANG}" translate="no">${escapeText(word.lemma)}</span> <span class="translation">= ${escapeText(translation(word))}</span></div>
     </div>`;
   const picture = document.createElement("canvas");
   // A picture still being made is empty for a moment: the card shows without it and it's drawn in as soon as it's there.
@@ -2342,9 +2408,9 @@ function touch(object, now) {
     const count = wanted - targets.filter((word) => word === object.word).length;
     cardEl.className = "";
     cardEl.innerHTML = audioOnly ? `<div class="note">${count} / ${wanted}</div>`
-      : `<div><div><span class="word" lang="${SAMI_LANG}">${escapeText(window.MAHTTE_NUMBERS[count])}</span>
+      : `<div><div><span class="word" lang="${SAMI_LANG}" translate="no">${escapeText(window.MAHTTE_NUMBERS[count])}</span>
         <span class="translation">${count} / ${wanted}</span></div>
-        <div class="note"><span lang="${SAMI_LANG}">${escapeText(object.word.lemma)}</span> = ${escapeText(translation(object.word))}</div></div>`;
+        <div class="note"><span lang="${SAMI_LANG}" translate="no">${escapeText(object.word.lemma)}</span> = ${escapeText(translation(object.word))}</div></div>`;
     fadeFoundCard();
     rightSpeech = (rightSpeech ?? Promise.resolve()).then(() => playVoice(`audio/count-${count}-${VOICES[look.gender]}.mp3`)).then(() => {
       rightSpeech = null;
@@ -2775,6 +2841,23 @@ const gridKey = (cx, cy) => cy * WIDTH * GRID + cx;
 
 // Spreads from the character over everywhere they can walk, nearest first, until visit says stop.
 function spreadOverGrid(visit) {
+  const steps = spreading(visit);
+  for (;;) {
+    const step = steps.next();
+    if (step.done) return step.value;
+  }
+}
+// The same, giving the page a moment now and then: for setting up a round. Nothing if that round has been left meanwhile.
+async function spreadOverGridSliced(visit, run) {
+  const steps = spreading(visit);
+  for (;;) {
+    const step = steps.next();
+    if (step.done) return step.value;
+    await breathe();
+    if (run !== preparing) return null;
+  }
+}
+function* spreading(visit) {
   // Start from every cell in clear reach, as the character may be standing between grid cells.
   const from = new Map();
   const queue = [];
@@ -2788,6 +2871,7 @@ function spreadOverGrid(visit) {
   }
   queue.sort((p, q) => Math.hypot(p[0] - startX, p[1] - startY) - Math.hypot(q[0] - startX, q[1] - startY));
   for (let head = 0; head < queue.length; head++) {
+    if (head % 64 === 63) yield;
     const [cx, cy] = queue[head];
     if (visit(cx, cy, (cx + 0.5) / GRID, (cy + 0.5) / GRID)) break;
     for (const [a, b] of [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]]) {
@@ -2807,23 +2891,21 @@ function spreadOverGrid(visit) {
 let pathCells = [];
 let openPathCells = null;
 
-function pathCellsFromHere() {
-  const reached = spreadOverGrid(() => false);
-  return pathCells.filter(({ key }) => reached.has(key));
-}
 
 // The floor a thing stands on is taken, of course; what matters is the way around it.
 const underAThing = ({ x, y }) => objects.some((o) => standsFree(o) && Math.hypot(x - o.x - 0.5, y - o.y - 0.5) < solidSize(o) + MOVE.radius + 0.1);
 
-function everythingInReach() {
+async function everythingInReach(run) {
   if (!openPathCells) {
     const placed = objects;
     objects = [];
-    openPathCells = pathCellsFromHere();
+    const open = await spreadOverGridSliced(() => false, run);
+    if (!open) return false; // left: what's in objects now is someone else's
     objects = placed;
+    openPathCells = pathCells.filter(({ key }) => open.has(key));
   }
   const waiting = new Set(objects);
-  const reached = spreadOverGrid((cx, cy, x, y) => {
+  const reached = await spreadOverGridSliced((cx, cy, x, y) => {
     for (const o of waiting) {
       // A number is read from the desk's chair, so that is what has to be reached.
       const atDesk = o.word.place === "desk";
@@ -2831,7 +2913,8 @@ function everythingInReach() {
       if (away < (atDesk ? SIT.reach : thingReach(o))) waiting.delete(o);
     }
     return false;
-  });
+  }, run);
+  if (!reached) return false;
   return waiting.size === 0 && openPathCells.every((cell) => reached.has(cell.key) || underAThing(cell));
 }
 
@@ -2972,8 +3055,19 @@ function wakeSound() {
     noiseBuffer = makeNoise(sound); // ready now, not during the first step
     startAmbience();
   }
-  if (sound.state !== "running") sound.resume().catch(() => {});
+  if (sound.state !== "running" && !document.hidden) sound.resume().catch(() => {});
 }
+
+// Nothing goes on sounding with the screen locked or another app in front (day test 2026-11-14: the forest's ambience played on the
+// lock screen); it comes back with the page.
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) {
+    sound?.suspend().catch(() => {});
+    voice?.pause();
+  } else if (sound && sound.state !== "running") {
+    sound.resume().catch(() => {});
+  }
+});
 
 function makeNoise(context) {
   const buffer = context.createBuffer(1, context.sampleRate, context.sampleRate);
@@ -3251,12 +3345,14 @@ const AMBIENCE_BLEND = 5; // seconds of a track's end blended into its start, so
 const AMBIENCE_SPIKE = 3; // nothing goes further above a track's average than this many times
 
 // Turns down anything sudden, like a dropped basket, starting a moment before it and recovering slowly, so that
-// no spike comes through and the turning down itself isn't heard.
-function limitSpikes(loop, loudness) {
+// no spike comes through and the turning down itself isn't heard. In slices, as it's done while a round is being set up.
+const SAMPLES_A_SLICE = 1 << 15;
+async function limitSpikes(loop, loudness) {
   const ceiling = loudness * AMBIENCE_SPIKE;
   const channels = Array.from({ length: loop.numberOfChannels }, (_, c) => loop.getChannelData(c));
   const wanted = new Float32Array(loop.length);
   for (let i = 0; i < loop.length; i++) {
+    if (i % SAMPLES_A_SLICE === 0) await breathe();
     let peak = 0;
     for (const channel of channels) peak = Math.max(peak, Math.abs(channel[i]));
     wanted[i] = peak > ceiling ? ceiling / peak : 1;
@@ -3266,17 +3362,19 @@ function limitSpikes(loop, loudness) {
   // Backwards, so the turning down starts before the spike; then forwards, so it comes back slowly.
   let gain = 1;
   for (let i = loop.length - 1; i >= 0; i--) {
+    if (i % SAMPLES_A_SLICE === 0) await breathe();
     gain = Math.min(wanted[i], gain + 1 / ahead);
     wanted[i] = gain;
   }
   gain = 1;
   for (let i = 0; i < loop.length; i++) {
+    if (i % SAMPLES_A_SLICE === 0) await breathe();
     gain = Math.min(wanted[i], gain + recover);
     for (const channel of channels) channel[i] *= gain;
   }
 }
 
-function blendedLoop(buffer) {
+async function blendedLoop(buffer) {
   const blend = Math.round(AMBIENCE_BLEND * buffer.sampleRate);
   const skip = Math.round(0.1 * buffer.sampleRate); // a cut MP3 can stumble on its first moment
   const length = buffer.length - skip - blend;
@@ -3285,6 +3383,7 @@ function blendedLoop(buffer) {
   for (let channel = 0; channel < buffer.numberOfChannels; channel++) {
     const from = buffer.getChannelData(channel), to = loop.getChannelData(channel);
     for (let i = 0; i < length; i++) {
+      if (i % SAMPLES_A_SLICE === 0) await breathe();
       let sample = from[skip + i];
       if (i < blend) sample = sample * Math.sqrt(i / blend) + from[skip + length + i] * Math.sqrt(1 - i / blend);
       to[i] = sample;
@@ -3292,7 +3391,7 @@ function blendedLoop(buffer) {
     }
   }
   const loudness = Math.sqrt(total / (length * buffer.numberOfChannels));
-  limitSpikes(loop, loudness);
+  await limitSpikes(loop, loudness);
   return { loop, loudness };
 }
 
@@ -3302,7 +3401,8 @@ async function playTrack(run, place) {
     if (!response.ok) throw new Error(response.status);
     const decoded = await sound.decodeAudioData(await response.arrayBuffer());
     if (run !== ambienceRun) return;
-    const { loop, loudness } = blendedLoop(decoded);
+    const { loop, loudness } = await blendedLoop(decoded);
+    if (run !== ambienceRun) return;
     const source = sound.createBufferSource();
     source.buffer = loop;
     source.loop = true;
@@ -3346,7 +3446,7 @@ function startAmbience() {
   output.gain.linearRampToValueAtTime(AMBIENCE_LEVEL[ambiencePlace], sound.currentTime + AMBIENCE_FADE);
   output.connect(sound.destination);
   ambienceRun = { place: ambiencePlace, output, endless: [], timers: new Set() };
-  if (recorded) playTrack(ambienceRun, ambiencePlace);
+  if (recorded) ambienceRun.ready = playTrack(ambienceRun, ambiencePlace); // a round waits for it, see prepareRound
   else make(ambienceRun);
 }
 
@@ -4066,7 +4166,7 @@ function sayPrice(remind = false) {
 function showKeypad(note = "") {
   cardEl.className = "keypad";
   cardEl.innerHTML = `<div class="sum">${escapeText(cart.typed) || "&nbsp;"} ${TEXT.euro}</div>
-    <div class="keys">${[1, 2, 3, 4, 5, 6, 7, 8, 9, "⌫", 0, "OK"].map((key) => `<button data-key="${key}">${key}</button>`).join("")}</div>
+    <div class="keys" translate="no">${[1, 2, 3, 4, 5, 6, 7, 8, 9, "⌫", 0, "OK"].map((key) => `<button data-key="${key}">${key}</button>`).join("")}</div>
     <button id="hear-price">🔊 ${TEXT.hearAgain}</button>
     <div class="note">${escapeText(note)}</div>`;
   cardEl.querySelectorAll("[data-key]").forEach((button) => button.addEventListener("click", () => {
@@ -4238,7 +4338,7 @@ function showTopHint(hint) {
   el.style.visibility = text ? "visible" : "hidden";
   if (!text) return;
   const [key, sme, fi] = text.split("|");
-  el.innerHTML = `${key ? `<kbd>${key}</kbd> ` : ""}${sme ? `<span lang="${SAMI_LANG}">${escapeText(sme)}</span> ` : ""}<small>${escapeText(fi)}</small>`;
+  el.innerHTML = `${key ? `<kbd>${key}</kbd> ` : ""}${sme ? `<span lang="${SAMI_LANG}" translate="no">${escapeText(sme)}</span> ` : ""}<small>${escapeText(fi)}</small>`;
 }
 
 let hintShown = null;
@@ -4261,7 +4361,7 @@ function updateHint() {
     }
     if (hint) {
       const key = hint.key || hint.act ? "<kbd>E</kbd> " : "";
-      const words = hint.sme && !audioOnly ? `<span lang="${SAMI_LANG}">${escapeText(hint.sme)}</span> <small>${escapeText(hint.fi)}</small>` : "";
+      const words = hint.sme && !audioOnly ? `<span lang="${SAMI_LANG}" translate="no">${escapeText(hint.sme)}</span> <small>${escapeText(hint.fi)}</small>` : "";
       el.innerHTML = hint.say ? escapeText(hint.say) : `${key}${words}`;
     }
   }
