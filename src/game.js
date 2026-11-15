@@ -456,7 +456,7 @@ function sheetFor({ outfit, gender, hair, length, eyes }) {
     sheetCache.clear();
     const sheet = document.createElement("canvas");
     sheet.complete = false;
-    const image = new Image();
+    const image = keepTrying(new Image()); // asked again when the network is back, or the character stays unseen (night test 2026-11-15)
     image.onload = () => {
       sheet.width = image.width;
       sheet.height = image.height;

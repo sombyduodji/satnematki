@@ -1383,12 +1383,16 @@ async function fitImageNow(image, width, height) {
 // A picture that couldn't be fetched, the network being gone for a moment, is asked for again a few seconds later, and at once
 // when the network is back, instead of staying missing for the rest of the visit (day test 2026-11-14: after the network came
 // back, the store's floor stayed black until the page was loaded again).
+// A picture that is really missing (not a lost network) would be asked for every few seconds for the whole visit, so the timed
+// tries stop after a while; the network coming back still asks for it again (night test 2026-11-15).
 const RETRY_PICTURE_MS = 4000;
+const RETRY_PICTURE_TIMES = 15;
 const failedPictures = new Set();
 function keepTrying(image) {
+  let tries = 0;
   image.addEventListener("error", () => {
     failedPictures.add(image);
-    setTimeout(() => retryPicture(image), RETRY_PICTURE_MS);
+    if (++tries <= RETRY_PICTURE_TIMES) setTimeout(() => retryPicture(image), RETRY_PICTURE_MS);
   });
   return image;
 }
@@ -1398,6 +1402,12 @@ function retryPicture(image) {
   image.src = `${src}${src.includes("?") ? "&" : "?"}retry=${Date.now()}`;
 }
 window.addEventListener("online", () => [...failedPictures].forEach(retryPicture));
+// A picture with a stand-in meanwhile (an animal drawn in code, a word page's bounce) is asked for again only when the network is
+// back, so that a long time offline doesn't flicker between the stand-in and nothing (night test 2026-11-15).
+function tryWhenOnline(image) {
+  image.addEventListener("error", () => failedPictures.add(image));
+  return image;
+}
 
 function loadFitted(src, size) {
   // The plain picture is there to draw until the fitted one is.
@@ -1506,7 +1516,7 @@ const DOG_BREEDS = { lapinkoira: "suomenlapinkoira", lapinporokoira: "lapinporok
 let dogBreed = "lapinkoira";
 const chooseDogBreed = () => { const breeds = Object.keys(DOG_BREEDS); dogBreed = breeds[Math.floor(Math.random() * breeds.length)]; };
 function bakedAnimal(sprite, facing, frame) {
-  if (!bakedSheets.has(sprite)) bakedSheets.set(sprite, Object.assign(new Image(), { src: `art/animals/${sprite}.png` }));
+  if (!bakedSheets.has(sprite)) bakedSheets.set(sprite, Object.assign(tryWhenOnline(new Image()), { src: `art/animals/${sprite}.png` }));
   const sheet = bakedSheets.get(sprite);
   if (!sheet.complete || !sheet.naturalWidth) return null;
   const { frames, rows, x, y, w, h } = window.MAHTTE_ANIMALS[sprite];

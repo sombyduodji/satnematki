@@ -6,8 +6,8 @@
   if (!TOUCH_UI) return;
   document.body.classList.add("touch-ui");
   const T = LANG === "nb"
-    ? { turn: "Snu telefonen", use: "Ta", jump: "Hopp", crouch: "Huk", full: "Fullskjerm" }
-    : { turn: "Käännä puhelin vaakatasoon", use: "Ota", jump: "Hyppy", crouch: "Kyykky", full: "Koko näyttö" };
+    ? { turn: "Snu telefonen", orTap: "eller trykk her", use: "Ta", jump: "Hopp", crouch: "Huk", full: "Fullskjerm" }
+    : { turn: "Käännä puhelin vaakatasoon", orTap: "tai napauta tästä", use: "Ota", jump: "Hyppy", crouch: "Kyykky", full: "Koko näyttö" };
 
   // The help speaks of the controls on the screen, not of keys a phone hasn't got.
   const touchHelp = LANG === "nb" ? {
@@ -74,6 +74,8 @@
   let touchedButton = false;
   let leavingOnPurpose = false;
   const inRound = () => theme && !document.body.classList.contains("menu");
+  // The round's guide, still "Loading…" or ready: nothing has started yet, so Back leaves for the menu (night test 2026-11-15).
+  const guideUp = () => !!(document.getElementById("guide-ok") || document.querySelector("#results.loading"));
   const fullInRound = () => {
     goFull();
     if (isFull()) screen.orientation?.lock?.("landscape").catch(() => {}); // held sideways again, back in a round
@@ -112,7 +114,11 @@
     // fullscreen in a round, other than with the ⛶ button, opens the pause menu, as Back does otherwise (phone test, 2026-11-13).
     const fullChanged = () => {
       showFull(); fittedTo = "";
-      if (!isFull() && !leavingOnPurpose && inRound() && !pauseOpen()) openPause();
+      // Back in fullscreen only leaves it, so leaving it is taken as Back: the pause menu in a round, the menu from its guide.
+      if (!isFull() && !leavingOnPurpose && inRound()) {
+        if (guideUp()) showPlaces();
+        else if (!pauseOpen()) openPause();
+      }
       if (!isFull()) leavingOnPurpose = false;
     };
     document.addEventListener("fullscreenchange", fullChanged);
@@ -122,7 +128,10 @@
   // Held upright, the game asks to be turned: there's no room for the controls and the picture side by side.
   const turn = document.createElement("div");
   turn.id = "turn-phone";
-  turn.innerHTML = `<div><span aria-hidden="true">📱</span>${T.turn}</div>`;
+  // With the phone's turning locked, turning does nothing, but a tap lies the game sideways itself (fullscreen and Chrome's lock),
+  // so the notice says so (night test 2026-11-15).
+  turn.innerHTML = `<div><span aria-hidden="true">📱</span>${T.turn}<small>${T.orTap}</small></div>`;
+  turn.addEventListener("click", () => inRound() && fullInRound());
   document.body.append(turn);
 
   // The picture walks nowhere when touched: the canvas's own tap-to-walk is for the mouse.
@@ -145,6 +154,8 @@
     if (!backStep) return;
     backStep = false;
     if (!theme || document.body.classList.contains("menu")) return;
+    // From the guide, the menu, as the pause menu's way out does; the round being set up stops.
+    if (guideUp()) return showPlaces();
     if (pauseOpen()) closePause(true);
     else openPause();
     keepBackStep();

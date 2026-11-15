@@ -200,7 +200,7 @@
       this.lightReady = false;
       this.lightPixels = null;
       if (!info) return;
-      const image = new Image();
+      const image = typeof keepTrying === "function" ? keepTrying(new Image()) : new Image(); // asked again when the network is back
       image.onload = () => {
         if (this.light !== info) return;
 

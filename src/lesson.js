@@ -245,7 +245,7 @@ function lessonKeypad(note = "") {
   // The word goes in a real text field, so that whatever the player's own keyboard can write comes through, accents and all. On a
   // touch screen it's only for show, as the keys below are there and the phone's own keyboard would cover the board.
   // The keys are letters and digits, never words: a browser translating the page mustn't touch them (Chrome made Ŋ "OF", 2026-11-14).
-  cardEl.innerHTML = `${theme.inWords ? `<input class="sum" lang="${SAMI_LANG}" translate="no" translate="no" maxlength="${LESSON.longestWord}" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="${LESSON_TEXT.promptWords}" ${LESSON_TOUCH ? "readonly" : ""}>` : `<div class="sum">${escapeText(lesson.typed) || "&nbsp;"}</div>`}
+  cardEl.innerHTML = `${theme.inWords ? `<input class="sum" lang="${SAMI_LANG}" translate="no" maxlength="${LESSON.longestWord}" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="${LESSON_TEXT.promptWords}" ${LESSON_TOUCH ? "readonly" : ""}>` : `<div class="sum">${escapeText(lesson.typed) || "&nbsp;"}</div>`}
     <div class="note">${escapeText(note)}</div>
     <div class="keys" translate="no">${keys}</div>
     <button id="lesson-close">${LESSON_TEXT.close}</button>`;

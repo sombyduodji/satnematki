@@ -508,7 +508,7 @@ function bookAnimation(word, entry) {
   const name = bookSheetName(word, entry);
   const info = name && window.MAHTTE_ANIMALS[name];
   if (!info || (info.frames.length === 1 && info.rows === 1)) return null; // nothing to move: it bounces instead
-  const sheet = new Image();
+  const sheet = tryWhenOnline(new Image());
   sheet.src = `art/animals/${name}.png`;
   const canvasEl = document.createElement("canvas");
   canvasEl.className = "moving";

@@ -1020,6 +1020,7 @@ body.touch-ui:not(.menu) .paper-list small, body.touch-ui:not(.menu) .paper-list
   body.touch-ui:not(.menu) #turn-phone { position: fixed; inset: 0; z-index: 40; display: grid; place-items: center; padding: 24px; text-align: center; color: #fff;
     background: #14213d; font: 700 22px system-ui, sans-serif; }
   #turn-phone span { display: block; font-size: 64px; animation: turn-phone 1.6s ease-in-out infinite; }
+  #turn-phone small { display: block; width: fit-content; margin: 14px auto 0; padding: 10px 20px; border: 2px solid rgba(255, 255, 255, 0.55); border-radius: 99px; font-size: 18px; font-weight: 700; }
 }
 @keyframes turn-phone { 50% { transform: rotate(-90deg); } }
 @media (prefers-reduced-motion: reduce) { #t-use.ready, #turn-phone span { animation: none; } }
