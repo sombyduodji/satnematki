@@ -333,13 +333,23 @@
     useSpriteProgram(sprite, additive) {
       const gl = this.gl, u = sprite.uniforms;
       gl.useProgram(sprite.program);
-      gl.uniform2f(u.uSize, this.w, this.h);
       gl.activeTexture(gl.TEXTURE0);
       gl.bindTexture(gl.TEXTURE_2D_ARRAY, this.owner.atlas.texture);
-      gl.uniform1i(u.uAtlas, 0);
-      gl.uniform1i(u.uQuality, this.quality);
-      gl.uniform3f(u.uShadow, 0.04, 0.07, 0.12);
-      this.lightUniforms(sprite, this.owner.view);
+      // A program keeps its uniforms, so they're set again only when something in them has changed: a frame has many batches,
+      // and on a Mali GPU each round of uniforms cost about as much as drawing the batch.
+      const view = this.owner.view;
+      const key = [this.w, this.h, this.quality, this.light, this.lightReady, view, view?.camX, view?.camY, view?.detail, view?.ox, view?.topPad];
+      if (!sprite.uniformKey || key.some((value, i) => value !== sprite.uniformKey[i])) {
+        sprite.uniformKey = key;
+        gl.uniform2f(u.uSize, this.w, this.h);
+        gl.uniform1i(u.uAtlas, 0);
+        gl.uniform1i(u.uQuality, this.quality);
+        gl.uniform3f(u.uShadow, 0.04, 0.07, 0.12);
+        this.lightUniforms(sprite, view);
+      } else {
+        gl.activeTexture(gl.TEXTURE1);
+        gl.bindTexture(gl.TEXTURE_2D, this.lightReady ? this.lightTexture : this.noLight);
+      }
       gl.enable(gl.BLEND);
       if (additive) gl.blendFunc(gl.ONE, gl.ONE);
       else gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);

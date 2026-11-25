@@ -1,12 +1,14 @@
 "use strict";
 // The performance counter in the corner: frames a second, how long a frame takes, the GPU's effects, and a way to switch
 // between the GPU and the 2D canvas. It's on at first; the switch under the game turns it off, and the browser keeps the choice.
+// On a touch screen the panel is hidden in a round, so there the switch (📊 in the pause menu) shows just the frames a second in
+// the top corner, beside the clock, and it starts off: children playing on a phone have no use for it.
 // kauppa-gl.html goes straight into the store.
 (function () {
   const params = new URLSearchParams(location.search);
   const testPage = !!window.SATNE_GL_AUTOSTART;
   const SHOWN_KEY = "mahtte.perf";
-  let shown = true; // on until it's turned off, and then kept off
+  let shown = !TOUCH_UI; // on until it's turned off, and then kept off; off at first on a touch screen
   try {
     const kept = localStorage.getItem(SHOWN_KEY);
     if (kept !== null) shown = kept === "1";
@@ -29,12 +31,19 @@
   if (footer) footer.before(panel);
   else document.body.append(panel);
 
+  // On a touch screen, during a round: the frames a second only, as a small pill in the top corner.
+  const fpsEl = document.createElement("span");
+  fpsEl.id = "gl-fps";
+  fpsEl.translate = false;
+  (document.getElementById("corner") ?? document.body).append(fpsEl);
+
   // The switch, among the links under the game.
   const toggle = document.createElement("button");
   toggle.id = "perf-toggle";
   toggle.className = "link";
   const show = () => {
     panel.hidden = !shown;
+    fpsEl.hidden = !shown;
     toggle.textContent = LANG === "nb" ? `Ytelse: ${shown ? "på" : "av"}` : `Suorituskyky: ${shown ? "päällä" : "pois"}`;
     toggle.setAttribute("aria-pressed", String(shown));
   };
@@ -58,8 +67,8 @@
   try { wanted = localStorage.getItem("mahtte.gl") !== "0"; } catch { wanted = true; }
   if (testPage) wanted = !!ctx.gpu;
   graphics.textContent = LANG === "nb"
-    ? `Grafikk: ${ctx.gpu ? "GPU" : wanted ? "enkel (GPU virker ikke her)" : "enkel"}`
-    : `Grafiikka: ${ctx.gpu ? "GPU" : wanted ? "perus (GPU ei toimi tässä)" : "perus"}`;
+    ? `Grafikk: ${ctx.gpu ? "GPU" : wanted && !window.SATNE_GPU_SLOW ? "enkel (GPU virker ikke her)" : "enkel"}`
+    : `Grafiikka: ${ctx.gpu ? "GPU" : wanted && !window.SATNE_GPU_SLOW ? "perus (GPU ei toimi tässä)" : "perus"}`;
   graphics.title = ctx.gpu ? "Piirrä perusgrafiikalla. Sivu alkaa alusta." : "Piirrä näytönohjaimella (GPU). Sivu alkaa alusta.";
   const RESUME_KEY = "mahtte.resume";
   const switchGraphics = () => {
@@ -168,6 +177,7 @@
         }
       } else parts.push("2D-canvas");
       statsEl.textContent = parts.join(" · ");
+      if (shown) fpsEl.textContent = `${times.length} fps`;
       worst = 0;
     }
     window.SATNE_STATS = { fps: times.length, drawMs, gpu: gpu ? { ...gpu.stats, gpuMs: gpu.post.gpuMs, quality: gpu.post.quality, layers: gpu.atlas.layers } : null };

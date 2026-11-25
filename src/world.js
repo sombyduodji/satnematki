@@ -23,10 +23,12 @@ const RAISED = { pallet: 15, meat: 11, shelf: 11, fridge: 8, freezer: 10, produc
 const canvas = document.getElementById("world");
 // In kauppa-gl.html the GPU draws instead (src/gl/), through a stand-in that takes the same calls. Elsewhere, or without WebGL 2, the 2D canvas.
 const ctx = (window.SATNE_GL && window.makeGLContext?.(canvas)) || canvas.getContext("2d", { alpha: false }); // nothing shows through it, and knowing that saves the browser work
-// The game's own pictures that the GPU path reads back (outlines, and trimming for its atlas) are kept by the CPU. Read back from GPU
-// canvases, they froze a Mali phone (Nothing Phone (2a)) for seconds at a time in the store, until Android killed the tab. The 2D canvas
-// draws them every frame, so there they stay on the GPU.
-const READ_BACK = ctx.gpu ? { willReadFrequently: true } : undefined;
+// On an ARM GPU (Mali), the game's own pictures that the GPU path reads back (outlines, and trimming for its atlas) are kept by the CPU.
+// Read back from GPU canvases, they froze a Mali phone (Nothing Phone (2a)) for seconds at a time in the store, until Android killed the
+// tab. Elsewhere they stay in graphics memory as before: kept by the CPU they took about 350 MB more of a phone's memory (OnePlus Nord
+// N10, Adreno), and reading them back there costs only a few hundred milliseconds a round. The 2D canvas draws them every frame, so
+// there they stay on the GPU too.
+const READ_BACK = ctx.gpu && ctx.slowReadBack ? { willReadFrequently: true } : undefined;
 const ANIMALS = new Set(["gumpe", "geatki", "albbas", "boazu", "beana", "njoammil", "loddi", "guovza", "rieban", "oarri", "sahpan", "gahttu", "savza", "gussa", "spiidni", "vuonccis", "cuoppu", "skuolfi", "beaiveloddi", "rievssat", "goahppil", "garanas", "njukca", "goaskin", "jievjaskuolfi", "beahceloddi",
   "ealga", "goddi", "neahti", "buoidda", "madjit", "ceavrris", "buovnnjat", "goddesahpan", "garja", "cuonja"]);
 const FLOATING = new Set(["guolli", "fanas"]);

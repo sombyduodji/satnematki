@@ -3,7 +3,13 @@
   background: rgba(16, 14, 12, 0.82); color: #e8e2d4; font: 12px/1.4 Ubuntu, "DejaVu Sans", sans-serif; }
 #gl-panel[hidden] { display: none; }
 #gl-panel a { color: #ffd25a; }
-#gl-panel select { font: inherit; color-scheme: light; } /* as it was before the pages said they handle dark mode themselves */
+/* The effects dropdown drawn wholly by the game, dark like the panel, with its own arrow: a browser's forced dark mode (Chrome's
+   "Auto dark mode for web contents") then has nothing light left to recolour, and the arrow can't vanish white on white. */
+#gl-panel select { font: inherit; color: #e8e2d4; background: #2b2723 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0h10L5 6z' fill='%23ffd25a'/%3E%3C/svg%3E") no-repeat right 7px center;
+  -webkit-appearance: none; appearance: none; padding: 2px 22px 2px 7px; border: 1px solid rgba(232, 226, 212, 0.35); border-radius: 4px; color-scheme: dark; cursor: pointer; }
+#gl-panel select:focus-visible { outline: 2px solid #ffd25a; outline-offset: 1px; }
+#gl-panel select:disabled { cursor: default; }
+#gl-panel option { color: #e8e2d4; background: #2b2723; }
 #graphics-ask { max-width: min(420px, calc(100vw - 32px)); padding: 16px 18px; border: 0; border-radius: 10px; color: #f3ecd9;
   background: #263845; box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5); font: 15px/1.45 Ubuntu, "DejaVu Sans", sans-serif; }
 #graphics-ask::backdrop { background: rgba(0, 0, 0, 0.45); }
@@ -13,3 +19,7 @@
 #graphics-ask button { font: inherit; font-weight: 700; padding: 8px 14px; border-radius: 8px; cursor: pointer; }
 #graphics-ask .primary { color: #14213d; background: #ffd25a; border: 2px solid #ffd25a; }
 #graphics-ask .secondary { color: #f3ecd9; background: none; border: 2px solid rgba(255, 255, 255, 0.35); }
+/* The frames a second alone, beside the clock: only on a touch screen during a round, where the panel above is hidden. */
+#gl-fps { display: none; }
+body.touch-ui:not(.menu) #corner #gl-fps:not([hidden]) { display: block; order: 2; padding: 5px 10px; border-radius: 99px; background: rgba(14, 26, 44, 0.82);
+  color: #c9d6ee; font: 12px/1.2 Ubuntu, "DejaVu Sans", sans-serif; font-variant-numeric: tabular-nums; }

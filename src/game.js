@@ -391,6 +391,12 @@ const BUBBLE_MIN_MS = 1800;
 const NAME_MAX = 15;
 const LINE_MAX_MS = 8000; // a line that never finishes must not silence the rest of the game
 const LINE_SLACK_MS = 1500; // how much longer than its length a line is given to end, once its length is known
+// A phone whose sound clock falls behind (the OnePlus Nord N10, night tests 22.–25.11: lines ended 0.5–8 s late, and lessons took twice
+// as long) is noticed after LATE_LINES lines in a row that end more than LATE_MS late, or never. Until a line ends on time again, the
+// game moves on LATE_SLACK_MS after a line's own length; the next line is still started after it on the sound clock, so they don't
+// overlap, and a line is left unsaid (its bubble still shows) rather than fall more than BEHIND_MOST_S behind.
+const LATE_LINES = 2, LATE_MS = 1000, LATE_SLACK_MS = 250, BEHIND_MOST_S = 2.5;
+let lateLines = 0;
 const ANNOUNCE_MS = 3000;
 const ANNOUNCE_PAUSE_MS = 900; // after the last find, before the next word appears
 const DEFAULT_LOOK = { gender: "boy", outfit: "ohcejohka", hair: 3, length: "short", eyes: 0 };
@@ -1456,20 +1462,28 @@ async function playNextLine() {
   duckAmbience(true);
   line.onStart?.();
   const mine = ++lineNumber;
-  const next = () => {
+  let expectedAt = null; // when the line should end, by the page's clock, once its length is known
+  const next = (ended) => {
     if (mine !== lineNumber) return;
+    if (expectedAt !== null) {
+      const late = performance.now() - expectedAt;
+      if (ended === true && late < LATE_MS / 2) lateLines = 0;
+      else if (ended !== true || late > LATE_MS) lateLines++;
+    }
     lineNumber++;
     currentLine = null;
     voice.onended = voice.onerror = voice.onloadedmetadata = null;
     playNextLine();
   };
+  const ended = () => next(true);
   let giveUp = setTimeout(next, LINE_MAX_MS);
   // Once the line's length is known, it isn't waited for longer than that: when the phone's sound stops working (Chrome: "an error
   // from the audio device", night test 2026-11-21 on the OnePlus), the end of a line never comes, and every line held the game for the
   // whole LINE_MAX_MS, so a round took minutes to reach its results.
   const endsIn = (ms) => {
     clearTimeout(giveUp);
-    giveUp = setTimeout(next, Math.min(LINE_MAX_MS, ms + LINE_SLACK_MS));
+    expectedAt = performance.now() + ms;
+    giveUp = setTimeout(next, Math.min(LINE_MAX_MS, ms + (lateLines >= LATE_LINES ? LATE_SLACK_MS : LINE_SLACK_MS)));
   };
   wakeSound();
   const ready = sound && !document.hidden && await Promise.race([
@@ -1479,21 +1493,29 @@ async function playNextLine() {
   const buffer = ready && sound.state === "running" ? await lineBuffer(src) : null;
   if (mine !== lineNumber) return;
   if (buffer) {
+    // After the fade of whatever was speaking, or after the last line itself where the sound runs late, so two don't talk over each other.
+    const startAt = Math.max(sound.currentTime + SOUND_AHEAD, lineFadeEnds, lineSoundEnds);
+    if (startAt - sound.currentTime > BEHIND_MOST_S) {
+      endsIn(buffer.duration / rate * 1000); // too far behind to be heard with its bubble: the bubble's time only
+      return;
+    }
     const source = sound.createBufferSource();
     source.buffer = buffer;
     source.playbackRate.value = rate;
     const gain = sound.createGain();
     source.connect(gain).connect(sound.destination);
-    source.onended = next;
-    // After the fade of whatever was speaking, so the two don't talk over each other.
-    const startAt = Math.max(sound.currentTime + SOUND_AHEAD, lineFadeEnds);
+    source.onended = ended;
     source.start(startAt);
+    lineSoundEnds = startAt + buffer.duration / rate;
     currentLine = { source, gain };
-    endsIn((startAt - sound.currentTime + buffer.duration / rate) * 1000);
+    // On a phone that's late, the bubbles keep the line's own time; the sound follows as it can, and is left out when too far behind.
+    const waitS = lateLines >= LATE_LINES ? buffer.duration / rate : startAt - sound.currentTime + buffer.duration / rate;
+    endsIn(waitS * 1000);
     return;
   }
   if (document.hidden) return next(); // not said to a locked screen
-  voice.onended = voice.onerror = next;
+  voice.onended = ended;
+  voice.onerror = next;
   voice.onloadedmetadata = () => mine === lineNumber && Number.isFinite(voice.duration) && endsIn(voice.duration / rate * 1000);
   voice.src = src;
   voice.preservesPitch = rate === 1;
@@ -1519,9 +1541,10 @@ function playVoice(...lines) {
 }
 
 // Ends the line now speaking with a short fade rather than a click, and cancels one still waiting to start.
-let lineFadeEnds = 0;
+let lineFadeEnds = 0, lineSoundEnds = 0; // on the sound clock
 function silenceLine() {
   lineNumber++;
+  lineSoundEnds = 0; // what was waiting is cut, so the next starts after the fade only
   if (currentLine) {
     const { source, gain } = currentLine;
     const now = sound.currentTime;

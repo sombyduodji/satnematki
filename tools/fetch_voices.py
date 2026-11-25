@@ -20,6 +20,8 @@ from pathlib import Path
 from audio_mp3 import wav_to_mp3
 
 OUT = Path(__file__).resolve().parent.parent / "audio"
+# The announcements are only the sources of audio/pa-*.mp3 (tools/store3d/make_announcements.py), so they're kept out of the site.
+ANNOUNCE_OUT = Path(__file__).resolve().parent / "store3d" / "voice"
 TTS_URL = "https://api-giellalt.uit.no/tts/se/{voice}"
 CHARACTERS = {"mahtte": "Máhtte", "biret": "Biret"}
 LINES = {
@@ -223,8 +225,9 @@ def main():
         path = OUT / f"{line}.mp3"
         if not path.exists():
             jobs.append((path, TEACHER, text))
+    ANNOUNCE_OUT.mkdir(exist_ok=True)
     for line, text in ANNOUNCEMENTS.items():
-        path = OUT / f"{line}.mp3"
+        path = ANNOUNCE_OUT / f"{line}.mp3"
         if not path.exists():
             jobs.append((path, ANNOUNCER, text))
     # Whole places first: home, then other plain names, before the many colour phrases and numbers.

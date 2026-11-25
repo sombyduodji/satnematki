@@ -1,4 +1,4 @@
-"""Makes the store's loudspeaker announcements, for Ruokakauppa and the 3D test, from Sunná's lines (audio/announce-*.mp3, fetched by tools/fetch_voices.py):
+"""Makes the store's loudspeaker announcements, for Ruokakauppa and the 3D test, from Sunná's lines (tools/store3d/voice/announce-*.mp3, fetched by tools/fetch_voices.py and kept out of the site):
 a chime first, then the voice as through a small, cheap ceiling speaker in a big hall, with a little hum and hiss, and at the end
 a burst of crackling static, as if a cable was loose. Writes audio/pa-*.mp3. Everything but the voice is made here.
 
@@ -81,7 +81,7 @@ def static(seconds=0.9):
     return speaker(out) * 0.55
 
 
-for path in sorted(glob.glob(os.path.join(ROOT, "audio", "announce-*.mp3"))):
+for path in sorted(glob.glob(os.path.join(os.path.dirname(os.path.abspath(__file__)), "voice", "announce-*.mp3"))):
     voice = read(path)
     voice = speaker(voice) * 0.85
     gap = np.zeros(int(RATE * 0.25))
