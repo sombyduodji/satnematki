@@ -112,14 +112,20 @@
     const showFull = () => full.classList.toggle("on", isFull());
     // In fullscreen the phone's Back key only takes the page out of fullscreen, and the game never hears it: so leaving
     // fullscreen in a round, other than with the ⛶ button, opens the pause menu, as Back does otherwise (phone test, 2026-11-13).
+    // Locking the screen or switching apps also ends fullscreen, and Chrome tells the page only when it is shown again. That
+    // isn't Back: the guide stays (it went to the menu and dropped the round being set up; night test 2026-11-16).
+    let wentAway = false;
+    // Shown again still in fullscreen (a browser that keeps it), the next leaving is Back again.
+    document.addEventListener("visibilitychange", () => { wentAway = document.hidden || (wentAway && !isFull()); });
     const fullChanged = () => {
       showFull(); fittedTo = "";
       // Back in fullscreen only leaves it, so leaving it is taken as Back: the pause menu in a round, the menu from its guide.
       if (!isFull() && !leavingOnPurpose && inRound()) {
-        if (guideUp()) showPlaces();
+        if (guideUp()) { if (!wentAway) showPlaces(); }
         else if (!pauseOpen()) openPause();
       }
       if (!isFull()) leavingOnPurpose = false;
+      wentAway = false;
     };
     document.addEventListener("fullscreenchange", fullChanged);
     document.addEventListener("webkitfullscreenchange", fullChanged);

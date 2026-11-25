@@ -3,7 +3,7 @@
   background: rgba(16, 14, 12, 0.82); color: #e8e2d4; font: 12px/1.4 Ubuntu, "DejaVu Sans", sans-serif; }
 #gl-panel[hidden] { display: none; }
 #gl-panel a { color: #ffd25a; }
-#gl-panel select { font: inherit; }
+#gl-panel select { font: inherit; color-scheme: light; } /* as it was before the pages said they handle dark mode themselves */
 #graphics-ask { max-width: min(420px, calc(100vw - 32px)); padding: 16px 18px; border: 0; border-radius: 10px; color: #f3ecd9;
   background: #263845; box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5); font: 15px/1.45 Ubuntu, "DejaVu Sans", sans-serif; }
 #graphics-ask::backdrop { background: rgba(0, 0, 0, 0.45); }

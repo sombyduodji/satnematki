@@ -162,6 +162,7 @@
       this.fps = { from: 0, frames: 0, last: 0, shown: 0, times: [] };
       this.lightTexture = null;
       this.lightReady = false;
+      this.lightPixelsKept = new Map(); // a place's light map as read back, by its address
       this.quadVbo = gl.createBuffer();
       this.quadVao = gl.createVertexArray();
       gl.bindVertexArray(this.quadVao);
@@ -215,7 +216,10 @@
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
         // Read back as well, to tell whether someone stands in the sun: only then do they throw a shadow from it. From the texture, as
         // a 2D canvas would lose the colours where the map's alpha, a height, is 0.
-        try {
+        // Kept per map: on Mali (Nothing Phone (2a)) a read-back waits for the GPU and took ~3.4 s each time the store was entered.
+        const kept = this.lightPixelsKept.get(src);
+        if (kept) this.lightPixels = kept;
+        else try {
           const w = image.naturalWidth, h = image.naturalHeight, data = new Uint8Array(w * h * 4);
           const fb = gl.createFramebuffer();
           gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
@@ -224,6 +228,7 @@
           gl.bindFramebuffer(gl.FRAMEBUFFER, null);
           gl.deleteFramebuffer(fb);
           this.lightPixels = { data, w, h };
+          this.lightPixelsKept.set(src, this.lightPixels); // all places' maps together are ~15 MB
         } catch { /* without it everyone throws one, as before */ }
         this.lightReady = true;
       };

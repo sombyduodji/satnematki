@@ -1021,7 +1021,7 @@
         const w = Math.ceil((metrics.width + pad * 2) * scale), h = Math.ceil((metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent + pad * 2) * scale) || 1;
         const c = document.createElement("canvas");
         c.width = Math.max(1, w); c.height = Math.max(1, h);
-        const t = c.getContext("2d");
+        const t = c.getContext("2d", { willReadFrequently: true }); // trimmed for the atlas: a GPU canvas is slow to read back on Mali
         t.scale(scale, scale);
         t.font = this.font;
         t.textBaseline = "alphabetic";

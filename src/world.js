@@ -23,6 +23,10 @@ const RAISED = { pallet: 15, meat: 11, shelf: 11, fridge: 8, freezer: 10, produc
 const canvas = document.getElementById("world");
 // In kauppa-gl.html the GPU draws instead (src/gl/), through a stand-in that takes the same calls. Elsewhere, or without WebGL 2, the 2D canvas.
 const ctx = (window.SATNE_GL && window.makeGLContext?.(canvas)) || canvas.getContext("2d", { alpha: false }); // nothing shows through it, and knowing that saves the browser work
+// The game's own pictures that the GPU path reads back (outlines, and trimming for its atlas) are kept by the CPU. Read back from GPU
+// canvases, they froze a Mali phone (Nothing Phone (2a)) for seconds at a time in the store, until Android killed the tab. The 2D canvas
+// draws them every frame, so there they stay on the GPU.
+const READ_BACK = ctx.gpu ? { willReadFrequently: true } : undefined;
 const ANIMALS = new Set(["gumpe", "geatki", "albbas", "boazu", "beana", "njoammil", "loddi", "guovza", "rieban", "oarri", "sahpan", "gahttu", "savza", "gussa", "spiidni", "vuonccis", "cuoppu", "skuolfi", "beaiveloddi", "rievssat", "goahppil", "garanas", "njukca", "goaskin", "jievjaskuolfi", "beahceloddi",
   "ealga", "goddi", "neahti", "buoidda", "madjit", "ceavrris", "buovnnjat", "goddesahpan", "garja", "cuonja"]);
 const FLOATING = new Set(["guolli", "fanas"]);
@@ -239,7 +243,7 @@ function addOutline(g, w, h, thick) {
 function outlined(w, h, paint, thick = 1) {
   const c = document.createElement("canvas");
   c.width = w; c.height = h;
-  const g = c.getContext("2d");
+  const g = c.getContext("2d", READ_BACK);
   paint(g);
   addOutline(g, w, h, thick);
   return c;
@@ -1217,7 +1221,21 @@ function drawModel(g, sprite, facing, frame, headFacing, colour, detail = 1) {
   g.restore();
 }
 
-const modelImages = new Map();
+// The pictures made so far, kept for the next round. Each remembers which place last asked for it, so that the ones of
+// places left long ago can be let go first (see forgetOldPictures).
+let placesOpened = 0;
+class PictureCache extends Map {
+  get(key) {
+    const image = super.get(key);
+    if (image) image.usedAt = placesOpened;
+    return image;
+  }
+  set(key, image) {
+    image.usedAt = placesOpened;
+    return super.set(key, image);
+  }
+}
+const modelImages = new PictureCache();
 // These places are drawn at double detail, so that things are easier to recognize.
 const DETAIL_PLACES = { home: FOREST_DETAIL, forest: FOREST_DETAIL, city: FOREST_DETAIL, library: FOREST_DETAIL, store: FOREST_DETAIL, gearstore: FOREST_DETAIL, camp: 2, classroom: FOREST_DETAIL, lesson: FOREST_DETAIL };
 let viewDetail = 1;
@@ -1435,6 +1453,24 @@ function setViewDetail(place) {
   fineQueued.clear();
 }
 
+// Kept without end, the pictures took 913 MB after 32 rounds in one page (Galaxy Z Flip5, 2026-11-23), enough to get the tab
+// closed on a phone with less memory. A forest round alone makes about 370 MB of them, so as a round's place opens (behind its
+// loading guide) and they take more than this, the ones no place has asked for the longest are let go, but none the last place used.
+const MODEL_IMAGES_MAX_BYTES = 512 * 1024 * 1024;
+const pictureBytes = (image) => image.width * image.height * 4;
+function forgetOldPictures() {
+  placesOpened++;
+  let bytes = 0;
+  for (const image of modelImages.values()) bytes += pictureBytes(image);
+  if (bytes <= MODEL_IMAGES_MAX_BYTES) return;
+  const oldestFirst = [...modelImages].filter(([, image]) => image.usedAt < placesOpened - 1).sort(([, a], [, b]) => a.usedAt - b.usedAt);
+  for (const [key, image] of oldestFirst) {
+    if (bytes <= MODEL_IMAGES_MAX_BYTES) break;
+    modelImages.delete(key);
+    bytes -= pictureBytes(image);
+  }
+}
+
 // What a made-ahead person has with them, to draw over them. Drawn the first time it's wanted, a little at a time.
 function carriedImage(sprite, facing, frame, carrying) {
   if (!sprite?.startsWith("person_") || !window.MAHTTE_ANIMALS?.[sprite.replace("person_gear_", "person_")] || carrying === "none" || carrying === undefined) return null;
@@ -1482,7 +1518,7 @@ function queueFinePicture(key, sprite, facing, frame, headFacing, colour) {
     const detail = viewDetail, w = 120 * detail, h = 90 * detail;
     const c = document.createElement("canvas");
     c.width = w; c.height = h;
-    const g = c.getContext("2d");
+    const g = c.getContext("2d", READ_BACK);
     const shapes = MODELS[sprite](frame, colour).map((shape) => turnedShape(shape, MODEL_FACINGS[shape.head ? headFacing : facing]));
     yield* roundModelRows(g, shapes, detail);
     yield;
@@ -1535,7 +1571,7 @@ function bakedAnimal(sprite, facing, frame) {
       c.offsetX = Math.round((x / BAKED_DETAIL) * CANVAS_DETAIL) / CANVAS_DETAIL;
       c.offsetY = Math.round((y / BAKED_DETAIL) * CANVAS_DETAIL) / CANVAS_DETAIL;
     }
-    const g = c.getContext("2d");
+    const g = c.getContext("2d", READ_BACK);
     g.imageSmoothingQuality = "high";
     g.drawImage(sheet, column * w, (facing % rows) * h, w, h, tight ? 0 : Math.round(x * scale), tight ? 0 : Math.round(y * scale), Math.ceil(w * scale), Math.ceil(h * scale));
     modelImages.set(key, c);

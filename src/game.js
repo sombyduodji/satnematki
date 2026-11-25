@@ -390,6 +390,7 @@ const VOICES = { boy: "mahtte", girl: "biret" };
 const BUBBLE_MIN_MS = 1800;
 const NAME_MAX = 15;
 const LINE_MAX_MS = 8000; // a line that never finishes must not silence the rest of the game
+const LINE_SLACK_MS = 1500; // how much longer than its length a line is given to end, once its length is known
 const ANNOUNCE_MS = 3000;
 const ANNOUNCE_PAUSE_MS = 900; // after the last find, before the next word appears
 const DEFAULT_LOOK = { gender: "boy", outfit: "ohcejohka", hair: 3, length: "short", eyes: 0 };
@@ -1459,10 +1460,17 @@ async function playNextLine() {
     if (mine !== lineNumber) return;
     lineNumber++;
     currentLine = null;
-    voice.onended = voice.onerror = null;
+    voice.onended = voice.onerror = voice.onloadedmetadata = null;
     playNextLine();
   };
-  setTimeout(next, LINE_MAX_MS);
+  let giveUp = setTimeout(next, LINE_MAX_MS);
+  // Once the line's length is known, it isn't waited for longer than that: when the phone's sound stops working (Chrome: "an error
+  // from the audio device", night test 2026-11-21 on the OnePlus), the end of a line never comes, and every line held the game for the
+  // whole LINE_MAX_MS, so a round took minutes to reach its results.
+  const endsIn = (ms) => {
+    clearTimeout(giveUp);
+    giveUp = setTimeout(next, Math.min(LINE_MAX_MS, ms + LINE_SLACK_MS));
+  };
   wakeSound();
   const ready = sound && !document.hidden && await Promise.race([
     sound.resume().then(() => true, () => false),
@@ -1478,12 +1486,15 @@ async function playNextLine() {
     source.connect(gain).connect(sound.destination);
     source.onended = next;
     // After the fade of whatever was speaking, so the two don't talk over each other.
-    source.start(Math.max(sound.currentTime + SOUND_AHEAD, lineFadeEnds));
+    const startAt = Math.max(sound.currentTime + SOUND_AHEAD, lineFadeEnds);
+    source.start(startAt);
     currentLine = { source, gain };
+    endsIn((startAt - sound.currentTime + buffer.duration / rate) * 1000);
     return;
   }
   if (document.hidden) return next(); // not said to a locked screen
   voice.onended = voice.onerror = next;
+  voice.onloadedmetadata = () => mine === lineNumber && Number.isFinite(voice.duration) && endsIn(voice.duration / rate * 1000);
   voice.src = src;
   voice.preservesPitch = rate === 1;
   voice.playbackRate = rate;
@@ -1522,7 +1533,7 @@ function silenceLine() {
     currentLine = null;
   }
   voice.pause();
-  voice.onended = voice.onerror = null;
+  voice.onended = voice.onerror = voice.onloadedmetadata = null;
 }
 
 function stopVoice() {
@@ -2934,6 +2945,7 @@ let OPEN_SPOTS = { land: [], water: [], large: [] };
 
 // Moves the character to a place and works out what its map allows.
 function enterPlace(name) {
+  forgetOldPictures();
   loadPlace(name);
   treesNear = new Map(treeMap.filter((t) => !t.block).map((t) => [`${t.tx},${t.ty}`, t]));
   pathCells = [];
@@ -4237,7 +4249,7 @@ const STORE_HINTS = {
   wait: { line: "store-wait", sme: "Vuordde vuoru", fi: "Odota vuoroasi" },
   basketDown: { line: "store-basketdown", sme: "Bija márssu beavdái", fi: "Laita kori pöydälle", act: putBasketDown },
   basketCloser: { line: "store-basketdown", sme: "Bija márssu beavdái", fi: "Laita kori pöydälle" }, // not yet near enough to the counter's start
-  belt: { line: "store-belt", sme: "Bija dan beavdái", fi: "Laita se hihnalle", act: putOnBelt },
+  belt: { line: "store-belt", sme: "Bija dan báddái", fi: "Laita se hihnalle", act: putOnBelt },
   full: { line: "store-full", sme: "Vuordde", fi: "Hihna on täynnä" },
   pay: { line: "store-pay", sme: "Mávsse", fi: "Maksa", act: () => (theme.counts ? confirmPrice() : payCashier()) },
   bag: { line: "store-bag", sme: "Váldde seahka", fi: "Ota kassi", act: takeBag },

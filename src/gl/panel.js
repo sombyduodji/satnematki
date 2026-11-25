@@ -11,10 +11,18 @@
     const kept = localStorage.getItem(SHOWN_KEY);
     if (kept !== null) shown = kept === "1";
   } catch { /* private windows: as the page starts */ }
+  // Its words in the help language (the page reloads when that changes). Finnish is the default, as elsewhere.
+  const T = LANG === "nb"
+    ? { effects: "Effekter", levels: ["0 av", "1 lys og skygger", "2 + lysstråler og glød", "3 alt"], worst: "verste", draw: "tegning",
+        calls: "tegnekall", quads: "bilder", pages: "sider", adreno: " (Adreno: ingen kopi)", toCanvas: "2D-canvas til sammenligning",
+        toGpu: "Til GPU-versjonen", onlyLit: "Lyseffektene finnes foreløpig bare i matbutikken, skogen og klasserommene." }
+    : { effects: "Tehosteet", levels: ["0 pois", "1 valo ja varjot", "2 + valokiilat ja hehku", "3 kaikki"], worst: "pahin", draw: "piirto",
+        calls: "piirtokutsua", quads: "kuvaa", pages: "sivua", adreno: " (Adreno: ei kopiota)", toCanvas: "2D-canvas vertailuun",
+        toGpu: "GPU-versioon", onlyLit: "Valotehosteet ovat toistaiseksi vain ruokakaupassa, metsässä ja luokissa." };
   const panel = document.createElement("div");
   panel.id = "gl-panel";
   panel.innerHTML = `<span id="gl-stats">…</span>
-    <label>Tehosteet <select id="gl-quality"><option value="0">0 pois</option><option value="1">1 valo ja varjot</option><option value="2">2 + valokiilat ja hehku</option><option value="3">3 kaikki</option></select></label>
+    <label>${T.effects} <select id="gl-quality">${T.levels.map((name, value) => `<option value="${value}">${name}</option>`).join("")}</select></label>
     <a id="gl-other"></a>`;
   // In the page just above the links under the game, so that it covers nothing, the switch least of all.
   const footer = document.querySelector("main > footer");
@@ -104,7 +112,7 @@
   // The switch under the game changes the drawing now; on the test page this link does it too, for comparing.
   otherEl.hidden = !testPage;
   otherEl.href = ctx.gpu ? "?canvas" : "?";
-  otherEl.textContent = ctx.gpu ? "2D-canvas vertailuun" : "GPU-versioon";
+  otherEl.textContent = ctx.gpu ? T.toCanvas : T.toGpu;
   const gpu = ctx.gpu ? ctx : null;
   if (gpu) {
     if (params.has("q")) gpu.post.setQuality(Number(params.get("q")));
@@ -146,9 +154,9 @@
     while (times.length && now - times[0] > 1000) times.shift();
     if (now - shownAt > 500) {
       shownAt = now;
-      const parts = [`${times.length} fps`, `pahin ${worst.toFixed(0)} ms`, `piirto ${drawMs.toFixed(1)} ms`, `${canvas.width}×${canvas.height}`];
+      const parts = [`${times.length} fps`, `${T.worst} ${worst.toFixed(0)} ms`, `${T.draw} ${drawMs.toFixed(1)} ms`, `${canvas.width}×${canvas.height}`];
       if (gpu) {
-        parts.push(`${gpu.stats.drawsShown} piirtokutsua`, `${gpu.stats.quadsShown} kuvaa`, `atlas ${gpu.atlas.layers} sivua${gpu.atlas.copyOnGrow ? "" : " (Adreno: ei kopiota)"}`);
+        parts.push(`${gpu.stats.drawsShown} ${T.calls}`, `${gpu.stats.quadsShown} ${T.quads}`, `atlas ${gpu.atlas.layers} ${T.pages}${gpu.atlas.copyOnGrow ? "" : T.adreno}`);
         if (gpu.post.gpuMs !== null) parts.push(`GPU ${gpu.post.gpuMs.toFixed(2)} ms`);
         if (qualityEl.value !== String(gpu.post.quality)) qualityEl.value = String(gpu.post.quality);
         // Only where the place has its light baked: elsewhere there's nothing for the effects to do yet.
@@ -156,7 +164,7 @@
         if (qualityEl.disabled === lit) {
           qualityEl.disabled = !lit;
           qualityEl.parentElement.style.opacity = lit ? "" : "0.45";
-          qualityEl.parentElement.title = lit ? "" : "Valotehosteet ovat toistaiseksi vain ruokakaupassa, metsässä ja luokissa.";
+          qualityEl.parentElement.title = lit ? "" : T.onlyLit;
         }
       } else parts.push("2D-canvas");
       statsEl.textContent = parts.join(" · ");

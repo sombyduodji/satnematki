@@ -28,7 +28,7 @@ LINES = {
     "store-basket": "Váldde márssu.",
     "store-till": "Mana kássii.",
     "store-wait": "Vuordde vuoru.",
-    "store-belt": "Bija dan beavdái.",
+    "store-belt": "Bija dan báddái.",  # bádde, the belt (beavdi would be the table)
     "store-basketdown": "Bija márssu beavdái.",  # the basket onto the counter's start. A draft for the user to check.
     "store-bag": "Váldde seahka.",
     "store-door": "Mana uksii.",
@@ -130,7 +130,7 @@ ANNOUNCER = "sunna"
 ANNOUNCEMENTS = {
     "announce-staff-till": "Bargit dárbbašuvvojit kássas.",  # Henkilökuntaa tarvitaan kassalla.
     "announce-staff-bottles": "Bargit dárbbašuvvojit bohttaliid máhcahanbáikkis.",  # ... pullonpalautuspisteellä.
-    "announce-car-lights": "Almmuhus! Alit biilla eaiggát: din biilla čuovggat leat báhcán buollit.",  # Sinisen auton valot jääneet päälle.
+    "announce-car-lights": "Almmuhus! Alit biilla eaiggát: du biilla čuovggat leat báhcán buollit.",  # Sinisen auton valot jääneet päälle.
     "announce-licence": "Vuodjinkoarta lea gávdnon mielkehildu ovddas. Dan sáhttá viežžat kássas.",  # Ajokortti löytynyt maitohyllyn edestä.
 }
 
