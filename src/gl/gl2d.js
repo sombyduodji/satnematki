@@ -451,10 +451,9 @@
       this.sprites = [compile(gl, SPRITE_VS, SPRITE_FS(0)), compile(gl, SPRITE_VS, SPRITE_FS(1))];
       this.vertices = new Float32Array(MOST_QUADS * 4 * FLOATS);
       this.quads = 0;
-      // Each batch's corners go after the last batch's in the GPU's buffer, never over them: a Mali GPU (the Nothing Phone) that is
-      // still drawing from what would be overwritten otherwise waits, or copies the buffer, every batch. When the buffer is full
-      // the driver is asked for a fresh one, and the old one stays the GPU's until it's done with it.
-      this.ring = 0;
+      // Each batch's corners are given to the GPU as a buffer of their own (bufferData), never written into one it may still be
+      // drawing from (bufferSubData): there a Mali GPU (Nothing Phone (2a)) copied the whole 4.7 MB buffer for every batch, and with
+      // ~17 batches a frame Chrome managed 14–30 fps; an Adreno 619 (OnePlus Nord N10) lost a sixth of its frames (2026-11-25).
       this.vbo = gl.createBuffer();
       gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
       gl.bufferData(gl.ARRAY_BUFFER, this.vertices.byteLength, gl.DYNAMIC_DRAW);
@@ -579,18 +578,13 @@
       tex.pending = false;
       gl.bindVertexArray(this.vao);
       gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
-      if (this.ring + this.quads > MOST_QUADS) {
-        gl.bufferData(gl.ARRAY_BUFFER, this.vertices.byteLength, gl.DYNAMIC_DRAW);
-        this.ring = 0;
-      }
-      gl.bufferSubData(gl.ARRAY_BUFFER, this.ring * 4 * FLOATS * 4, this.vertices, 0, this.quads * 4 * FLOATS);
+      gl.bufferData(gl.ARRAY_BUFFER, this.vertices.subarray(0, this.quads * 4 * FLOATS), gl.STREAM_DRAW);
       const clip = this.drawnClip;
       if (clip) {
         gl.enable(gl.SCISSOR_TEST);
         gl.scissor(Math.floor(clip[0]), Math.floor(this.canvas.height - clip[3]), Math.ceil(clip[2] - clip[0]), Math.ceil(clip[3] - clip[1]));
       }
-      gl.drawElements(gl.TRIANGLES, this.quads * 6, gl.UNSIGNED_SHORT, this.ring * 6 * 2); // the indices of quad n point at its corners
-      this.ring += this.quads;
+      gl.drawElements(gl.TRIANGLES, this.quads * 6, gl.UNSIGNED_SHORT, 0);
       if (clip) gl.disable(gl.SCISSOR_TEST);
       gl.bindVertexArray(null);
       this.stats.draws++;
@@ -1075,18 +1069,6 @@
       const renderer = info ? String(probe.getParameter(info.UNMASKED_RENDERER_WEBGL)) : "";
       if (/swiftshader|llvmpipe|softpipe|software|microsoft basic render/i.test(renderer) && new URLSearchParams(location.search).get("gl") !== "force") {
         console.info(`Sátnemátki: WebGL is done in software here (${renderer}), so the 2D canvas draws.`);
-        probe.getExtension("WEBGL_lose_context")?.loseContext();
-        return null;
-      }
-      // On an ARM GPU (Mali, Immortalis) Chrome's WebGL is slow however little is drawn: on a Nothing Phone (2a) the store ran at
-      // 14–30 fps in fullscreen with 15 draw calls and no effects, where the 2D canvas runs at 120 (2026-11-25). The effects had
-      // already turned themselves off there. So the 2D canvas draws, unless the player chose the GPU (Grafiikka under the game, or
-      // ?gl=1 on the address). The GPU test page, kauppa-gl.html, still draws with the GPU.
-      let chosen = null;
-      try { chosen = localStorage.getItem("mahtte.gl"); } catch { /* as if nothing was chosen */ }
-      if (/mali|immortalis/i.test(renderer) && chosen !== "1" && !window.SATNE_GL_AUTOSTART) {
-        console.info(`Sátnemátki: ${renderer} is slow with WebGL in Chrome, so the 2D canvas draws (Grafiikka: GPU turns it on).`);
-        window.SATNE_GPU_SLOW = true;
         probe.getExtension("WEBGL_lose_context")?.loseContext();
         return null;
       }
