@@ -2681,6 +2681,19 @@ const canPassOver = (o) => me.height >= JUMP.clears && !isLarge(o);
 // A thing in water or in a fixture stands on a tile that is solid already, and is touched from beside it.
 const standsFree = (o) => o.word.place === "land" && !o.animal?.crossing; // a bird on its way over the river is up in the air
 const thingReach = (o) => (boxed(o) ? MOVE.radius + 0.12 : standsFree(o) ? solidSize(o) + MOVE.radius + 0.1 : 0.95);
+// An animal is also in reach when the two look close on the screen: an oval round it, sized from its shadow (its footprint in the art),
+// wider than it is deep, as the view is. Measured on the ground alone, a cat whose picture touched the character's at its lower right
+// was 1.4 tiles away, more than twice the reach (user, 2026-11-25). In the world's pixels: a tile is 32 across and 16 deep on screen.
+const ANIMAL_REACH = { across: 16, acrossPerShadow: 1, deep: 8, deepPerShadow: 2 };
+function looksInReach(o, x, y) {
+  const shadow = ANIMALS.has(o.word.sprite) && standsFree(o) ? ANIMAL_WAYS[o.word.sprite]?.shadow : null;
+  if (!shadow) return false;
+  const dx = o.x + 0.5 - x, dy = o.y + 0.5 - y;
+  const across = (dx - dy) * 16 / (ANIMAL_REACH.across + shadow[0] * ANIMAL_REACH.acrossPerShadow);
+  const deep = (dx + dy) * 8 / (ANIMAL_REACH.deep + shadow[1] * ANIMAL_REACH.deepPerShadow);
+  return across * across + deep * deep <= 1;
+}
+const inReach = (o, x, y) => awayFrom(o, x, y) < thingReach(o) || looksInReach(o, x, y);
 
 // Width and length of a parked vehicle in tiles, in the two-tile bay that starts at its tile.
 const VEHICLES = {
@@ -2814,7 +2827,7 @@ function collide() {
 function thingInReach() {
   const size = (o) => (o.word.place === "home" ? HOME_THINGS[o.word.sprite][0] * HOME_THINGS[o.word.sprite][1] : 1);
   return objects
-    .filter((o) => o.word.place !== "desk" && !o.done && !o.animal?.crossing && awayFrom(o, me.x, me.y) < thingReach(o))
+    .filter((o) => o.word.place !== "desk" && !o.done && !o.animal?.crossing && inReach(o, me.x, me.y))
     .sort((p, q) => size(p) - size(q) || awayFrom(p, me.x, me.y) - awayFrom(q, me.x, me.y))[0];
 }
 
@@ -2822,7 +2835,7 @@ function thingInReach() {
 function touchThings(now) {
   const goal = me.goal;
   if (!goal || goal.done || goal.word.place === "desk") return;
-  if (awayFrom(goal, me.x, me.y) >= thingReach(goal)) return;
+  if (!inReach(goal, me.x, me.y)) return;
   if (rightSpeech && (theme?.counts || targets[0] !== goal.word)) return;
   me.goal = null;
   touch(goal, now);

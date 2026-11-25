@@ -1295,6 +1295,28 @@ zoomButtons.addEventListener("click", (event) => {
   placeCamera();
   event.target.blur(); // so that the keys go on moving the character
 });
+// The mouse wheel over the game zooms too, a step per notch: up for closer, down for further out, through the same steps as the
+// buttons. A touchpad sends many small turns, so they're added up to a notch's worth, and after a step the next waits a moment
+// (a zoom change costs a frame or two of 50–130 ms while pictures are made for the new size). Ctrl with the wheel is still the
+// browser's own zoom, and where the buttons aren't shown (the menu, a touch screen, places with no zoom) the wheel scrolls as usual.
+const WHEEL_ZOOM = { notch: 50, restMs: 220 };
+let wheelSum = 0, wheelRestUntil = 0;
+canvas.addEventListener("wheel", (event) => {
+  if (event.ctrlKey || zoomButtons.hidden || TOUCH_UI) return;
+  const steps = zoomsIn(viewPlace);
+  if (steps.length < 2) return;
+  event.preventDefault(); // the page mustn't scroll under the game
+  const now = performance.now();
+  if (now < wheelRestUntil) return;
+  wheelSum += event.deltaY * (event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? 400 : 1);
+  if (Math.abs(wheelSum) < WHEEL_ZOOM.notch) return;
+  const at = steps.indexOf(VIEW_ZOOM);
+  const next = steps[Math.max(0, Math.min(steps.length - 1, (at < 0 ? steps.indexOf(ZOOM_FIRST) : at) + (wheelSum < 0 ? 1 : -1)))];
+  wheelSum = 0;
+  wheelRestUntil = now + WHEEL_ZOOM.restMs;
+  if (next !== undefined && next !== VIEW_ZOOM) zoomButtons.querySelector(`button[data-zoom="${next}"]`)?.click();
+}, { passive: false });
+
 function chooseCanvasDetail() {
   const ratio = window.devicePixelRatio || 1;
   VIEW_W = BASE_VIEW_W;
