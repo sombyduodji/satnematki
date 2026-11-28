@@ -1302,7 +1302,7 @@ zoomButtons.addEventListener("click", (event) => {
 const WHEEL_ZOOM = { notch: 50, restMs: 220 };
 let wheelSum = 0, wheelRestUntil = 0;
 canvas.addEventListener("wheel", (event) => {
-  if (event.ctrlKey || zoomButtons.hidden || TOUCH_UI) return;
+  if (event.ctrlKey || zoomButtons.hidden || TOUCH_UI || pauseOpen()) return; // the pause menu stands over a still game
   const steps = zoomsIn(viewPlace);
   if (steps.length < 2) return;
   event.preventDefault(); // the page mustn't scroll under the game
@@ -1366,16 +1366,24 @@ function keepFitted() {
 }
 
 // A slow device gets a finer picture only as long as it can draw it smoothly: after a few seconds well under this rate, one step coarser, for the rest of the visit.
-const SMOOTH = { fps: 50, afterMs: 4000, gapMs: 250 }; // the aim is a steady 60
-let smoothFrom = 0, smoothFrames = 0, smoothLast = 0;
+// The first look after a round has loaded takes only firstMs: a phone too slow for the finer picture would otherwise play its first
+// seconds at 10–20 fps (the Motorola and the OnePlus, 28.11), and one that's fast enough keeps it.
+const SMOOTH = { fps: 50, afterMs: 4000, firstMs: 1000, gapMs: 250 }; // the aim is a steady 60
+let smoothFrom = 0, smoothFrames = 0, smoothLast = 0, smoothQuick = false;
+// True while a round's guide is up, until OK. The set-up runs in short slices behind it, so the frames keep coming, only slowly; they
+// say how fast loading is, not play (on the OnePlus, night test 28.11, they took the effects down before play had begun). And once
+// loaded, a still scene behind the guide draws faster than play.
+var roundLoading = false;
 function keepItSmooth(now) {
-  if (now - smoothLast > SMOOTH.gapMs) { // away from the tab, or something being loaded: that's no measure
+  if (roundLoading) smoothQuick = true;
+  if (now - smoothLast > SMOOTH.gapMs || roundLoading) { // away from the tab, or something being loaded: that's no measure
     smoothFrom = now;
     smoothFrames = 0;
   }
   smoothLast = now;
   smoothFrames++;
-  if (now - smoothFrom < SMOOTH.afterMs) return;
+  if (now - smoothFrom < (smoothQuick ? SMOOTH.firstMs : SMOOTH.afterMs)) return;
+  smoothQuick = false;
   if (CANVAS_DETAIL > 2 && (smoothFrames * 1000) / (now - smoothFrom) < SMOOTH.fps) {
     // Half the size if it divides evenly, as each pixel then is exactly two of the screen's.
     mostDetail = screenStep && screenStep % 2 === 0 && CANVAS_DETAIL > screenStep / 2 ? screenStep / 2 : CANVAS_DETAIL === 3 ? 2 : Math.max(2, CANVAS_DETAIL - 1);

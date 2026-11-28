@@ -495,10 +495,12 @@
       f.times.push(now);
       while (f.times.length && now - f.times[0] > 1000) f.times.shift();
       f.shown = f.times.length;
-      if (now - f.last > 250) { f.from = now; f.frames = 0; }
+      if (now - f.last > 250 || window.roundLoading) { f.from = now; f.frames = 0; } // see roundLoading in src/world.js
+      if (window.roundLoading) f.quick = true; // the first look at play is a short one: see SMOOTH in src/world.js
       f.last = now;
       f.frames++;
-      if (now - f.from < 4000) return;
+      if (now - f.from < (f.quick ? 1000 : 4000)) return;
+      f.quick = false;
       if (this.autoQuality && this.quality > 0 && (f.frames * 1000) / (now - f.from) < 50) {
         this.quality--;
         console.info(`Sátnemátki GL: effects down to ${this.quality}, as frames were slow`);

@@ -854,6 +854,7 @@ function showTimer() {
 }
 
 function closeResults() {
+  roundLoading = false; // play begins (OK), or the guide closed early, as by going to the menu
   document.getElementById("results")?.remove();
 }
 
@@ -1060,6 +1061,7 @@ function showGuide() {
   }
   if (TOUCH_UI && typeof touchGuide === "function") panel.querySelector("ul").after(touchGuide());
   document.body.append(panel);
+  roundLoading = true;
   const ok = panel.querySelector("#guide-ok");
   ok.addEventListener("click", () => {
     if (!ok.disabled) startRound();
@@ -3098,11 +3100,20 @@ let sound = null;
 let noiseBuffer = null;
 const STEP_EVERY_MS = WALK_FRAME_MS * 4;
 
+// Android's low-latency sound path is cut off whenever the phone reroutes its sound. On the OnePlus Nord N10 (Android 11, night test
+// 26.11 and checks the next morning) its caption service did that every few seconds while lines played: Chrome reopened the output
+// over and over, the sound clock stood still for most of a lesson, and more than half of the teacher's lines were left unsaid. The
+// "balanced" path rides through a reroute (all 53 lines of lesson-9 in every run), at about 0.1 s more delay, which a voice line or
+// a footstep doesn't show. A phone whose browser asks for the desktop site leaves "Android" out of its user agent, so any device whose
+// main pointer is a finger gets the balanced path too (tablets and iPads as well; a touch laptop with a mouse or touchpad doesn't).
+const SOUND_OPTIONS = /Android/i.test(navigator.userAgent) || navigator.userAgentData?.mobile ||
+  window.matchMedia?.("(pointer: coarse)").matches ? { latencyHint: "balanced" } : undefined;
+
 function wakeSound() {
   if (!sound) {
     const Context = window.AudioContext || window.webkitAudioContext;
     if (!Context) return;
-    sound = new Context();
+    sound = new Context(SOUND_OPTIONS);
     noiseBuffer = makeNoise(sound); // ready now, not during the first step
     startAmbience();
   }
